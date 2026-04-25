@@ -1,0 +1,88 @@
+# Security Policy for PolicyPulse CRM
+
+## Reporting Security Vulnerabilities
+
+We take security seriously. If you discover a security vulnerability, please report it responsibly.
+
+### How to Report
+
+**DO NOT** report security vulnerabilities through public GitHub issues.
+
+Instead, please report them via:
+
+1. **Email**: security@policypulse.com
+2. **Encrypted Email**: Use our PGP key (see below)
+
+### What to Include
+
+Please include the following information:
+- Description of the vulnerability
+- Steps to reproduce
+- Potential impact
+- Any proof-of-concept code (non-malicious)
+
+### Response Timeline
+
+- **Initial Response**: Within 48 hours
+- **Triage & Confirmation**: Within 7 days
+- **Fix Development**: Varies by severity
+- **Disclosure**: After fix is deployed, coordinated with reporter
+
+### Scope
+
+**In Scope:**
+- policypulse.com and all subdomains
+- API endpoints (*.policypulse.com/api/*)
+- Authentication mechanisms
+- Data storage and processing
+
+**Out of Scope:**
+- Third-party services (Clerk, Paddle, etc.)
+- Social engineering attacks
+- Physical security
+- Denial of service attacks
+
+### Recognition
+
+We believe in recognizing security researchers who help keep our users safe. With your permission, we will:
+- List your name in our security acknowledgments
+- Provide a reference for your portfolio
+
+### Safe Harbor
+
+We will not pursue legal action against security researchers who:
+- Make a good faith effort to avoid privacy violations
+- Do not access, modify, or delete data that is not theirs
+- Report vulnerabilities promptly
+- Do not publicly disclose vulnerabilities before we have had reasonable time to fix them
+
+---
+
+## Security Best Practices for Users
+
+### Account Security
+- Use a strong, unique password
+- Enable two-factor authentication (2FA)
+- Review account activity regularly
+
+### Data Security
+- Do not share login credentials
+- Log out from shared computers
+- Report suspicious activity immediately
+
+---
+
+## PGP Key
+
+For encrypted communications, use our PGP key:
+
+```
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+[PGP key would be added here in production]
+-----END PGP PUBLIC KEY BLOCK-----
+```
+
+---
+
+Last Updated: 2024
+Expires: 2025-12-31T23:59:00.000Z

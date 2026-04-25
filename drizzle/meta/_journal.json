@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1776155168879,
+      "tag": "0000_typical_malcolm_colcord",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1776446743795,
+      "tag": "0001_rare_wilson_fisk",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776892690930,
+      "tag": "0002_broken_thunderball",
+      "breakpoints": true
+    }
+  ]
+}
