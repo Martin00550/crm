@@ -1,3 +1,5 @@
+"use client";
+
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@/lib/better-auth";
@@ -18,7 +20,7 @@ import { KeyboardShortcuts, useKeyboardShortcuts } from "@/components/dashboard/
 import { NotificationDropdown } from "@/components/dashboard/NotificationDropdown";
 import { NotificationSettingsModal } from "@/components/dashboard/NotificationSettingsModal";
 import Link from "next/link";
-import { Add, RefreshCw, Calendar, Clock, Keyboard, Bell } from "lucide-react";
+import { Plus, RefreshCw, Calendar, Clock, Keyboard, Bell } from "lucide-react";
 import { DateRangeFilter } from "@/components/dashboard/DateRangeFilter";
 import { useState, useEffect } from "react";
 
@@ -133,7 +135,7 @@ function DashboardClient({ stats, ledger, agencyId }: { stats: any, ledger: any[
             href="/dashboard/clients"
             className="flex items-center gap-2 px-4 py-2 bg-surface border border-black/5 rounded-xl hover:bg-slate-50 transition-all group"
           >
-            <Add className="w-4 h-4 text-on-surface/40 group-hover:text-primary transition-colors" />
+            <Plus className="w-4 h-4 text-on-surface/40 group-hover:text-primary transition-colors" />
             <span className="text-xs font-black text-on-surface/60 uppercase tracking-widest group-hover:text-primary transition-colors">Add Client</span>
           </Link>
           <ImportCSVButton agencyId={agencyId} />
