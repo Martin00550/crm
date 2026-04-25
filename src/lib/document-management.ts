@@ -207,11 +207,11 @@ export async function listDocuments(
 /**
  * Restore document to a specific version
  */
-export async function restoreDocumentVersion(documentId: string, versionId: string, agencyId: string) {
+export async function restoreDocumentVersion(documentId: string, versionNumber: number, agencyId: string, userId: string) {
   const doc = await getDocument(documentId, agencyId);
   if (!doc) return null;
 
-  const version = doc.versions.find(v => v.id === versionId);
+  const version = doc.versions.find(v => v.version === versionNumber);
   if (!version) return null;
 
   // Update parent document with version data
@@ -219,6 +219,7 @@ export async function restoreDocumentVersion(documentId: string, versionId: stri
     filePath: version.storageUrl,
     fileUrl: version.storageUrl,
     changeNotes: version.changeNotes,
+    uploadedBy: userId,
     updatedAt: new Date(),
   }).where(eq(documents.id, documentId));
 
