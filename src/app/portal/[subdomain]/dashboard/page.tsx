@@ -73,11 +73,11 @@ export default async function PortalDashboard({ params }: PortalDashboardProps) 
       id: documents.id,
       fileName: documents.fileName,
       fileType: documents.fileType,
-      uploadedAt: documents.uploadedAt,
+      createdAt: documents.createdAt,
     })
     .from(documents)
     .where(eq(documents.clientId, decoded.clientId))
-    .orderBy(desc(documents.uploadedAt))
+    .orderBy(desc(documents.createdAt))
     .limit(5)
     .execute();
 
@@ -303,7 +303,7 @@ export default async function PortalDashboard({ params }: PortalDashboardProps) 
                 </div>
                 <div className="flex items-center gap-4">
                   <p className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest">
-                    {new Date(doc.uploadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    {new Date(doc.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </p>
                   <button className="p-2 text-on-surface/40 hover:text-primary transition-colors" style={{ color: branding.primaryColor }}>
                     <Download className="w-4 h-4" />

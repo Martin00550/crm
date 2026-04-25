@@ -147,7 +147,7 @@ export function withApiSecurity(
           .limit(1)
           .then((r: any[]) => r[0]);
         
-        if (!user?.role || !hasPermission(user.role as any, options.requiredPermission)) {
+        if (!user?.role || !hasPermission(user.role as 'owner' | 'admin' | 'csr' | 'producer', options.requiredPermission as any)) {
           const error = Errors.authorization('Insufficient permissions');
           logError(error, { userId, requiredPermission: options.requiredPermission });
           return NextResponse.json(createErrorResponse(error), { status: error.statusCode });

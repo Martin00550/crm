@@ -91,7 +91,7 @@ export default function DemoPage() {
     totalBookOfBusiness: totalBook,
     renewalsAtRisk: {
       count: renewalsAtRisk.length,
-      volume: riskVolume,
+      volume: String(riskVolume),
     },
   };
 

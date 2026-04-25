@@ -17,7 +17,7 @@ export interface DocumentVersion {
   fileSize: number;
   storageUrl: string;
   uploadedBy: string;
-  uploadedAt: Date;
+  createdAt: Date;
   changeNotes?: string;
 }
 
@@ -118,7 +118,6 @@ export async function uploadDocument(
     clientId: data.clientId,
     uploadedBy: userId,
     changeNotes: data.changeNotes,
-    uploadedAt: new Date(),
     createdAt: new Date(),
     updatedAt: new Date(),
   });
@@ -160,7 +159,7 @@ export async function getDocument(documentId: string, agencyId: string): Promise
       fileSize: v.fileSize,
       storageUrl: v.fileUrl,
       uploadedBy: v.uploadedBy,
-      uploadedAt: v.uploadedAt,
+      createdAt: v.createdAt,
       changeNotes: v.changeNotes,
     })));
 

@@ -50,7 +50,7 @@ interface Document {
   id: string;
   filename: string;
   category: string;
-  uploadedAt: string;
+  createdAt: string;
   fileSize: number;
 }
 

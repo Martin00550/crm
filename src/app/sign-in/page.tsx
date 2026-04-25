@@ -29,18 +29,6 @@ export default function SignInPage() {
       if (result.error) {
         setError(result.error.message || "Invalid credentials");
       } else {
-        // Check if user has agency and active subscription
-        const session = await authClient.getSession();
-        if (session?.user?.id) {
-          const agencyId = await getUserAgencyId(session.user.id);
-          if (agencyId) {
-            const subscriptionCheck = await checkAgencySubscription(agencyId);
-            if (!subscriptionCheck.canAccessDashboard) {
-              router.push("/checkout?reason=" + encodeURIComponent(subscriptionCheck.reason || 'subscription_required'));
-              return;
-            }
-          }
-        }
         router.push("/dashboard");
       }
     } catch (err) {

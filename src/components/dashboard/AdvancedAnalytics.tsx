@@ -356,7 +356,7 @@ export function AdvancedAnalytics({ agencyId, isDemo = false, initialData = null
                 <YAxis tick={{ fontSize: 10 }} />
                 <Tooltip 
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                  formatter={(value: number) => formatCurrency(value)}
+                  formatter={(value: any) => typeof value === 'number' ? formatCurrency(value) : ''}
                 />
                 <Area 
                   type="monotone" 
@@ -424,7 +424,7 @@ export function AdvancedAnalytics({ agencyId, isDemo = false, initialData = null
                     <Cell fill="#6366f1" />
                     <Cell fill="#22c55e" />
                   </Pie>
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  <Tooltip formatter={(value: any) => typeof value === 'number' ? formatCurrency(value) : ''} />
                   <Legend 
                     verticalAlign="bottom" 
                     height={36}
@@ -456,7 +456,7 @@ export function AdvancedAnalytics({ agencyId, isDemo = false, initialData = null
                 <YAxis tick={{ fontSize: 10 }} />
                 <Tooltip 
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                  formatter={(value: number) => formatPercent(value)}
+                  formatter={(value: any) => typeof value === 'number' ? formatPercent(value) : ''}
                 />
                 <Bar dataKey="marketShare" fill="#6366f1" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -520,7 +520,7 @@ export function AdvancedAnalytics({ agencyId, isDemo = false, initialData = null
                 <YAxis tick={{ fontSize: 10 }} />
                 <Tooltip 
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                  formatter={(value: number) => value.toLocaleString()}
+                  formatter={(value: any) => typeof value === 'number' ? value.toLocaleString() : ''}
                 />
                 <Bar dataKey="count" fill="#22c55e" radius={[4, 4, 0, 0]} name="Policies" />
                 <Bar dataKey="totalPremium" fill="#6366f1" radius={[4, 4, 0, 0]} name="Premium" />
@@ -750,17 +750,17 @@ export function AdvancedAnalytics({ agencyId, isDemo = false, initialData = null
                   tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short' })}
                 />
                 <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                  formatter={(value: number) => formatCurrency(value)}
+                  formatter={(value: any) => typeof value === 'number' ? formatCurrency(value) : ''}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="commission" 
-                  stroke="#8b5cf6" 
+                <Area
+                  type="monotone"
+                  dataKey="commission"
+                  stroke="#8b5cf6"
                   strokeWidth={2}
-                  fillOpacity={1} 
-                  fill="url(#colorCommission)" 
+                  fillOpacity={1}
+                  fill="url(#colorCommission)"
                 />
               </LineChart>
             </ResponsiveContainer>

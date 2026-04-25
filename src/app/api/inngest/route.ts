@@ -15,6 +15,4 @@ export const { GET, POST, PUT } = serve({
   client: inngest,
   functions,
   streaming: false,
-  // Enable signature verification for security
-  signingKey: INNGEST_SIGNING_KEY,
 });

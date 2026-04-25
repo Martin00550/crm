@@ -31,15 +31,6 @@ export function RenewalPipelineDashboard({
   const [filter, setFilter] = useState<'all' | '30' | '60' | '90' | 'overdue'>('all');
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  // Group pipeline by status for drag-and-drop
-  const groupedPipeline = {
-    '90_days': filteredPipeline.filter(item => item.daysUntilRenewal > 60 && item.daysUntilRenewal <= 90),
-    '60_days': filteredPipeline.filter(item => item.daysUntilRenewal > 30 && item.daysUntilRenewal <= 60),
-    '30_days': filteredPipeline.filter(item => item.daysUntilRenewal > 0 && item.daysUntilRenewal <= 30),
-    'overdue': filteredPipeline.filter(item => item.daysUntilRenewal < 0),
-    'completed': filteredPipeline.filter(item => item.status === 'completed'),
-  };
-
   const filteredPipeline = pipeline.filter((item) => {
     if (filter === 'all') return item.status !== 'completed';
     if (filter === '30') return item.daysUntilRenewal <= 30 && item.daysUntilRenewal >= 0;
@@ -48,6 +39,15 @@ export function RenewalPipelineDashboard({
     if (filter === 'overdue') return item.daysUntilRenewal < 0;
     return true;
   });
+
+  // Group pipeline by status for drag-and-drop
+  const groupedPipeline = {
+    '90_days': filteredPipeline.filter(item => item.daysUntilRenewal > 60 && item.daysUntilRenewal <= 90),
+    '60_days': filteredPipeline.filter(item => item.daysUntilRenewal > 30 && item.daysUntilRenewal <= 60),
+    '30_days': filteredPipeline.filter(item => item.daysUntilRenewal > 0 && item.daysUntilRenewal <= 30),
+    'overdue': filteredPipeline.filter(item => item.daysUntilRenewal < 0),
+    'completed': filteredPipeline.filter(item => item.status === 'completed'),
+  };
 
   const handleSendNotification = async (renewalId: string) => {
     setLoadingId(renewalId);
