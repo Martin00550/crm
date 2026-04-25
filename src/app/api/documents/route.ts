@@ -33,6 +33,10 @@ export const POST = withApiSecurity(
   async (request: NextRequest, context) => {
     const { userId, agencyId } = context;
 
+    if (!agencyId) {
+      return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
+    }
+
     // Get user's agency tier
     const agency = await db
       .select({ tier: agencies.subscriptionTier })
