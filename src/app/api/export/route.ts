@@ -9,7 +9,11 @@ import { isFeatureEnabled, SubscriptionTier } from '@/lib/features';
 export const GET = withApiSecurity(
   async (request: NextRequest, context) => {
     const { agencyId: authAgencyId } = context;
-    
+
+    if (!authAgencyId) {
+      return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
+    }
+
     const { searchParams } = new URL(request.url);
     const agencyId = searchParams.get('agencyId') || authAgencyId;
     const dataType = searchParams.get('dataType') || 'all';

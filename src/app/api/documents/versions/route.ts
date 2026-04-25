@@ -41,7 +41,7 @@ export const POST = withApiSecurity(
       return NextResponse.json({ error: 'Document ID and version required' }, { status: 400 });
     }
 
-    const result = await restoreDocumentVersion(documentId, agencyId, parseInt(version), userId);
+    const result = await restoreDocumentVersion(documentId, parseInt(version), agencyId, userId);
     return NextResponse.json(result);
   },
   {

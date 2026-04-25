@@ -125,7 +125,11 @@ function validateRow(row: CSVRow): { valid: boolean; errors: string[] } {
 export const POST = withApiSecurity(
   async (request: NextRequest, context) => {
     const { userId, agencyId: authAgencyId } = context;
-    
+
+    if (!authAgencyId) {
+      return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const agencyId = formData.get('agencyId') as string || authAgencyId;

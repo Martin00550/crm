@@ -6,8 +6,12 @@ export const GET = withApiSecurity(
   async (request: NextRequest, context) => {
     const { agencyId } = context;
 
-    const members = await getTeamMembers(agencyId!);
-    const canAdd = await canAddTeamMember(agencyId!);
+    if (!agencyId) {
+      return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
+    }
+
+    const members = await getTeamMembers(agencyId);
+    const canAdd = await canAddTeamMember(agencyId);
 
 
     return NextResponse.json({ members, canAdd });

@@ -10,7 +10,11 @@ export const GET = withApiSecurity(
   async (request: NextRequest, context) => {
     const { agencyId } = context;
 
-    const status = await getSubscriptionStatus(agencyId!);
+    if (!agencyId) {
+      return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
+    }
+
+    const status = await getSubscriptionStatus(agencyId);
     return NextResponse.json(status);
   },
   {
@@ -59,6 +63,10 @@ export const PATCH = withApiSecurity(
   async (request: NextRequest, context) => {
     const { agencyId } = context;
 
+    if (!agencyId) {
+      return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
+    }
+
     const body = await request.json();
     const { tier } = body;
 
@@ -67,7 +75,7 @@ export const PATCH = withApiSecurity(
     }
 
     // Update subscription tier
-    const result = await updateSubscription(agencyId!, tier);
+    const result = await updateSubscription(agencyId, tier);
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
@@ -89,7 +97,11 @@ export const DELETE = withApiSecurity(
   async (request: NextRequest, context) => {
     const { agencyId } = context;
 
-    const result = await cancelSubscription(agencyId!);
+    if (!agencyId) {
+      return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
+    }
+
+    const result = await cancelSubscription(agencyId);
     return NextResponse.json(result);
   },
   {

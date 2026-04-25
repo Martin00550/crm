@@ -5,6 +5,11 @@ import { searchPolicies, searchClients, getFilterOptions } from '@/lib/search';
 export const GET = withApiSecurity(
   async (request: NextRequest, context) => {
     const { agencyId } = context;
+
+    if (!agencyId) {
+      return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
+    }
+
     const searchParams = request.nextUrl.searchParams;
 
     const type = searchParams.get('type') || 'policies';
@@ -24,13 +29,13 @@ export const GET = withApiSecurity(
     const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
 
     if (searchParams.get('options') === 'true') {
-      const options = await getFilterOptions(agencyId!);
+      const options = await getFilterOptions(agencyId);
       return NextResponse.json(options);
     }
 
     if (type === 'policies') {
       const results = await searchPolicies(
-        agencyId!,
+        agencyId,
         {
           query,
           status,
@@ -49,7 +54,7 @@ export const GET = withApiSecurity(
 
     if (type === 'clients') {
       const results = await searchClients(
-        agencyId!,
+        agencyId,
         { query, industry },
         { page, limit, sortBy, sortOrder }
       );

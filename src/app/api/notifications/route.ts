@@ -9,6 +9,10 @@ export const GET = withApiSecurity(
   async (request: NextRequest, context) => {
     const { userId, agencyId } = context;
 
+    if (!agencyId || !userId) {
+      return NextResponse.json({ error: 'Agency ID and User ID required' }, { status: 400 });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const unreadOnly = searchParams.get('unreadOnly') === 'true';
     const limit = parseInt(searchParams.get('limit') || '50');
@@ -69,6 +73,10 @@ export const GET = withApiSecurity(
 export const POST = withApiSecurity(
   async (request: NextRequest, context) => {
     const { userId, agencyId } = context;
+
+    if (!agencyId) {
+      return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
+    }
 
     const body = await request.json();
     const { title, message, type, metadata, targetUserId } = body;

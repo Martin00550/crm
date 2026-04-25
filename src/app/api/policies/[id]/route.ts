@@ -9,6 +9,10 @@ export const DELETE = withApiSecurity(
   async (request: NextRequest, context) => {
     const { userId, agencyId } = context;
 
+    if (!agencyId) {
+      return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
+    }
+
     const { id: policyId } = await (request as any).params;
 
     // Verify policy belongs to agency
@@ -47,6 +51,10 @@ export const DELETE = withApiSecurity(
 export const PUT = withApiSecurity(
   async (request: NextRequest, context) => {
     const { userId, agencyId } = context;
+
+    if (!agencyId) {
+      return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
+    }
 
     const { id: policyId } = await (request as any).params;
     const updateData = await request.json();

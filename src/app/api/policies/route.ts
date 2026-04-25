@@ -13,7 +13,11 @@ import { z } from 'zod';
 export const POST = withApiSecurity(
   async (request: NextRequest, context) => {
     const { userId, agencyId } = context;
-    
+
+    if (!agencyId) {
+      return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
+    }
+
     // Validate request body
     const validation = await validateRequestBody(request, createPolicySchema);
     if (!validation.success) {
@@ -35,7 +39,7 @@ export const POST = withApiSecurity(
       .insert(policies)
       .values({
         id: randomUUID(),
-        agencyId: agencyId!,
+        agencyId: agencyId,
         clientId: policyData.clientId,
         policyNumber: policyData.policyNumber,
         carrier: policyData.carrier,
