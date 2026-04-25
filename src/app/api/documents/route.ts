@@ -164,6 +164,10 @@ export const GET = withApiSecurity(
   async (request: NextRequest, context) => {
     const { userId, agencyId: userAgencyId } = context;
 
+    if (!userAgencyId) {
+      return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
+    }
+
     const { searchParams } = new URL(request.url);
     const policyId = searchParams.get('policyId');
     const agencyId = searchParams.get('agencyId');
@@ -201,6 +205,10 @@ export const GET = withApiSecurity(
 export const DELETE = withApiSecurity(
   async (request: NextRequest, context) => {
     const { userId, agencyId: userAgencyId } = context;
+
+    if (!userAgencyId) {
+      return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
+    }
 
     const { searchParams } = new URL(request.url);
     const documentId = searchParams.get('documentId');
