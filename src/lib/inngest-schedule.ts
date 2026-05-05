@@ -35,6 +35,7 @@ export const dailyBackupJob = (inngest as InngestClient).createFunction(
     // Get all active agencies
     const agencies = await step.run('get-agencies', async () => {
       const { db } = await import('@/lib/db');
+      if (!db) return [];
       const { agencies } = await import('@/db/schema');
       return await db.select().from(agencies).where(eq(agencies.subscriptionStatus, 'active'));
     });
@@ -65,6 +66,7 @@ export const dailyExpirationCheckJob = (inngest as InngestClient).createFunction
     // Get all active agencies
     const agencies = await step.run('get-agencies', async () => {
       const { db } = await import('@/lib/db');
+      if (!db) return [];
       const { agencies } = await import('@/db/schema');
       return await db.select().from(agencies).where(eq(agencies.subscriptionStatus, 'active'));
     });
@@ -97,6 +99,7 @@ export const hourlyCriticalCheckJob = (inngest as InngestClient).createFunction(
     // Get all active agencies
     const agencies = await step.run('get-agencies', async () => {
       const { db } = await import('@/lib/db');
+      if (!db) return [];
       const { agencies } = await import('@/db/schema');
       return await db.select().from(agencies).where(eq(agencies.subscriptionStatus, 'active'));
     });

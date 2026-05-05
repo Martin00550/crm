@@ -3,6 +3,7 @@ import { getAuth } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
 import { agencies } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {

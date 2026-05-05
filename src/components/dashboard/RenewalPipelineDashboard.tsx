@@ -147,7 +147,7 @@ export function RenewalPipelineDashboard({
                                   </div>
                                   <div className="flex flex-col gap-1 text-right">
                                     <span className="text-[9px] text-on-surface/20 font-black uppercase tracking-widest">Premium Volume</span>
-                                    <span className="text-[15px] font-black text-on-surface leading-none tracking-tighter">${parseFloat(item.premium.replace(/[^0-9.-]+/g, "") || "0").toLocaleString()}</span>
+                                    <span className="text-[15px] font-black text-on-surface leading-none tracking-tighter">${parseFloat((item.premium || "0").replace(/[^0-9.-]+/g, "") || "0").toLocaleString()}</span>
                                   </div>
                                 </div>
                               </div>

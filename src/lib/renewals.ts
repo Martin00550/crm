@@ -12,19 +12,19 @@ export interface RenewalPipelineItem {
   policyId: string;
   clientId: string;
   policyNumber: string;
-  carrier: string;
-  policyType: string;
-  premium: string;
+  carrier: string | null;
+  policyType: string | null;
+  premium: string | null;
   expirationDate: Date;
   clientName: string;
   clientEmail: string | null;
   clientPhone: string | null;
-  status: string;
+  status: string | null;
   daysUntilRenewal: number;
-  notification90Sent: boolean;
-  notification60Sent: boolean;
-  notification30Sent: boolean;
-  aiReportGenerated: boolean;
+  notification90Sent: boolean | null;
+  notification60Sent: boolean | null;
+  notification30Sent: boolean | null;
+  aiReportGenerated: boolean | null;
 }
 
 export interface RenewalStats {

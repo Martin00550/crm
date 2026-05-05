@@ -145,6 +145,9 @@ export const widgetTypes = [
  * Get user's dashboard layout
  */
 export async function getDashboardLayout(userId: string): Promise<DashboardLayout> {
+  if (!db) {
+    return { userId, widgets: defaultWidgets, version: 1, updatedAt: new Date() };
+  }
   const user = await db
     .select({ dashboardLayout: users.dashboardLayout, dashboardLayoutVersion: users.dashboardLayoutVersion })
     .from(users)
@@ -189,6 +192,8 @@ export async function saveDashboardLayout(
     version: newVersion,
     updatedAt: new Date(),
   };
+
+  if (!db) return layout;
 
   await db
     .update(users)

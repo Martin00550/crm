@@ -30,6 +30,13 @@ export const agencies = pgTable('agencies', {
     email?: string;
     address?: string;
     businessHours?: string;
+    renewalNotifications?: boolean;
+    email90Day?: boolean;
+    email60Day?: boolean;
+    email30Day?: boolean;
+    notifyOnExpiry?: boolean;
+    dailyDigest?: boolean;
+    commissionAlerts?: boolean;
   }>().default({
     primaryColor: '#1e40af',
     secondaryColor: '#7c3aed',

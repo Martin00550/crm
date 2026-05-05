@@ -61,6 +61,7 @@ export async function requireAuth(): Promise<AuthResult> {
   }
 
   const authUserId = session.user.id;
+  if (!db) throw new Error('Database not connected');
 
   // Get user from database by authUserId
   const user = await db
@@ -170,6 +171,8 @@ export async function getOptionalAuth(): Promise<AuthResult | null> {
 
     const authUserId = session.user.id;
 
+    if (!db) return null;
+
     const user = await db
       .select()
       .from(users)
@@ -203,15 +206,17 @@ export const withAuthAction = <TArgs extends any[], TResult>(
     } catch (error) {
       logger.error('Server action error', error);
       
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      
       // Map error types to user-friendly messages
-      if (error.message?.includes('Unauthorized')) {
+      if (errorMessage.includes('Unauthorized')) {
         return { success: false, error: 'Please sign in to continue' };
       }
-      if (error.message?.includes('Forbidden')) {
+      if (errorMessage.includes('Forbidden')) {
         return { success: false, error: 'You do not have permission to perform this action' };
       }
       
-      return { success: false, error: error.message || 'An unexpected error occurred' };
+      return { success: false, error: errorMessage };
     }
   };
 }
@@ -230,14 +235,16 @@ export const withAgencyAuth = <TArgs extends any[], TResult>(
     } catch (error) {
       logger.error('Server action error', error);
       
-      if (error.message?.includes('Unauthorized')) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      
+      if (errorMessage.includes('Unauthorized')) {
         return { success: false, error: 'Please sign in to continue' };
       }
-      if (error.message?.includes('Forbidden')) {
+      if (errorMessage.includes('Forbidden')) {
         return { success: false, error: 'You must be part of an agency to perform this action' };
       }
       
-      return { success: false, error: error.message || 'An unexpected error occurred' };
+      return { success: false, error: errorMessage };
     }
   };
 }
@@ -246,6 +253,7 @@ export const withAgencyAuth = <TArgs extends any[], TResult>(
  * Get user's agency details with subscription info
  */
 export async function getAgencyWithSubscription(agencyId: string) {
+  if (!db) throw new Error('Database not connected');
   const agency = await db
     .select()
     .from(agencies)

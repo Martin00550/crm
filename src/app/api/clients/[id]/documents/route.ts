@@ -24,6 +24,10 @@ export async function GET(
 
     const { id: clientId } = await params;
 
+    if (!db) {
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    }
+
     // Verify client belongs to agency
     const client = await db
       .select({ id: clients.id })

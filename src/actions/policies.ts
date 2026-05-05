@@ -187,7 +187,7 @@ export async function getPolicyLeakageRisk(agencyId: string) {
       daysUntilRenewal,
       premiumChange: premiumChange.toFixed(1),
       riskScore,
-      riskLevel,
+      riskLevel: riskLevel as 'low' | 'medium' | 'high' | 'critical',
       riskFactors,
       potentialLoss: premium,
     };
@@ -232,7 +232,7 @@ export async function getRetentionStrategy(policyId: string) {
     });
   }
 
-  if (policy.healthScore < 50) {
+  if (policy.healthScore !== null && policy.healthScore < 50) {
     strategies.push({
       priority: 'medium',
       action: 'Client Consultation',

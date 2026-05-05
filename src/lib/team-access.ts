@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { db } from '@/lib/db';
 import { invitations, users, agencies } from '@/db/schema';
-import { eq, and, lte, sql } from 'drizzle-orm';
+import { eq, and, lte, sql, count, ne, gt, lt } from 'drizzle-orm';
 import { logger } from '@/lib/logger';
 import { getFeatureLimit, type SubscriptionTier } from '@/lib/features';
 import { sendTeamInvitationEmail } from '@/lib/email';

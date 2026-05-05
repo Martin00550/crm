@@ -29,6 +29,7 @@ const MOCK_POLICIES = [
 
 export async function seedMockData(agencyId: string) {
   const now = new Date();
+  if (!db) throw new Error('Database not connected');
   const createdClients = [];
 
   for (const clientData of MOCK_CLIENTS) {
@@ -78,10 +79,9 @@ export async function seedMockData(agencyId: string) {
             policyId: policy.id,
             agencyId,
             renewalDate,
-            daysOut: days,
-            status: days <= 30 ? 'active' : 'scheduled',
-            emailSent: days <= 30,
-            emailSentAt: days <= 30 ? subDays(now, 1) : null,
+            status: days <= 30 ? 'in-progress' : 'pending',
+            notification30Sent: days <= 30,
+            notification30SentAt: days <= 30 ? subDays(now, 1) : null,
           })
           .returning();
       }
@@ -95,6 +95,7 @@ export async function seedMockData(agencyId: string) {
 }
 
 export async function clearMockData(agencyId: string) {
+  if (!db) return;
   await db.delete(renewals).where(eq(renewals.agencyId, agencyId));
   await db.delete(policies).where(eq(policies.agencyId, agencyId));
   await db.delete(clients).where(eq(clients.agencyId, agencyId));

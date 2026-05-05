@@ -13,7 +13,7 @@ if (connectionString && connectionString.startsWith('postgresql')) {
     sql = neon(connectionString);
     db = drizzle(sql, { schema });
   } catch (error) {
-    logger.warn('Database connection failed, running in demo mode', error);
+    logger.warn('Database connection failed, running in demo mode', { error: error instanceof Error ? error.message : String(error) });
   }
 } else {
   logger.info('Running in demo mode without database');

@@ -70,6 +70,15 @@ async function checkDatabaseRateLimit(
   now: number,
   resetAt: number
 ): Promise<RateLimitResult> {
+  if (!db) {
+    return {
+      success: false,
+      limit: config.maxRequests,
+      remaining: 0,
+      resetAt: new Date(resetAt),
+      retryAfter: Math.ceil(config.windowMs / 1000),
+    };
+  }
   try {
     // Clean up expired entries
     await db.delete(rateLimits).where(lt(rateLimits.resetAt, new Date(now)));

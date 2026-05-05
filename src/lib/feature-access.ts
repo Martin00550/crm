@@ -2,7 +2,7 @@
 
 import { db } from '@/lib/db';
 import { featureUsage, agencies } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { 
   isFeatureEnabled, 
   getFeatureLimit, 
@@ -82,17 +82,16 @@ export async function incrementFeatureUsage(
 
   // Use atomic increment to prevent race conditions
   // First try to increment existing record
-  const result = await db.execute(
-    `UPDATE feature_usage 
-     SET usage_count = usage_count + 1, 
-         updated_at = NOW()
-     WHERE agency_id = $1 
-       AND feature_key = $2
-       AND billing_period_start >= $3
-       AND billing_period_end <= $4
-     RETURNING usage_count`,
-    [agencyId, featureKey, start, end]
-  );
+  const result = await db.execute(sql`
+    UPDATE feature_usage 
+    SET usage_count = usage_count + 1, 
+        updated_at = NOW()
+    WHERE agency_id = ${agencyId} 
+      AND feature_key = ${featureKey}
+      AND billing_period_start >= ${start}
+      AND billing_period_end <= ${end}
+    RETURNING usage_count
+  `);
 
   // If no record exists or expired, create new one
   if ((result.rows as any[]).length === 0) {

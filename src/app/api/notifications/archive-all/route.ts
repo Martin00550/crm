@@ -18,6 +18,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Agency not found' }, { status: 404 });
     }
 
+    if (!db) {
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    }
+
     // Delete all notifications for this user in this agency
     const result = await db
       .delete(notifications)

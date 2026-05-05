@@ -20,6 +20,10 @@ export const PUT = withApiSecurity(
       const body = await request.json();
       const { name, subdomain, logoUrl, phone, email, address, businessHours, description } = body;
 
+      if (!db) {
+        return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+      }
+
       // Get current agency to check tier
       const currentAgency = await db
         .select()
@@ -126,6 +130,10 @@ export async function GET(request: NextRequest) {
     
     if (!agencyId) {
       return NextResponse.json({ error: 'Agency not found' }, { status: 404 });
+    }
+
+    if (!db) {
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
     }
 
     const agency = await db

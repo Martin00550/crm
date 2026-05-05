@@ -13,6 +13,10 @@ export const DELETE = withApiSecurity(
       return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
     }
 
+    if (!db) {
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    }
+
     const { id: policyId } = params;
 
     // Verify policy belongs to agency
@@ -54,6 +58,10 @@ export const PUT = withApiSecurity(
 
     if (!agencyId) {
       return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
+    }
+
+    if (!db) {
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
     }
 
     const { id: policyId } = params;

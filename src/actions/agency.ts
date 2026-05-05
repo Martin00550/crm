@@ -2,7 +2,7 @@
 
 import { db } from '@/lib/db';
 import { users, agencies, policies } from '@/db/schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, type InferSelectModel } from 'drizzle-orm';
 import { requireAuth, requireAgencyAuth } from '@/lib/auth-wrapper';
 import { Errors } from '@/lib/error-handler';
 import { getOrSetCached, CacheKeys, CacheConfig } from '@/lib/redis';

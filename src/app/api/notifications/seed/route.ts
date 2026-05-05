@@ -24,6 +24,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    if (!db) {
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    }
+
     // Get user info
     const user = await db
       .select({ agencyId: users.agencyId })

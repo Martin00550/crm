@@ -11,6 +11,10 @@ export async function GET(
 ) {
   try {
     const { token } = await params;
+
+    if (!db) {
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    }
     const invitation = await db
       .select({
         id: invitations.id,

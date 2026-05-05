@@ -11,6 +11,7 @@ export const POST = withApiSecurity(
   async (request: NextRequest, context) => {
     try {
       const { agencyId, userId } = context;
+      if (!userId || !agencyId) { return NextResponse.json({ error: "Unauthorized or Agency not found" }, { status: 401 }); }
 
       if (!agencyId) {
         return NextResponse.json({ error: 'Agency not found' }, { status: 404 });
@@ -54,6 +55,7 @@ export const DELETE = withApiSecurity(
   async (request: NextRequest, context) => {
     try {
       const { agencyId, userId } = context;
+      if (!userId || !agencyId) { return NextResponse.json({ error: "Unauthorized or Agency not found" }, { status: 401 }); }
 
       if (!agencyId) {
         return NextResponse.json({ error: 'Agency not found' }, { status: 404 });

@@ -29,6 +29,25 @@ export default async function PortalDashboard({ params }: PortalDashboardProps) 
     redirect(`/portal/${subdomain}/login`);
   }
 
+  if (!db) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 font-body">
+        <div className="bg-white p-12 rounded-[40px] shadow-2xl border border-black/5 text-center max-w-lg">
+          <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-red-100">
+            <AlertCircle className="w-8 h-8 text-red-500" />
+          </div>
+          <h2 className="text-2xl font-black text-on-surface font-headline italic tracking-tight mb-2 italic">Connection Integrity Failed</h2>
+          <p className="text-on-surface/50 font-medium italic mb-8">
+            The RetainVault secure infrastructure is currently undergoing maintenance. Please try accessing your portal again in a few minutes.
+          </p>
+          <button onClick={() => window.location.reload()} className="px-10 py-4 bg-primary text-white font-black text-xs uppercase tracking-[0.2em] rounded-full hover:shadow-xl transition-all">
+            Retry Connection
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Get agency branding
   const agency = await db
     .select()

@@ -69,7 +69,7 @@ export default async function RenewalsPage() {
         </div>
         <div className="bg-white p-8 rounded-3xl shadow-sm border border-black/5">
           <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block mb-2">Pipeline Value</span>
-          <h3 className="text-4xl font-bold tracking-tight text-on-surface">${pipeline.reduce((sum, p) => sum + parseFloat(p.premium.replace(/[^0-9.-]+/g, "") || "0"), 0).toLocaleString()}</h3>
+          <h3 className="text-4xl font-bold tracking-tight text-on-surface">${pipeline.reduce((sum, p) => sum + parseFloat((p.premium || "0").replace(/[^0-9.-]+/g, "") || "0"), 0).toLocaleString()}</h3>
         </div>
       </section>
 

@@ -134,7 +134,7 @@ async function handleEmailDispatch(
   settings: any
 ) {
   const { 
-    sendRenewalEmail, 
+    sendAgentRenewalAlertEmail, 
     sendTeamJoinEmail, 
     sendCommissionEmail,
     sendInsuredReminderEmail 
@@ -157,7 +157,7 @@ async function handleEmailDispatch(
     case 'policy_renewal':
       const { isEmailNotificationEnabled } = await import('./notification-settings');
       if (isEmailNotificationEnabled(settings, event.daysOut)) {
-        await sendRenewalEmail(user.email, {
+        await sendAgentRenewalAlertEmail(user.email, {
           policyNumber: event.policyNumber,
           clientName: event.clientName,
           daysOut: event.daysOut,

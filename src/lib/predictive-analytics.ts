@@ -43,7 +43,7 @@ export function calculatePolicyRiskScore(policy: any, client: any): number {
   }
 
   // Factor 2: Premium increase rate
-  const premium = parseFloat(policy.premium || 0);
+  const premium = parseFloat(policy.premium || '0');
   if (premium > 20000) {
     riskScore += 15;
   }
@@ -60,9 +60,10 @@ export function calculatePolicyRiskScore(policy: any, client: any): number {
   }
 
   // Factor 5: Health score
-  if (policy.healthScore < 50) {
+  const healthScore = policy.healthScore ?? 100;
+  if (healthScore < 50) {
     riskScore += 20;
-  } else if (policy.healthScore < 70) {
+  } else if (healthScore < 70) {
     riskScore += 10;
   }
 
@@ -108,11 +109,12 @@ export async function predictPolicyLeakage(agencyId: string): Promise<PolicyRisk
     if (client && !client.portalAccessEnabled) {
       factors.push({ factor: 'No portal access', weight: 15, value: 'No', impact: 'medium' });
     }
-    if (policy.healthScore < 50) {
-      factors.push({ factor: 'Low health score', weight: 20, value: policy.healthScore, impact: 'high' });
+    const healthScore = policy.healthScore ?? 100;
+    if (healthScore < 50) {
+      factors.push({ factor: 'Low health score', weight: 20, value: healthScore, impact: 'high' });
     }
-    if (parseFloat(policy.premium || 0) > 20000) {
-      factors.push({ factor: 'High premium', weight: 15, value: parseFloat(policy.premium), impact: 'medium' });
+    if (parseFloat(policy.premium || '0') > 20000) {
+      factors.push({ factor: 'High premium', weight: 15, value: parseFloat(policy.premium || '0'), impact: 'medium' });
     }
 
     // Generate recommended actions
@@ -123,10 +125,10 @@ export async function predictPolicyLeakage(agencyId: string): Promise<PolicyRisk
     if (client && !client.portalAccessEnabled) {
       recommendedActions.push('Enable portal access to increase engagement');
     }
-    if (policy.healthScore < 50) {
+    if ((policy.healthScore ?? 100) < 50) {
       recommendedActions.push('Send AI rate explainer to justify current pricing');
     }
-    if (parseFloat(policy.premium || 0) > 20000) {
+    if (parseFloat(policy.premium || '0') > 20000) {
       recommendedActions.push('Schedule in-person meeting to review coverage');
     }
 
@@ -148,6 +150,7 @@ export async function predictPolicyLeakage(agencyId: string): Promise<PolicyRisk
  * Get leakage prediction summary
  */
 export async function getLeakagePredictionSummary(agencyId: string) {
+  if (!db) return null;
   const riskScores = await predictPolicyLeakage(agencyId);
 
   const highRisk = riskScores.filter(r => r.currentRiskScore >= 70);
@@ -164,6 +167,8 @@ export async function getLeakagePredictionSummary(agencyId: string) {
       )
     )
     .then((r: any[]) => r[0]?.total || '0');
+
+  if (!db) return null;
 
   const projectedLoss = (parseFloat(highRiskVolume) * 0.3).toFixed(2);
 
@@ -204,6 +209,7 @@ function getTopRiskFactors(riskScores: PolicyRiskScore[]): Array<{ factor: strin
  */
 export async function getLeakagePreventionRecommendations(agencyId: string) {
   const summary = await getLeakagePredictionSummary(agencyId);
+  if (!summary) return { summary: null, recommendations: [], urgency: 'moderate' };
   const recommendations: string[] = [];
 
   if (summary.highRiskCount > 10) {

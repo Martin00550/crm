@@ -13,6 +13,10 @@ export const GET = withApiSecurity(
       return NextResponse.json({ error: 'Agency ID and User ID required' }, { status: 400 });
     }
 
+    if (!db) {
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    }
+
     // Look up DB user ID to avoid UUID mismatch
     const { users } = await import('@/db/schema');
     const user = await db
@@ -91,6 +95,10 @@ export const POST = withApiSecurity(
 
     if (!agencyId) {
       return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
+    }
+
+    if (!db) {
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
     }
 
     const body = await request.json();

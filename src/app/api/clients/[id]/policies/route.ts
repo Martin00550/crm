@@ -4,12 +4,21 @@ import { db } from '@/lib/db';
 import { policies, clients } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { getUserAgencyId } from '@/actions/data';
+import { withApiSecurity } from '@/lib/api-security';
 import { logger } from '@/lib/logger';
 
 export const GET = withApiSecurity(
   async (request: NextRequest, context) => {
     const { agencyId, params } = context;
     const { id: clientId } = params;
+
+    if (!agencyId) {
+      return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
+    }
+
+    if (!db) {
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    }
 
     // Verify client belongs to agency
     const client = await db

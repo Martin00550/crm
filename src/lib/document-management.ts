@@ -51,6 +51,7 @@ export async function uploadDocument(
     changeNotes?: string;
   }
 ) {
+  if (!db) throw new Error('Database not connected');
   // Check if document with same name exists
   const existing = await db
     .select()
@@ -129,6 +130,7 @@ export async function uploadDocument(
  * Get document with all versions
  */
 export async function getDocument(documentId: string, agencyId: string): Promise<Document | null> {
+  if (!db) return null;
   const doc = await db
     .select()
     .from(documents)
@@ -180,6 +182,7 @@ export async function listDocuments(
     clientId?: string;
   } = {}
 ) {
+  if (!db) return [];
   const conditions = [eq(documents.agencyId, agencyId)];
 
   if (filters.type) {
@@ -213,6 +216,8 @@ export async function restoreDocumentVersion(documentId: string, versionNumber: 
   const version = doc.versions.find(v => v.version === versionNumber);
   if (!version) return null;
 
+  if (!db) throw new Error('Database not connected');
+
   // Update parent document with version data
   await db.update(documents).set({
     filePath: version.storageUrl,
@@ -229,6 +234,7 @@ export async function restoreDocumentVersion(documentId: string, versionNumber: 
  * Delete document (soft delete with version history preserved)
  */
 export async function deleteDocument(documentId: string, agencyId: string) {
+  if (!db) throw new Error('Database not connected');
   await db.delete(documents).where(
     and(
       eq(documents.id, documentId),
@@ -248,6 +254,7 @@ export async function getDocumentHistory(documentId: string, agencyId: string) {
 
   // Get uploader information for each version
   const uploaderIds = [...new Set(doc.versions.map(v => v.uploadedBy))];
+  if (!db) return doc.versions.map(v => ({ ...v, uploadedByName: 'Unknown' }));
   const uploaders = await db
     .select()
     .from(users)

@@ -18,6 +18,9 @@ export function ImportCSVModal({ isOpen, onClose, agencyId, onImportComplete }: 
     success?: boolean;
     imported?: number;
     failed?: number;
+    newClients?: number;
+    details?: string;
+    error?: any;
     importedRows?: { clientName: string; policyNumber: string }[];
     errors?: { clientName: string; error: string }[];
     invalidRows?: { clientName: string; errors: string[] }[];

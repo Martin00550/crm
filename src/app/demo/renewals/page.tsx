@@ -31,6 +31,7 @@ export default function DemoRenewalsPage() {
     return {
       id: `renewal-${p.id}`,
       policyId: p.id,
+      clientId: p.clientId,
       policyNumber: p.policyNumber,
       carrier: p.carrier,
       policyType: p.policyType,

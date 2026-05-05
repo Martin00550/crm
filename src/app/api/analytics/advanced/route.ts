@@ -22,6 +22,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Agency not found' }, { status: 404 });
     }
 
+    if (!db) {
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    }
+
     // Get agency's tier
     const agency = await db
       .select({ subscriptionTier: agencies.subscriptionTier })

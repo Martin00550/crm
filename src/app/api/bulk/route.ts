@@ -15,6 +15,10 @@ export const POST = withApiSecurity(
     const body = await request.json();
     const { action, type, ids, data } = body;
 
+    if (!db) {
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    }
+
     if (!action || !type || !ids || !Array.isArray(ids)) {
       return NextResponse.json({ error: 'Invalid bulk operation request' }, { status: 400 });
     }

@@ -22,6 +22,10 @@ export const POST = withApiSecurity(
         return NextResponse.json({ error: 'Agency not found' }, { status: 404 });
       }
 
+      if (!db) {
+        return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+      }
+
       // Get document and increment download count
       const document = await db
         .select()

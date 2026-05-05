@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, NextFetchEvent } from 'next/server';
 import { authkitProxy } from '@workos-inc/authkit-nextjs';
 
-export default async function proxy(request: NextRequest) {
+export default async function proxy(request: NextRequest, event: NextFetchEvent) {
   const url = request.nextUrl;
   const hostname = request.headers.get('host') || '';
 
@@ -34,7 +34,7 @@ export default async function proxy(request: NextRequest) {
   return authkitProxy({
     debug: isDevelopment,
     redirectUri: process.env.WORKOS_REDIRECT_URI,
-  })(request);
+  })(request, event);
 }
 
 export const config = {

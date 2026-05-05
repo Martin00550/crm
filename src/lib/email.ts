@@ -78,6 +78,33 @@ export interface RenewalEmailData {
   renewalDate: Date;
 }
 
+export async function sendAgentRenewalAlertEmail(
+  to: string,
+  data: {
+    policyNumber: string;
+    clientName: string;
+    daysOut: number;
+    premium: string;
+    policyId: string;
+  }
+) {
+  const subject = `[RENEWAL] ${data.clientName} - ${data.daysOut} Days Out`;
+  const html = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h1 style="color: #041627;">Renewal Alert</h1>
+      <p>Policy <strong>${data.policyNumber}</strong> for <strong>${data.clientName}</strong> is expiring in <strong>${data.daysOut} days</strong>.</p>
+      <p><strong>Current Premium:</strong> $${parseFloat(data.premium).toLocaleString()}</p>
+      <div style="margin-top: 30px;">
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://retainvault.com'}/dashboard/policies/${data.policyId}"
+           style="display: inline-block; background: #006c49; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+          View Policy in Dashboard
+        </a>
+      </div>
+    </div>
+  `;
+  return sendEmailWithRetry(to, subject, html);
+}
+
 export async function sendRenewalEmail(
   client: Client,
   policy: Policy,

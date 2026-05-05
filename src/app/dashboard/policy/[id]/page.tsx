@@ -60,7 +60,7 @@ export default async function PolicyDetailPage({ params }: Props) {
           </div>
           <MetricComparison 
             current={policy.premium} 
-            previous={policy.previousTermPremium} 
+            previous={policy.previousTermPremium || undefined} 
             trend={premiumChange > 0 ? "down" : "up"} 
             type="currency"
             label="Term Variance"

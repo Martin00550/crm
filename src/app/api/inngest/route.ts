@@ -14,7 +14,6 @@ if (!INNGEST_SIGNING_KEY && process.env.NODE_ENV === 'production') {
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
-  functions,
-  signingKey: process.env.INNGEST_SIGNING_KEY,
+  functions: functions as any,
   streaming: false,
 });

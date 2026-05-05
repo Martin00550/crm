@@ -6,8 +6,8 @@ import { Building2, Globe, Phone, Mail, MapPin, Clock, Check, AlertCircle, Lock,
 interface Agency {
   id: string;
   name: string;
-  subdomain: string;
-  subscriptionTier: string;
+  subdomain: string | null;
+  subscriptionTier: string | null;
   branding: {
     logoUrl?: string;
     phone?: string;
@@ -15,7 +15,7 @@ interface Agency {
     address?: string;
     businessHours?: string;
     description?: string;
-  };
+  } | null;
 }
 
 interface AgencyProfileFormProps {

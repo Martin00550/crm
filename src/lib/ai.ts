@@ -174,6 +174,7 @@ Keep it under 400 words total. Be specific and actionable.`;
 }
 
 export async function getPolicyWithClient(policyId: string) {
+  if (!db) return null;
   const policy = await db
     .select()
     .from(policies)

@@ -6,7 +6,7 @@
 import { db } from '@/lib/db';
 import { sql } from 'drizzle-orm';
 import { uploadFile, getFile, generateStoragePath, deleteFile } from '@/lib/storage';
-import { backups, agencies } from '@/db/schema';
+import { backups, agencies, policies, clients } from '@/db/schema';
 import { eq, and, lte } from 'drizzle-orm';
 import { logger } from '@/lib/logger';
 import { randomUUID } from 'crypto';
@@ -33,6 +33,7 @@ export interface BackupResult {
 export async function createDatabaseBackup(agencyId: string): Promise<BackupResult> {
   const startTime = Date.now();
   const backupId = `${agencyId}-${randomUUID()}`;
+  if (!db) throw new Error('Database not connected');
   
   try {
     // Get all data for the agency
@@ -69,6 +70,7 @@ export async function createDatabaseBackup(agencyId: string): Promise<BackupResu
     const { url } = await uploadFile(buffer, {
       path: storagePath,
       contentType: 'application/json',
+      visibility: 'private',
       cacheControl: 'public, max-age=86400',
       metadata: {
         'backup-id': backupId,
@@ -118,6 +120,7 @@ export async function createDatabaseBackup(agencyId: string): Promise<BackupResu
  * Restore database from backup
  */
 export async function restoreFromBackup(backupId: string, agencyId: string): Promise<boolean> {
+  if (!db) throw new Error('Database not connected');
   try {
     // Download backup from Backblaze B2
     const storagePath = `backups/${agencyId}/backup-${backupId}.json`;
@@ -128,15 +131,15 @@ export async function restoreFromBackup(backupId: string, agencyId: string): Pro
     for (const table of backupData) {
       if (table.table_name === 'policies' && table.data) {
         for (const record of table.data) {
-          await db.insert(sql`policies`).values(record).onConflictDoNothing();
+          await db.insert(policies).values(record).onConflictDoNothing();
         }
       } else if (table.table_name === 'clients' && table.data) {
         for (const record of table.data) {
-          await db.insert(sql`clients`).values(record).onConflictDoNothing();
+          await db.insert(clients).values(record).onConflictDoNothing();
         }
       } else if (table.table_name === 'agencies' && table.data) {
         for (const record of table.data) {
-          await db.insert(sql`agencies`).values(record).onConflictDoNothing();
+          await db.insert(agencies).values(record).onConflictDoNothing();
         }
       }
     }
@@ -161,6 +164,7 @@ export async function scheduleAutomatedBackups(agencyId: string) {
  * Get backup history for an agency
  */
 export async function getBackupHistory(agencyId: string, limit: number = 10) {
+  if (!db) return [];
   const history = await db
     .select()
     .from(backups)
@@ -177,6 +181,8 @@ export async function getBackupHistory(agencyId: string, limit: number = 10) {
 export async function cleanupOldBackups(agencyId: string, retentionDays: number = 30) {
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
+
+  if (!db) return { deleted: 0, cutoffDate };
 
   // Get expired backups
   const expiredBackups = await db
@@ -220,6 +226,7 @@ export async function exportAgencyData(agencyId: string): Promise<{
   agency: any;
   exportedAt: Date;
 }> {
+  if (!db) throw new Error('Database not connected');
   const [policies, clients, agency] = await Promise.all([
     db.select().from(sql`policies`).where(sql`agencyId = ${agencyId}`),
     db.select().from(sql`clients`).where(sql`agencyId = ${agencyId}`),

@@ -286,7 +286,7 @@ export async function calculatePolicyRisk(agencyId: string): Promise<PolicyRisk[
       riskLevel,
       riskFactors,
       premiumAmount,
-      renewalDate: policy.expirationDate,
+      renewalDate: new Date(policy.expirationDate).toISOString(),
       daysUntilRenewal,
       lastContact: 'Not tracked',
       trend,

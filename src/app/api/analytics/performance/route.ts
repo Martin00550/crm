@@ -15,6 +15,8 @@ export async function POST(request: NextRequest) {
     // For now, we'll just acknowledge receipt
     
     // Example: Store in database for analysis
+
+
     // await db.performanceMetrics.create({ data: metrics });
     
     return NextResponse.json({ success: true });

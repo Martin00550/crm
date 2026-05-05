@@ -18,6 +18,10 @@ export const POST = withApiSecurity(
       return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
     }
 
+    if (!db) {
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    }
+
     // Validate request body
     const validation = await validateRequestBody(request, createPolicySchema);
     if (!validation.success) {

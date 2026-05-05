@@ -18,14 +18,15 @@ const AIInsightsCard = lazy(() => import("@/components/dashboard/AIInsightsCard"
 const NotificationSettingsModal = lazy(() => import("@/components/dashboard/NotificationSettingsModal").then(m => ({ default: m.NotificationSettingsModal })));
 
 interface DashboardStats {
-  totalPremiumVolume: number;
-  activePolicies: number;
-  retentionRisk: number;
-  boundPolicies: number;
-  churnRate: number;
+  totalBookOfBusiness: string;
+  renewalsAtRisk: {
+    count: number;
+    volume: string;
+  };
+  totalPolicies: number;
 }
 
-export function DashboardClient({ stats, ledger, agencyId }: { stats: DashboardStats, ledger: Record<string, any>[], agencyId: string }) {
+export function DashboardClient({ stats, ledger, agencyId }: { stats: DashboardStats, ledger: any[], agencyId: string }) {
   const router = useRouter();
   const { showShortcuts, setShowShortcuts } = useKeyboardShortcuts();
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);

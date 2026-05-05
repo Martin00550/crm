@@ -38,9 +38,9 @@ export const POST = withApiSecurity(
   async (request: NextRequest, context) => {
     try {
       const { agencyId, userId } = context;
-
-      if (!agencyId) {
-        return NextResponse.json({ error: 'Agency not found' }, { status: 404 });
+      
+      if (!userId || !agencyId) {
+        return NextResponse.json({ error: 'Unauthorized or Agency not found' }, { status: 401 });
       }
 
       const body = await request.json();

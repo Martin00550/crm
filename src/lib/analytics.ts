@@ -11,12 +11,12 @@ interface Policy {
   id: string;
   agencyId: string;
   premium: string;
-  status: string;
-  expirationDate: Date;
-  createdAt: Date;
-  healthStatus?: string;
-  carrier?: string;
-  policyType?: string;
+  status: string | null;
+  expirationDate: Date | null;
+  createdAt: Date | null;
+  healthStatus?: string | null;
+  carrier?: string | null;
+  policyType?: string | null;
 }
 
 interface Client {
@@ -103,6 +103,9 @@ export interface MonthlyTrend {
  * Get comprehensive analytics for an agency
  */
 export async function getAgencyAnalytics(agencyId: string): Promise<AnalyticsMetrics> {
+  if (!db) {
+    throw new Error('Database not connected');
+  }
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);

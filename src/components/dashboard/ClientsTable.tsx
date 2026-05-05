@@ -11,8 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 interface Client {
   id: string;
   name: string;
-  email: string;
-  industry: string;
+  email: string | null;
+  industry: string | null;
   totalPolicies: number;
   totalPremium: string;
   healthStatus: string;

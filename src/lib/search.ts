@@ -34,6 +34,7 @@ export async function searchPolicies(
   filters: SearchFilters,
   options: SearchOptions = {}
 ) {
+  if (!db) return { results: [], total: 0, page: 1, limit: 50, totalPages: 0 };
   const {
     query,
     status,
@@ -151,6 +152,7 @@ export async function searchClients(
   },
   options: SearchOptions = {}
 ) {
+  if (!db) return { results: [], total: 0, page: 1, limit: 50, totalPages: 0 };
   const { query, industry } = filters;
   const { page = 1, limit = 50, sortBy = 'createdAt', sortOrder = 'desc' } = options;
   const offset = (page - 1) * limit;
@@ -205,6 +207,7 @@ export async function searchClients(
  * Get filter options (distinct values)
  */
 export async function getFilterOptions(agencyId: string) {
+  if (!db) return { carriers: [], policyTypes: [], industries: [] };
   const [carriers, policyTypes, industries] = await Promise.all([
     db
       .selectDistinct({ carrier: policies.carrier })

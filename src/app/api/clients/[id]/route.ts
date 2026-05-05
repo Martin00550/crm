@@ -12,6 +12,7 @@ export const GET = withApiSecurity(
     }
 
     const { id: clientId } = params;
+    if (!db) { return NextResponse.json({ error: "Database connection failed" }, { status: 500 }); }
 
     // Get client details
     const client = await db
@@ -62,6 +63,7 @@ export const PUT = withApiSecurity(
     }
 
     const { id: clientId } = params;
+    if (!db) { return NextResponse.json({ error: "Database connection failed" }, { status: 500 }); }
     const updateData = await request.json();
 
     // Verify client belongs to agency
@@ -128,6 +130,7 @@ export const DELETE = withApiSecurity(
     }
 
     const { id: clientId } = params;
+    if (!db) { return NextResponse.json({ error: "Database connection failed" }, { status: 500 }); }
 
     // Verify client belongs to agency
     const existingClient = await db

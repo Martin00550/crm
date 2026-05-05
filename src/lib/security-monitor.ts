@@ -236,7 +236,7 @@ export async function runSecurityMonitors(
 
   // Log all alerts
   for (const alert of alerts) {
-    logger.warn('SECURITY ALERT', alert);
+    logger.warn('SECURITY ALERT', { ...alert });
     
     // Store in database
     await storeSecurityAlert(alert, context);

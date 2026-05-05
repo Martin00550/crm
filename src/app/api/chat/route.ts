@@ -1,3 +1,4 @@
+import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@/lib/auth-wrapper';
 
 interface ChatMessage {
@@ -16,7 +17,7 @@ interface AIResponse {
 import { revalidatePath } from 'next/cache';
 import { db } from '@/lib/db';
 import { clients, policies, users } from '@/db/schema';
-import { eq, and, gte, lte, ilike, or, asc, inArray } from 'drizzle-orm';
+import { eq, and, gte, lte, ilike, or, asc, inArray, sql } from 'drizzle-orm';
 import { buildAgencyContext } from '@/lib/ai-context';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
@@ -31,20 +32,19 @@ async function checkRateLimit(userId: string): Promise<boolean> {
   
   // Count requests in the time window
   const result = await db.execute(
-    `SELECT COUNT(*) as count FROM ai_chat_logs 
-     WHERE user_id = $1 AND created_at > $2`,
-    [userId, windowStart]
+    sql`SELECT COUNT(*) as count FROM ai_chat_logs WHERE user_id = ${userId} AND created_at > ${windowStart.toISOString()}`
   );
+
+
   
-  const count = parseInt((result.rows[0] as any)?.count || '0', 10);
+  const count = parseInt((result as any)?.count || '0', 10);
   return count < RATE_LIMIT_MAX;
 }
 
 async function logChatRequest(userId: string, messageCount: number) {
   if (!db) return;
   await db.execute(
-    `INSERT INTO ai_chat_logs (user_id, message_count, created_at) VALUES ($1, $2, NOW())`,
-    [userId, messageCount]
+    sql`INSERT INTO ai_chat_logs (user_id, message_count, created_at) VALUES (${userId}, ${messageCount}, NOW())`
   );
 }
 
@@ -469,21 +469,21 @@ interface AIResponse {
   }[];
 }
 export const POST = withApiSecurity(
-  async (req: Request, context) => {
+  async (req: NextRequest, context) => {
     const { userId, agencyId } = context;
 
-    if (!agencyId) {
-      return new Response(JSON.stringify({ 
-        error: 'Agency not found' 
-      }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+    if (!userId || !agencyId) {
+      return NextResponse.json({ 
+        error: 'Unauthorized or Agency not found' 
+      }, { status: 401 });
     }
 
     // Rate limiting check (per user, not IP)
     const rateLimitAllowed = await checkRateLimit(userId);
     if (!rateLimitAllowed) {
-      return new Response(JSON.stringify({ 
+      return NextResponse.json({ 
         error: 'Rate limit exceeded. Please try again in 1 minute.' 
-      }), { status: 429, headers: { 'Content-Type': 'application/json' } });
+      }, { status: 429 });
     }
 
     let contextSummary = '';
@@ -564,7 +564,7 @@ If the user asks something outside your capabilities, explain what you can do an
           const args = JSON.parse(toolCall.function.arguments);
           const result = await executeTool(toolCall.function.name, args, agencyId || '', userId);
           toolMessages.push({
-            role: 'tool',
+            role: 'tool' as const,
             tool_call_id: toolCall.id,
             content: JSON.stringify(result),
           });
@@ -573,19 +573,19 @@ If the user asks something outside your capabilities, explain what you can do an
         const followUpMessages = [...allMessages, assistantMessage, ...toolMessages];
         const followUpResponse = await callAI(followUpMessages, []);
 
-        return new Response(JSON.stringify({
+        return NextResponse.json({
           content: followUpResponse.choices[0].message.content,
-        }), { headers: { 'Content-Type': 'application/json' } });
+        });
       }
 
-      return new Response(JSON.stringify({
+      return NextResponse.json({
         content: assistantMessage.content,
-      }), { headers: { 'Content-Type': 'application/json' } });
+      });
     } catch (error) {
       console.error('AI chat error:', error);
-      return new Response(JSON.stringify({
+      return NextResponse.json({
         error: 'Failed to get AI response. Please try again later.',
-      }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+      }, { status: 500 });
     } finally {
       if (agencyId) {
         try {

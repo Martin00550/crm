@@ -37,6 +37,10 @@ export const POST = withApiSecurity(
       return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
     }
 
+    if (!db) {
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    }
+
     // Get user's agency tier
     const agency = await db
       .select({ tier: agencies.subscriptionTier })
@@ -229,8 +233,8 @@ export const DELETE = withApiSecurity(
       .limit(1)
       .execute();
 
-    if (!doc) {
-      return NextResponse.json({ error: 'Document not found' }, { status: 404 });
+    if (!doc || !doc.fileUrl) {
+      return NextResponse.json({ error: 'Document not found or invalid' }, { status: 404 });
     }
 
     // Extract key from URL (format: https://bucket.s3.region.backblazeb2.com/documents/agencyId/policyId/filename)

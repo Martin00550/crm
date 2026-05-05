@@ -161,7 +161,7 @@ export function PolicyLedgerTable({ ledger, isDemo = false }: { ledger: Policy[]
                     <span className="text-[10px] font-bold text-on-surface/40 uppercase tracking-wider bg-background/50 px-2 py-1 rounded-md border border-black/5 truncate inline-block">{policy.policyType}</span>
                   </td>
                   <td className="px-6 py-4 text-right font-bold text-sm text-on-surface w-1/6">
-                    ${typeof policy.premium === 'number' ? policy.premium.toLocaleString() : policy.premium}
+                    ${typeof policy.premium === 'number' ? (policy.premium as number).toLocaleString() : policy.premium}
                   </td>
                   <td className="px-8 py-4 text-right w-1/6">
                     <div className="flex flex-col items-end">

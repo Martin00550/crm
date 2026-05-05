@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { getUserAgencyId, getPolicyLeakageRisk, getAgency } from "@/actions/data";
 import { checkAgencySubscription } from "@/lib/subscription-check";
-import { isFeatureEnabled } from "@/lib/features";
+import { isFeatureEnabled, SubscriptionTier } from "@/lib/features";
 import { AlertTriangle, Shield, TrendingUp, DollarSign, AlertCircle, ChevronRight, Lock } from "lucide-react";
 import Link from "next/link";
 import { GenerateAIReportButton } from "@/components/dashboard/GenerateAIReportButton";
@@ -61,7 +61,7 @@ export default async function RiskPage() {
   const tier = agency?.subscriptionTier || 'solo';
   
   // Check if policy leakage dashboard is enabled for this tier
-  const hasRiskDashboard = isFeatureEnabled('policyLeakageDashboard', tier);
+  const hasRiskDashboard = isFeatureEnabled('policyLeakageDashboard', tier as SubscriptionTier);
   
   if (!hasRiskDashboard) {
     return (

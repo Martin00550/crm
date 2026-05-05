@@ -71,7 +71,7 @@ export const POST = withApiSecurity(
       if (!alert) {
         return NextResponse.json({ error: 'Policy not found' }, { status: 404 });
       }
-      await sendInsuredReminder(alert);
+      await sendInsuredReminder(agencyId, alert);
       return NextResponse.json({ success: true });
     }
 

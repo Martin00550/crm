@@ -13,6 +13,26 @@ interface PortalPageProps {
 
 export default async function PortalPage({ params }: PortalPageProps) {
   const { subdomain } = await params;
+
+  if (!db) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 font-body">
+        <div className="bg-white p-12 rounded-[40px] shadow-2xl border border-black/5 text-center max-w-lg">
+          <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-red-100">
+            <Shield className="w-8 h-8 text-red-500" />
+          </div>
+          <h2 className="text-2xl font-black text-on-surface font-headline italic tracking-tight mb-2 italic">Infrastructure Sync Failure</h2>
+          <p className="text-on-surface/50 font-medium italic mb-8">
+            The RetainVault secure node is currently syncing data. Please wait a moment and refresh your browser.
+          </p>
+          <button onClick={() => window.location.reload()} className="px-10 py-4 bg-primary text-white font-black text-xs uppercase tracking-[0.2em] rounded-full hover:shadow-xl transition-all">
+            Refresh Node
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // 1. Try Client First
   const clientData = await getClientAndAgencyBySubdomain(subdomain);
   
@@ -261,7 +281,7 @@ export default async function PortalPage({ params }: PortalPageProps) {
   }
 
   // 2. Try Agency (Fallback to existing logic)
-  const agency = await getAgencyBySubdomain(params.subdomain);
+  const agency = await getAgencyBySubdomain(subdomain);
   
   if (!agency || !agency.whiteLabelEnabled || !['growth', 'enterprise'].includes(agency.subscriptionTier as string)) {
     notFound();
@@ -291,7 +311,7 @@ export default async function PortalPage({ params }: PortalPageProps) {
             <a href="#about" className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">About</a>
             <a href="#contact" className="text-sm font-bold text-slate-600 hover:text-primary transition-colors">Contact</a>
             <a 
-              href={`/portal/${params.subdomain}/login`}
+              href={`/portal/${subdomain}/login`}
               className="px-6 py-2 text-white text-sm font-black rounded-full hover:shadow-lg transition-all"
               style={{ backgroundColor: branding.primaryColor }}
             >
@@ -320,7 +340,7 @@ export default async function PortalPage({ params }: PortalPageProps) {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href={`/portal/${params.subdomain}/login`}
+              href={`/portal/${subdomain}/login`}
               className="px-8 py-4 text-white font-bold rounded-full transition-all hover:opacity-90"
               style={{ backgroundColor: branding.primaryColor }}
             >

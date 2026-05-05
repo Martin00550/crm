@@ -24,6 +24,10 @@ export async function POST(
       return NextResponse.json({ error: 'Agency not found' }, { status: 404 });
     }
 
+    if (!db) {
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    }
+
     // Update notification as read
     const result = await db
       .update(notifications)

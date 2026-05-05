@@ -212,6 +212,7 @@ export async function getAdvancedAnalytics(agencyId: string): Promise<AdvancedAn
 }
 
 async function getCarrierPerformance(agencyId: string, today: Date): Promise<CarrierPerformance[]> {
+  if (!db) return [];
   const carrierData = await db
     .select({
       carrier: policies.carrier,
@@ -244,6 +245,7 @@ async function getCarrierPerformance(agencyId: string, today: Date): Promise<Car
 }
 
 async function getProducerPerformance(agencyId: string, today: Date): Promise<ProducerPerformance[]> {
+  if (!db) return [];
   const producerData = await db
     .select({
       producerId: users.id,
@@ -277,6 +279,7 @@ async function getProducerPerformance(agencyId: string, today: Date): Promise<Pr
 }
 
 async function getPolicyTypeAnalysis(agencyId: string, today: Date, lastYear: Date): Promise<PolicyTypeAnalysis[]> {
+  if (!db) return [];
   const typeData = await db
     .select({
       policyType: policies.policyType,
@@ -328,6 +331,7 @@ async function getPolicyTypeAnalysis(agencyId: string, today: Date, lastYear: Da
 }
 
 async function getPremiumTrends(agencyId: string, startDate: Date, endDate: Date): Promise<PremiumTrend[]> {
+  if (!db) return [];
   const monthlyData = await db
     .select({
       period: sql<string>`date_trunc('month', ${policies.createdAt})`,
@@ -359,6 +363,7 @@ async function getPremiumTrends(agencyId: string, startDate: Date, endDate: Date
 }
 
 async function getRenewalTrends(agencyId: string, startDate: Date, endDate: Date): Promise<RenewalTrend[]> {
+  if (!db) return [];
   const monthlyRenewals = await db
     .select({
       period: sql<string>`date_trunc('month', ${renewals.renewalDate})`,
@@ -386,6 +391,7 @@ async function getRenewalTrends(agencyId: string, startDate: Date, endDate: Date
 }
 
 async function getGrowthMetrics(agencyId: string, today: Date, lastMonth: Date, lastYear: Date): Promise<GrowthMetrics> {
+  if (!db) return { newPoliciesThisMonth: 0, newPoliciesLastMonth: 0, growthRate: 0, yearOverYearGrowth: 0, projectedAnnualGrowth: 0 };
   const [currentMonth, lastMonthData, lastYearData] = await Promise.all([
     db.select({ count: sql<number>`COUNT(*)`.mapWith(Number) })
       .from(policies)
@@ -433,6 +439,7 @@ async function getGrowthMetrics(agencyId: string, today: Date, lastMonth: Date, 
 }
 
 async function getClientSegments(agencyId: string, today: Date): Promise<ClientSegment[]> {
+  if (!db) return [];
   // Simplified client segmentation based on premium size
   const segments = await db
     .select({
@@ -476,6 +483,7 @@ async function getClientSegments(agencyId: string, today: Date): Promise<ClientS
 }
 
 async function getClientLifecycleMetrics(agencyId: string, today: Date, lastMonth: Date): Promise<ClientLifecycleMetrics> {
+  if (!db) return { newClients: 0, activeClients: 0, atRiskClients: 0, leakageRate: 0, averageClientValue: 0, clientAcquisitionCost: 0 };
   const [newClients, activeClients, atRiskClients] = await Promise.all([
     db.select({ count: sql<number>`COUNT(*)`.mapWith(Number) })
       .from(clients)
@@ -511,6 +519,7 @@ async function getClientLifecycleMetrics(agencyId: string, today: Date, lastMont
 }
 
 async function getRevenueBreakdown(agencyId: string, today: Date, lastMonth: Date): Promise<RevenueBreakdown> {
+  if (!db) return { newBusiness: 0, renewals: 0, percentageBreakdown: { newBusiness: 0, renewals: 0 } };
   const [newBizResult, renewalResult] = await Promise.all([
     db.select({ premium: sql<number>`SUM(CAST(${policies.premium} AS NUMERIC))`.mapWith(Number) })
       .from(policies)
@@ -543,6 +552,7 @@ async function getRevenueBreakdown(agencyId: string, today: Date, lastMonth: Dat
 }
 
 async function getCommissionAnalysis(agencyId: string, startDate: Date, endDate: Date): Promise<CommissionAnalysis> {
+  if (!db) return { totalCommission: 0, averageCommissionRate: 0, commissionByCarrier: [], commissionTrend: [] };
   const [totalCommission, commissionByCarrier, commissionTrend] = await Promise.all([
     db.select({ total: sql<number>`SUM(CAST(${commissions.commissionAmount} AS NUMERIC))`.mapWith(Number) })
       .from(commissions)
@@ -597,6 +607,7 @@ async function getCommissionAnalysis(agencyId: string, startDate: Date, endDate:
 }
 
 async function getProfitabilityMetrics(agencyId: string, today: Date): Promise<ProfitabilityMetrics> {
+  if (!db) return { grossRevenue: 0, commissionExpense: 0, operatingExpense: 0, netProfit: 0, profitMargin: 0, returnOnInvestment: 0 };
   // Simplified profitability metrics
   const totalRevenue = await db
     .select({ premium: sql<number>`SUM(CAST(${policies.premium} AS NUMERIC))`.mapWith(Number) })

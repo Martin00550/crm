@@ -5,7 +5,7 @@ import { eq, and, sql, gte, lt } from 'drizzle-orm';
 import { getAgencyNotificationSettings, isNotificationEnabled } from '@/lib/notification-settings';
 
 interface InngestStep {
-  run: (name: string, fn: () => Promise<unknown>) => Promise<unknown>;
+  run: <T>(name: string, fn: () => Promise<T>) => Promise<T>;
 }
 
 interface InngestEvent {
@@ -23,16 +23,17 @@ interface InngestContext {
 interface Policy {
   id: string;
   agencyId: string;
-  status: string;
+  policyNumber: string;
+  status: string | null;
   expirationDate: Date;
   premium: string;
-  healthStatus?: string;
-  metadata?: Record<string, unknown>;
+  healthStatus?: string | null;
+  metadata?: unknown;
 }
 
 interface User {
   id: string;
-  agencyId: string;
+  agencyId: string | null;
   role: string;
   email?: string;
 }
@@ -78,6 +79,7 @@ export const renewalAutomation = (inngest as { createFunction: (config: unknown,
       targetDateEnd.setDate(targetDateStart.getDate() + 1);
       
       const expiringPolicies = await step.run(`get-expiring-${days}`, async () => {
+        if (!db) return [];
         return await db
           .select({
             policy: policies,
@@ -92,11 +94,12 @@ export const renewalAutomation = (inngest as { createFunction: (config: unknown,
               gte(policies.expirationDate, targetDateStart),
               lt(policies.expirationDate, targetDateEnd)
             )
-          );
+          ) as Array<{ policy: typeof policies.$inferSelect; clientName: string; clientEmail: string | null }>;
       });
 
       for (const { policy, clientName, clientEmail } of expiringPolicies) {
         await step.run(`dispatch-alert-${policy.id}-${days}`, async () => {
+          if (!db) return;
           // Find the agency owner or primary agent
           const owner = await db
             .select()
@@ -137,6 +140,7 @@ export const healthScoreUpdater = (inngest as { createFunction: (config: unknown
     triggers: [{ cron: '0 3 * * *' }],
   },
   async ({ step }: InngestContext) => {
+    if (!db) return { processed: 0, updated: 0 };
     const activePolicies = await db
       .select()
       .from(policies)
@@ -146,6 +150,7 @@ export const healthScoreUpdater = (inngest as { createFunction: (config: unknown
 
     for (const policy of activePolicies) {
       await step.run(`update-health-${policy.id}`, async () => {
+        if (!db) return;
         const { calculatePolicyRiskScore } = await import('@/lib/predictive-analytics');
         const score = await calculatePolicyRiskScore(policy, null);
         
@@ -181,8 +186,11 @@ export const rateExplainerGenerator = (inngest as { createFunction: (config: unk
     triggers: [{ event: 'rate/explainer.requested' }],
   },
   async ({ event, step }: InngestContext) => {
+    if (!event) return { success: false, error: 'Event data missing' };
     const { policyId } = event.data;
+    if (!policyId) return { success: false, error: 'Policy ID missing' };
     
+    if (!db) return { success: false, error: 'Database not connected' };
     const policy = await db
       .select()
       .from(policies)
@@ -197,6 +205,7 @@ export const rateExplainerGenerator = (inngest as { createFunction: (config: unk
     });
 
     await step.run('store-explanation', async () => {
+      if (!db) return;
       await db
         .update(policies)
         .set({ 
@@ -219,8 +228,11 @@ export const manualRenewalNotification = (inngest as { createFunction: (config: 
     triggers: [{ event: 'renewal.notification.manual' }],
   },
   async ({ event, step }: InngestContext) => {
+    if (!event) return { success: false, error: 'Event data missing' };
     const { policyId, daysOut } = event.data;
+    if (!policyId) return { success: false, error: 'Policy ID missing' };
 
+    if (!db) return { success: false, error: 'Database not connected' };
     const policy = await db
       .select()
       .from(policies)
@@ -230,6 +242,7 @@ export const manualRenewalNotification = (inngest as { createFunction: (config: 
     if (!policy) return { success: false, error: 'Policy not found' };
 
     await step.run('send-manual-notification', async () => {
+      if (!db) return;
       const owner = await db
         .select()
         .from(users)
@@ -264,6 +277,7 @@ export const weeklyIntelligenceReport = (inngest as { createFunction: (config: u
     triggers: [{ cron: '0 9 * * 1' }],
   },
   async ({ step }: InngestContext) => {
+    if (!db) return { processed: 0, sent: 0, skipped: 0 };
     const allAgencies = await db
       .select()
       .from(agencies)
@@ -279,6 +293,7 @@ export const weeklyIntelligenceReport = (inngest as { createFunction: (config: u
 
       if (shouldSend) {
         const reportData = await step.run(`generate-report-${agency.id}`, async () => {
+          if (!db) return { totalPremium: 0, renewalsUpcoming: 0, policiesAtRisk: 0, policiesCount: 0 };
           const agencyPolicies = await db.select().from(policies).where(eq(policies.agencyId, agency.id));
           const now = new Date();
           
@@ -295,6 +310,7 @@ export const weeklyIntelligenceReport = (inngest as { createFunction: (config: u
         });
 
         await step.run(`deliver-report-${agency.id}`, async () => {
+          if (!db) return;
           const owner = await db
             .select()
             .from(users)

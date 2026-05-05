@@ -88,23 +88,25 @@ export async function sendPushNotification(
     logger.error('Push notification error', error);
 
     // If subscription is invalid, disable push for this user
-    if (error.statusCode === 410) {
-      await db
-        .update(notificationSettings)
-        .set({
-          pushEnabled: false,
-          pushSubscription: null,
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(notificationSettings.agencyId, agencyId),
-            eq(notificationSettings.userId, userId)
-          )
-        );
+    if (typeof error === 'object' && error !== null && 'statusCode' in error && (error as any).statusCode === 410) {
+      if (db) {
+        await db
+          .update(notificationSettings)
+          .set({
+            pushEnabled: false,
+            pushSubscription: null,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(notificationSettings.agencyId, agencyId),
+              eq(notificationSettings.userId, userId)
+            )
+          );
+      }
     }
 
-    return { success: false, error: error?.message || 'Failed to send notification' };
+    return { success: false, error: error instanceof Error ? error.message : 'Failed to send notification' };
   }
 }
 
@@ -134,6 +136,7 @@ export async function sendAgencyPushNotification(
       );
 
     for (const user of users) {
+      if (!user.userId) continue;
       const result = await sendPushNotification(agencyId, user.userId, payload);
       if (result.success) {
         results.sent++;

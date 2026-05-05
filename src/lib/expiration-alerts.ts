@@ -33,6 +33,8 @@ export async function getExpiringPolicies(
   const now = new Date();
   const thresholdDate = new Date(now.getTime() + daysThreshold * 24 * 60 * 60 * 1000);
 
+  if (!db) return [];
+
   const expiringPolicies = await db
     .select({
       policy: policies,
@@ -85,6 +87,7 @@ export async function getExpiringPolicies(
  * Send expiration alert to agent
  */
 export async function sendAgentAlert(agencyId: string, alert: ExpirationAlert) {
+  if (!db) return;
   // Find the agency owner or primary agent
   const agent = await db
     .select()
@@ -114,6 +117,7 @@ export async function sendAgentAlert(agencyId: string, alert: ExpirationAlert) {
  * Send automated expiration reminder to insured
  */
 export async function sendInsuredReminder(agencyId: string, alert: ExpirationAlert) {
+  if (!db) return;
   // We still need an agent/user ID for the dispatcher context, 
   // even if it's an insured reminder (for audit/ownership)
   const agent = await db

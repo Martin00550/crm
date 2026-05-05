@@ -61,6 +61,7 @@ export async function getDashboardStatsQuery(agencyId: string, range?: string) {
   const cacheKey = `${CacheKeys.dashboardStats(agencyId)}:${range || 'all'}`;
   
   return getOrSetCached(cacheKey, CacheConfig.DASHBOARD_STATS, async () => {
+    if (!db) throw new Error('Database connection failed');
     const totalPremium = await db
       .select({ total: sql<string>`COALESCE(SUM(${policies.premium}::numeric), 0)` })
       .from(policies)
@@ -89,7 +90,7 @@ export async function getDashboardStatsQuery(agencyId: string, range?: string) {
       .then((r: any[]) => r[0]?.count || 0);
 
     const riskCount = renewalsAtRisk.length;
-    const riskVolume = renewalsAtRisk.reduce((sum: number, p) => sum + (parseFloat(p.premium) || 0), 0);
+    const riskVolume = renewalsAtRisk.reduce((sum: number, p) => sum + (parseFloat(p.premium || '0') || 0), 0);
 
     return {
       totalBookOfBusiness: totalPremium,

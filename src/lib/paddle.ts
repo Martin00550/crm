@@ -88,8 +88,8 @@ async function paddleAPI(endpoint: string, method: 'GET' | 'POST' | 'PATCH' | 'D
  * Create or update agency record with Paddle customer ID
  */
 export async function createCustomer(agencyId: string, email: string, name: string) {
+  if (!db) return { id: '', email, name };
   // In Paddle, customers are created automatically during checkout
-  // We just need to store the agency info for later reference
   await db
     .update(agencies)
     .set({ 
@@ -160,6 +160,7 @@ export async function updateSubscription(
   agencyId: string,
   newTier: 'solo' | 'growth' | 'enterprise'
 ) {
+  if (!db) return { success: false, error: 'Database not connected' };
   const agency = await db
     .select()
     .from(agencies)
@@ -200,6 +201,7 @@ export async function updateSubscription(
  * Cancel a subscription via Paddle
  */
 export async function cancelSubscription(agencyId: string) {
+  if (!db) return { success: false, error: 'Database not connected' };
   const agency = await db
     .select()
     .from(agencies)
@@ -233,6 +235,7 @@ export async function cancelSubscription(agencyId: string) {
  * Get subscription status from Paddle
  */
 export async function getSubscriptionStatus(agencyId: string) {
+  if (!db) return { status: 'none', tier: null };
   const agency = await db
     .select()
     .from(agencies)
@@ -261,6 +264,7 @@ export async function getSubscriptionStatus(agencyId: string) {
  * Handle Paddle webhook events
  */
 export async function handleWebhook(event: any) {
+  if (!db) return { received: false, error: 'Database not connected' };
   const eventType = event.event_type;
 
   switch (eventType) {

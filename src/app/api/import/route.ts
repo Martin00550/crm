@@ -5,6 +5,7 @@ import { eq, and, count, sql } from 'drizzle-orm';
 import { validateRequestBody, withApiSecurity } from '@/lib/api-security';
 import { canUseFeature } from '@/lib/feature-access';
 import { sanitizeString } from '@/lib/validation';
+import { logger } from '@/lib/logger';
 
 interface CSVRow {
   clientName?: string;

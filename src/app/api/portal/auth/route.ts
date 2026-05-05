@@ -74,6 +74,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
+    if (!db) {
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    }
+    
     // Validate input
     const validationResult = portalAuthSchema.safeParse(body);
     if (!validationResult.success) {
@@ -261,6 +265,10 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('portal_token')?.value;
+
+    if (!db) {
+      return NextResponse.json({ authenticated: false }, { status: 500 });
+    }
 
     if (!token) {
       return NextResponse.json({ authenticated: false }, { status: 401 });
