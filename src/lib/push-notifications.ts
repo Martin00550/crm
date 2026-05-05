@@ -152,6 +152,6 @@ export async function sendAgencyPushNotification(
 /**
  * Get VAPID public key for client-side subscription
  */
-export function getVapidPublicKey(): string | null {
+export async function getVapidPublicKey(): Promise<string | null> {
   return VAPID_PUBLIC_KEY || null;
 }

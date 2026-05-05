@@ -12,8 +12,7 @@ import nextDynamic from "next/dynamic";
 
 // Lazy load heavy dashboard component
 const PolicyLeakageDashboard = nextDynamic(() => import("@/components/dashboard/PolicyLeakageDashboard").then(m => ({ default: m.PolicyLeakageDashboard })), {
-  loading: () => <div className="p-8 text-center text-on-surface/40">Loading risk dashboard...</div>,
-  ssr: false
+  loading: () => <div className="p-8 text-center text-on-surface/40">Loading risk dashboard...</div>
 });
 
 export const dynamic = "force-dynamic";
