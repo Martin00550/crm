@@ -7,9 +7,17 @@ import {
 } from "@/components/dashboard/DashboardButtons";
 import { RenewalPipelineDashboard } from "@/components/dashboard/RenewalPipelineDashboard";
 import { RenewalPipelineItem, RenewalStats } from "@/lib/renewals";
+import { useState, useEffect } from "react";
 
 export default function DemoRenewalsPage() {
   const { policies, clients } = useMockData();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return <div className="p-12 animate-pulse bg-white rounded-[32px] h-96 border border-black/5 shadow-sm"></div>;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -31,7 +39,7 @@ export default function DemoRenewalsPage() {
       clientName: client?.name || "Unknown Insured",
       clientEmail: client?.email || null,
       clientPhone: client?.phone || null,
-      status: p.healthStatus === 'at-risk' ? 'urgent' : 'pending',
+      status: daysUntilRenewal <= 30 ? 'urgent' : 'pending',
       daysUntilRenewal,
       notification90Sent: daysUntilRenewal < 90,
       notification60Sent: daysUntilRenewal < 60,
@@ -65,74 +73,53 @@ export default function DemoRenewalsPage() {
   };
 
   return (
-    <div className="space-y-8 font-body">
-      {/* Header */}
+    <div className="space-y-12 font-body pb-20 animate-in fade-in duration-700">
+      {/* Header - Identical to Live */}
       <div className="flex justify-between items-center">
         <div>
-          <div className="flex items-center gap-4 mb-2">
-            <h1 className="text-3xl font-black text-on-surface font-headline italic tracking-tight">Renewal Pipeline</h1>
-            <div className="hidden sm:flex items-center gap-2 bg-secondary/5 px-3 py-1 rounded-full border border-secondary/10">
-              <span className="w-2 h-2 bg-secondary rounded-full animate-pulse"></span>
-              <span className="text-[10px] font-black text-secondary uppercase tracking-widest">Live Status</span>
-            </div>
-          </div>
-          <p className="text-on-surface/60 font-medium italic">Manage your 90-day retention cycle.</p>
+          <h1 className="text-4xl font-black text-on-surface tracking-tight">Renewal Pipeline</h1>
+          <p className="text-on-surface/50 font-medium mt-1">Simulated environment for retention lifecycle management.</p>
         </div>
         <div className="flex items-center gap-3">
-          <ExportCSVButton data={pipeline} filename="renewals-registry.csv" />
+          <ExportCSVButton data={pipeline} filename="renewals-demo.csv" />
           <AddRenewalButton />
         </div>
       </div>
 
-      {/* Renewal Pipeline Dashboard */}
-      <RenewalPipelineDashboard
-        initialPipeline={pipeline}
-        initialStats={stats}
-        onSendNotification={handleSendNotification}
-        onUpdateStatus={handleUpdateStatus}
-      />
+      {/* Stats Summary - Identical to Live */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="bg-white p-8 rounded-3xl shadow-sm border border-black/5">
+          <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block mb-2">Total Pipeline</span>
+          <h3 className="text-4xl font-bold tracking-tight text-on-surface">{stats.total}</h3>
+        </div>
+        <div className="bg-white p-8 rounded-3xl shadow-sm border border-black/5">
+          <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block mb-2">Policies at Risk</span>
+          <h3 className="text-4xl font-bold tracking-tight text-red-500">{stats.days30 + stats.overdue}</h3>
+        </div>
+        <div className="bg-white p-8 rounded-3xl shadow-sm border border-black/5">
+          <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block mb-2">Pipeline Value</span>
+          <h3 className="text-4xl font-bold tracking-tight text-on-surface">${totalPremiumValue.toLocaleString()}</h3>
+        </div>
+      </section>
 
-      {/* Page Content */}
-      <div className="space-y-8">
-        {/* Stats Summary */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-surface p-6 rounded-2xl shadow-sm border border-black/5 flex flex-col justify-between group hover:shadow-md transition-all">
-            <div className="flex justify-between items-start mb-4">
-              <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em]">Total Renewal Pipeline</span>
-              <span className="material-symbols-outlined text-secondary bg-blue-50 p-2 rounded-lg">autorenew</span>
-            </div>
-            <div>
-              <h3 className="text-4xl font-black tracking-tighter text-on-surface font-headline italic">{stats.total}</h3>
-              <p className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest mt-1">Placements in Cycle</p>
-            </div>
-          </div>
-          <div className="bg-surface p-6 rounded-2xl shadow-sm border border-black/5 flex flex-col justify-between group hover:shadow-md transition-all">
-            <div className="flex justify-between items-start mb-4">
-              <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em]">Policy Leakage Risk (30d)</span>
-              <span className="material-symbols-outlined text-red-500 bg-red-50 p-2 rounded-lg">warning</span>
-            </div>
-            <div>
-              <h3 className="text-4xl font-black tracking-tighter text-on-surface font-headline italic">{stats.days30}</h3>
-              <p className="text-[10px] font-black text-red-600 uppercase tracking-widest mt-1 flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs">priority_high</span>
-                Requires Attention
-              </p>
-            </div>
-          </div>
-          <div className="bg-surface p-6 rounded-2xl shadow-sm border border-black/5 flex flex-col justify-between group hover:shadow-md transition-all">
-            <div className="flex justify-between items-start mb-4">
-              <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em]">Premium at Risk</span>
-              <span className="material-symbols-outlined text-secondary bg-secondary/10 p-2 rounded-lg">account_balance_wallet</span>
-            </div>
-            <div>
-              <h3 className="text-4xl font-black tracking-tighter text-on-surface font-headline italic">${totalPremiumValue.toLocaleString()}</h3>
-              <p className="text-[10px] font-black text-secondary uppercase tracking-widest mt-1 flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs">trending_up</span>
-                Total Renewal Value
-              </p>
-            </div>
-          </div>
-        </section>
+      {/* Main Content Area - Identical to Live */}
+      <section className="space-y-12">
+        <div className="bg-white rounded-3xl border border-black/5 shadow-sm p-8">
+          <h2 className="text-xl font-bold text-on-surface mb-8">Automated Notifications</h2>
+          <RenewalPipelineDashboard
+            initialPipeline={pipeline}
+            initialStats={stats}
+            onSendNotification={handleSendNotification}
+            onUpdateStatus={handleUpdateStatus}
+          />
+        </div>
+      </section>
+
+      {/* Demo Badge */}
+      <div className="fixed bottom-8 left-8 z-50">
+        <div className="px-4 py-2 bg-white/80 backdrop-blur-md border border-black/5 rounded-full shadow-xl">
+          <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em]">Live Demo Environment</span>
+        </div>
       </div>
     </div>
   );

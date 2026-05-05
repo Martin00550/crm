@@ -1,15 +1,29 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
+import { useState, useEffect, lazy, Suspense } from 'react';
+import { Plus, RefreshCw } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { NotificationPanel } from './NotificationPanel';
 import { SettingsPanel } from './SettingsPanel';
-import { ChatInterface } from './ChatInterface';
 import { FilterPanel } from './FilterPanel';
+
+// Lazy load heavy components
+const ChatInterface = lazy(() => import('./ChatInterface').then(m => ({ default: m.ChatInterface })));
+
+import { Button } from '@/components/ui/button';
+import { Sparkles, Download, Filter, Send, Users as UsersIcon, Calculator, Plus as PlusIcon, Bell, Settings as SettingsIcon } from 'lucide-react';
 
 export function GenerateAIReportButton() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    let t: NodeJS.Timeout;
+    if (message === 'AI report generated successfully!') {
+      t = setTimeout(() => setMessage(''), 3000);
+    }
+    return () => clearTimeout(t);
+  }, [message]);
 
   const handleGenerateReport = async () => {
     setIsLoading(true);
@@ -18,23 +32,21 @@ export function GenerateAIReportButton() {
     // Simulate AI report generation
     setTimeout(() => {
       setMessage('AI report generated successfully!');
-      setTimeout(() => setMessage(''), 3000);
       setIsLoading(false);
     }, 2000);
   };
 
   return (
     <>
-      <button 
+      <Button 
         onClick={handleGenerateReport}
-        disabled={isLoading}
-        className="w-full bg-secondary text-white py-3 rounded-xl font-bold text-xs uppercase tracking-widest mb-4 flex items-center justify-center gap-2 hover:opacity-90 transition-all disabled:opacity-50 active:scale-[0.98]"
+        isLoading={isLoading}
+        variant="secondary"
+        className="w-full mb-4"
+        leftIcon={<Sparkles className="w-4 h-4" />}
       >
-        <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
-          {isLoading ? 'refresh' : 'auto_awesome'}
-        </span>
-        {isLoading ? 'Generating Analysis...' : 'Generate AI Report'}
-      </button>
+        Generate Executive Summary
+      </Button>
       {message && (
         <div className="mb-4 p-3 bg-secondary/5 text-secondary text-[10px] font-bold uppercase tracking-widest rounded-xl text-center border border-secondary/10">
           {message}
@@ -47,16 +59,31 @@ export function GenerateAIReportButton() {
 export function ExportCSVButton({ data = [], filename = 'export.csv' }: { data?: any[], filename?: string }) {
   const [showMessage, setShowMessage] = useState(false);
 
+  useEffect(() => {
+    let t: NodeJS.Timeout;
+    if (showMessage) {
+      t = setTimeout(() => setShowMessage(false), 3000);
+    }
+    return () => clearTimeout(t);
+  }, [showMessage]);
+
   const handleExport = () => {
     if (data.length === 0) {
       setShowMessage(true);
-      setTimeout(() => setShowMessage(false), 3000);
       return;
     }
 
-    // Create CSV content
-    const headers = Object.keys(data[0]).join(',');
-    const rows = data.map(item => Object.values(item).join(',')).join('\n');
+    // Create CSV content safely
+    if (!data[0]) return; // Guard against [null]
+    const escapeCsv = (val: any) => {
+      if (val == null) return '""';
+      let str = String(val);
+      // Prevent CSV injection
+      if (/^[=+\-@]/.test(str)) str = "'" + str;
+      return `"${str.replace(/"/g, '""')}"`;
+    };
+    const headers = Object.keys(data[0]).map(escapeCsv).join(',');
+    const rows = data.map(item => item ? Object.values(item).map(escapeCsv).join(',') : '').filter(Boolean).join('\n');
     const csvContent = `${headers}\n${rows}`;
 
     // Create download link
@@ -71,13 +98,15 @@ export function ExportCSVButton({ data = [], filename = 'export.csv' }: { data?:
 
   return (
     <div className="relative">
-      <button 
+      <Button 
         onClick={handleExport}
-        className="flex items-center gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-on-surface/40 bg-surface border border-black/10 rounded-xl hover:text-on-surface hover:bg-black/5 transition-all"
+        variant="outline"
+        size="sm"
+        leftIcon={<Download className="w-3.5 h-3.5" />}
+        className="text-on-surface/40 hover:text-on-surface"
       >
-        <span className="material-symbols-outlined text-sm">download</span>
-        Export Registry
-      </button>
+        Export Book
+      </Button>
       {showMessage && (
         <div className="absolute top-full left-0 right-0 mt-2 p-2 bg-amber-50 border border-amber-100 rounded-lg text-[10px] font-bold text-amber-700 text-center whitespace-nowrap z-10 uppercase tracking-widest">
           No records available for export
@@ -96,13 +125,14 @@ export function FilterViewButton({ onFilter }: { onFilter?: (filters: any) => vo
 
   return (
     <>
-      <button 
+      <Button 
         onClick={() => setIsFilterOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-white bg-primary rounded-xl hover:bg-primary/90 transition-all shadow-sm"
+        variant="default"
+        size="sm"
+        leftIcon={<Filter className="w-3.5 h-3.5" />}
       >
-        <span className="material-symbols-outlined text-sm">filter_list</span>
         Filter Pipeline
-      </button>
+      </Button>
       <FilterPanel 
         isOpen={isFilterOpen} 
         onClose={() => setIsFilterOpen(false)} 
@@ -116,6 +146,14 @@ export function SendAllButton() {
   const [isSending, setIsSending] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  useEffect(() => {
+    let t: NodeJS.Timeout;
+    if (showSuccess) {
+      t = setTimeout(() => setShowSuccess(false), 3000);
+    }
+    return () => clearTimeout(t);
+  }, [showSuccess]);
+
   const handleSendAll = async () => {
     setIsSending(true);
     
@@ -123,25 +161,23 @@ export function SendAllButton() {
     setTimeout(() => {
       setIsSending(false);
       setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
     }, 1500);
   };
 
   return (
     <div className="relative">
-      <button 
+      <Button 
         onClick={handleSendAll}
-        disabled={isSending}
-        className="w-full bg-secondary text-white py-3 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50"
+        isLoading={isSending}
+        variant="secondary"
+        className="w-full"
+        leftIcon={<Send className="w-4 h-4" />}
       >
-        <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
-          {isSending ? 'refresh' : 'send'}
-        </span>
-        {isSending ? 'Dispatching...' : 'Dispatch All Notices'}
-      </button>
+        Dispatch All Notices
+      </Button>
       {showSuccess && (
         <div className="absolute top-full left-0 right-0 mt-2 p-3 bg-secondary/5 border border-secondary/10 rounded-xl text-[10px] font-bold text-secondary text-center uppercase tracking-widest">
-          Forensic reports successfully dispatched to 5 insureds
+          Analysis reports successfully dispatched to 5 insureds
         </div>
       )}
     </div>
@@ -157,15 +193,16 @@ export function ReviewClientsButton() {
 
   return (
     <div className="relative">
-      <button 
+      <Button 
         onClick={handleReview}
-        className="w-full bg-white/10 border border-white/10 text-white font-bold text-[10px] uppercase tracking-widest py-2.5 rounded-xl hover:bg-white/20 transition-all"
+        variant="outline"
+        className="w-full bg-white/10 border-white/10 text-white hover:bg-white/20"
       >
-        Review Portfolio
-      </button>
+        Analyze Retention Risks
+      </Button>
       {showDetails && (
         <div className="absolute top-full left-0 right-0 mt-2 p-4 bg-surface border border-black/5 rounded-xl shadow-xl z-50">
-          <h4 className="text-[10px] font-bold text-on-surface/40 uppercase tracking-widest mb-3">Rate Increase Forensics</h4>
+          <h4 className="text-[10px] font-bold text-on-surface/40 uppercase tracking-widest mb-3">Rate Increase Analysis</h4>
           <ul className="text-xs text-on-surface/70 space-y-2 font-medium">
             <li className="flex justify-between"><span>Tech Corp</span> <span className="text-red-600 font-bold">+15%</span></li>
             <li className="flex justify-between"><span>Global Industries</span> <span className="text-red-600 font-bold">+12%</span></li>
@@ -173,12 +210,14 @@ export function ReviewClientsButton() {
             <li className="flex justify-between"><span>Summit Holdings</span> <span className="text-red-600 font-bold">+14%</span></li>
             <li className="flex justify-between"><span>Phoenix Enterprises</span> <span className="text-red-600 font-bold">+16%</span></li>
           </ul>
-          <button 
+          <Button 
             onClick={() => setShowDetails(false)}
-            className="w-full mt-4 py-2 text-[10px] font-bold text-secondary uppercase tracking-widest hover:bg-secondary/5 rounded-lg transition-all"
+            variant="ghost"
+            size="sm"
+            className="w-full mt-4 text-secondary hover:bg-secondary/5"
           >
             Dismiss
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -199,7 +238,7 @@ export function QuoteToolButton() {
         className="group flex flex-col items-center justify-center p-6 bg-surface border border-black/5 rounded-xl hover:bg-white hover:shadow-md transition-all gap-3 text-center"
       >
         <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center group-hover:bg-secondary group-hover:text-white transition-all">
-          <span className="material-symbols-outlined text-secondary group-hover:text-white">calculate</span>
+          <Calculator className="w-5 h-5 text-secondary group-hover:text-white" />
         </div>
         <span className="text-[10px] font-bold text-on-surface/40 uppercase tracking-widest group-hover:text-on-surface transition-colors">Premium Engine</span>
       </button>
@@ -227,15 +266,16 @@ export function QuoteToolButton() {
               </div>
             </div>
             <div className="flex gap-3 mt-8">
-              <button 
+              <Button 
                 onClick={() => setShowModal(false)}
-                className="flex-1 px-6 py-2.5 border border-black/10 text-on-surface/60 font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-black/5 transition-all"
+                variant="outline"
+                className="flex-1"
               >
                 Cancel
-              </button>
-              <button className="flex-1 px-6 py-2.5 bg-primary text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:shadow-lg transition-all">
-                Initialize Quote
-              </button>
+              </Button>
+              <Button variant="default" className="flex-1">
+                Generate Quote
+              </Button>
             </div>
           </div>
         </div>
@@ -258,7 +298,7 @@ export function NewLeadButton() {
         className="group flex flex-col items-center justify-center p-6 bg-surface border border-black/5 rounded-xl hover:bg-white hover:shadow-md transition-all gap-3 text-center"
       >
         <div className="w-10 h-10 rounded-lg bg-primary/5 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
-          <span className="material-symbols-outlined text-primary group-hover:text-white">assignment_add</span>
+          <PlusIcon className="w-5 h-5 text-primary group-hover:text-white" />
         </div>
         <span className="text-[10px] font-bold text-on-surface/40 uppercase tracking-widest group-hover:text-on-surface transition-colors">New Submission</span>
       </button>
@@ -266,7 +306,7 @@ export function NewLeadButton() {
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowModal(false)} />
           <div className="relative w-full max-w-md bg-surface rounded-xl shadow-xl border border-black/5 p-8">
-            <h3 className="text-xl font-bold text-on-surface mb-6 tracking-tight">Initialize New Submission</h3>
+            <h3 className="text-xl font-bold text-on-surface mb-6 tracking-tight">Add New Submission</h3>
             <div className="space-y-6">
               <div>
                 <label className="text-[10px] font-bold text-on-surface/40 uppercase tracking-widest block mb-2">Insured Prospect Name</label>
@@ -286,15 +326,16 @@ export function NewLeadButton() {
               </div>
             </div>
             <div className="flex gap-3 mt-8">
-              <button 
+              <Button 
                 onClick={() => setShowModal(false)}
-                className="flex-1 px-6 py-2.5 border border-black/10 text-on-surface/60 font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-black/5 transition-all"
+                variant="outline"
+                className="flex-1"
               >
                 Cancel
-              </button>
-              <button className="flex-1 px-6 py-2.5 bg-primary text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-primary/90 transition-all">
+              </Button>
+              <Button variant="default" className="flex-1">
                 Dispatch Submission
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -304,6 +345,7 @@ export function NewLeadButton() {
 }
 
 export function AddClientButton() {
+  const router = useRouter();
   const [showModal, setShowModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
@@ -316,7 +358,6 @@ export function AddClientButton() {
   });
 
   const handleAddClient = () => {
-    console.log('Add Client button clicked!');
     setShowModal(true);
   };
 
@@ -360,7 +401,7 @@ export function AddClientButton() {
         setShowModal(false);
         setSaveMessage('');
         setFormData({ clientName: '', clientEmail: '', clientIndustry: '', clientPhone: '', clientAddress: '' });
-        window.location.reload(); // Refresh to show the new client
+        router.refresh(); // Refresh to show the new client
       }, 1500);
     } catch (error: any) {
       setSaveMessage(error.message || 'Failed to add client');
@@ -376,13 +417,14 @@ export function AddClientButton() {
 
   return (
     <>
-      <button 
+      <Button 
         onClick={handleAddClient}
-        className="flex items-center gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-white bg-primary rounded-xl hover:bg-primary/90 transition-all shadow-sm"
+        variant="default"
+        size="sm"
+        leftIcon={<PlusIcon className="w-3.5 h-3.5" />}
       >
-        <Plus className="w-3.5 h-3.5" />
-        Initialize Insured
-      </button>
+        Add Client
+      </Button>
       {showModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowModal(false)} />
@@ -446,20 +488,22 @@ export function AddClientButton() {
               </div>
             )}
             <div className="flex gap-3 mt-8">
-              <button
+              <Button
                 onClick={resetForm}
                 disabled={isSaving}
-                className="flex-1 px-6 py-2.5 border border-black/10 text-on-surface/60 font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-black/5 transition-all disabled:opacity-50"
+                variant="outline"
+                className="flex-1"
               >
                 Cancel
-              </button>
-              <button 
+              </Button>
+              <Button 
                 onClick={handleSaveClient}
-                disabled={isSaving}
-                className="flex-1 px-6 py-2.5 bg-primary text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50"
+                isLoading={isSaving}
+                variant="default"
+                className="flex-1"
               >
-                {isSaving ? 'Syncing...' : 'Complete Onboarding'}
-              </button>
+                Complete Onboarding
+              </Button>
             </div>
           </div>
         </div>
@@ -469,13 +513,14 @@ export function AddClientButton() {
 }
 
 export function AddRenewalButton() {
+  const router = useRouter();
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
   const [formData, setFormData] = useState({
     clientId: '',
     placementType: '',
-    maturityDate: '',
+    expirationDate: '',
     targetPremium: '',
   });
 
@@ -484,8 +529,8 @@ export function AddRenewalButton() {
   };
 
   const handleSubmitRenewal = async () => {
-    if (!formData.clientId || !formData.maturityDate) {
-      setSubmitMessage('Insured entity and maturity date are required');
+    if (!formData.clientId || !formData.expirationDate) {
+      setSubmitMessage('Insured entity and expiration date are required');
       return;
     }
 
@@ -499,7 +544,7 @@ export function AddRenewalButton() {
         body: JSON.stringify({
           clientId: formData.clientId,
           placementType: formData.placementType,
-          maturityDate: formData.maturityDate,
+          expirationDate: formData.expirationDate,
           targetPremium: formData.targetPremium,
         }),
       });
@@ -509,15 +554,15 @@ export function AddRenewalButton() {
         throw new Error(error.error || 'Failed to create renewal');
       }
 
-      setSubmitMessage('Renewal initialized successfully!');
+      setSubmitMessage('Renewal added successfully!');
       setTimeout(() => {
         setShowModal(false);
         setSubmitMessage('');
-        setFormData({ clientId: '', placementType: '', maturityDate: '', targetPremium: '' });
-        window.location.reload();
+        setFormData({ clientId: '', placementType: '', expirationDate: '', targetPremium: '' });
+        router.refresh();
       }, 1500);
     } catch (error: any) {
-      setSubmitMessage(error.message || 'Failed to initialize renewal');
+      setSubmitMessage(error.message || 'Failed to create renewal');
     } finally {
       setIsSubmitting(false);
     }
@@ -526,23 +571,24 @@ export function AddRenewalButton() {
   const resetForm = () => {
     setShowModal(false);
     setSubmitMessage('');
-    setFormData({ clientId: '', placementType: '', maturityDate: '', targetPremium: '' });
+    setFormData({ clientId: '', placementType: '', expirationDate: '', targetPremium: '' });
   };
 
   return (
     <>
-      <button 
+      <Button 
         onClick={handleAddRenewal}
-        className="flex items-center gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-white bg-primary rounded-xl hover:bg-primary/90 transition-all shadow-sm"
+        variant="default"
+        size="sm"
+        leftIcon={<PlusIcon className="w-3.5 h-3.5" />}
       >
-        <Plus className="w-3.5 h-3.5" />
-        Initialize Renewal
-      </button>
+        Add Renewal
+      </Button>
       {showModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowModal(false)} />
           <div className="relative w-full max-w-md bg-surface rounded-xl shadow-xl border border-black/5 p-8">
-            <h3 className="text-xl font-bold text-on-surface mb-6 tracking-tight">Initialize Renewal Workflow</h3>
+            <h3 className="text-xl font-bold text-on-surface mb-6 tracking-tight">Add Renewal Workflow</h3>
             <div className="space-y-6">
               <div>
                 <label className="text-[10px] font-bold text-on-surface/40 uppercase tracking-widest block mb-2">Target Insured Entity</label>
@@ -571,11 +617,11 @@ export function AddRenewalButton() {
                 </select>
               </div>
               <div>
-                <label className="text-[10px] font-bold text-on-surface/40 uppercase tracking-widest block mb-2">Maturity Date (Expiration)</label>
+                <label className="text-[10px] font-bold text-on-surface/40 uppercase tracking-widest block mb-2">Expiration Date</label>
                 <input
                   type="date"
-                  value={formData.maturityDate}
-                  onChange={(e) => setFormData({ ...formData, maturityDate: e.target.value })}
+                  value={formData.expirationDate}
+                  onChange={(e) => setFormData({ ...formData, expirationDate: e.target.value })}
                   className="w-full px-4 py-2.5 bg-slate-50 border border-black/10 rounded-lg text-sm font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all cursor-pointer"
                 />
               </div>
@@ -596,20 +642,22 @@ export function AddRenewalButton() {
               </div>
             )}
             <div className="flex gap-3 mt-8">
-              <button
+              <Button
                 onClick={resetForm}
                 disabled={isSubmitting}
-                className="flex-1 px-6 py-2.5 border border-black/10 text-on-surface/60 font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-black/5 transition-all disabled:opacity-50"
+                variant="outline"
+                className="flex-1"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleSubmitRenewal}
-                disabled={isSubmitting}
-                className="flex-1 px-6 py-2.5 bg-primary text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50"
+                isLoading={isSubmitting}
+                variant="default"
+                className="flex-1"
               >
-                {isSubmitting ? 'Syncing...' : 'Commit Renewal'}
-              </button>
+                Commit Renewal
+              </Button>
             </div>
           </div>
         </div>
@@ -637,14 +685,19 @@ export function ChatBubbleButton({ initialPrompt }: { initialPrompt?: string } =
 
   return (
     <>
-      <button 
+      <Button 
         onClick={handleChatClick}
-        data-chat-button
-        className="w-14 h-14 bg-secondary text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all"
+        variant="secondary"
+        size="icon"
+        className="w-14 h-14 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all"
+        leftIcon={<span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>help</span>}
       >
-        <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>chat_bubble</span>
-      </button>
-      <ChatInterface isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} initialPrompt={prompt} />
+      </Button>
+      {isChatOpen && (
+        <Suspense fallback={null}>
+          <ChatInterface isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} initialPrompt={prompt} />
+        </Suspense>
+      )}
     </>
   );
 }
@@ -653,19 +706,20 @@ export function NotificationButton() {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   const handleNotificationClick = () => {
-    console.log('Notification button clicked!');
     setIsPanelOpen(true);
   };
 
   return (
     <>
-      <button 
+      <Button 
         onClick={handleNotificationClick}
-        className="w-10 h-10 flex items-center justify-center rounded-xl bg-surface border border-black/5 text-on-surface/40 hover:text-primary hover:bg-slate-50 transition-all relative group"
+        variant="outline"
+        size="icon"
+        className="w-10 h-10 rounded-xl bg-surface border-black/5 text-on-surface/40 hover:text-primary hover:bg-slate-50 transition-all relative group"
+        leftIcon={<Bell className="w-5 h-5 group-hover:scale-110 transition-transform" />}
       >
-        <span className="material-symbols-outlined text-xl group-hover:scale-110 transition-transform">notifications</span>
         <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-surface animate-pulse" />
-      </button>
+      </Button>
       <NotificationPanel isOpen={isPanelOpen} onClose={() => setIsPanelOpen(false)} />
     </>
   );
@@ -681,12 +735,14 @@ export function SettingsButton() {
 
   return (
     <>
-      <button 
+      <Button 
         onClick={handleSettingsClick}
-        className="w-10 h-10 flex items-center justify-center rounded-xl bg-surface border border-black/5 text-on-surface/40 hover:text-primary hover:bg-slate-50 transition-all group"
+        variant="outline"
+        size="icon"
+        className="w-10 h-10 rounded-xl bg-surface border-black/5 text-on-surface/40 hover:text-primary hover:bg-slate-50 transition-all group"
+        leftIcon={<SettingsIcon className="w-5 h-5 group-hover:rotate-90 transition-transform duration-500" />}
       >
-        <span className="material-symbols-outlined text-xl group-hover:rotate-90 transition-transform duration-500">settings</span>
-      </button>
+      </Button>
       <SettingsPanel isOpen={isPanelOpen} onClose={() => setIsPanelOpen(false)} />
     </>
   );

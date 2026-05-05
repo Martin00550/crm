@@ -177,9 +177,8 @@ export function NotificationDropdown({ agencyId }: NotificationDropdownProps) {
               )}
             </div>
 
-            {/* Footer */}
             <div className="p-4 border-t border-black/5 bg-slate-50/50">
-              <Link href="/dashboard/notifications" className="block w-full text-center text-[10px] font-black text-primary uppercase tracking-[0.2em] hover:text-secondary transition-colors py-2">
+              <Link href="/dashboard/settings/notifications" className="block w-full text-center text-[10px] font-black text-primary uppercase tracking-[0.2em] hover:text-secondary transition-colors py-2">
                 View Intelligence Log
               </Link>
             </div>

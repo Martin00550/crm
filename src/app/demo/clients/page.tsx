@@ -28,13 +28,13 @@ export default function DemoClientsPage() {
       <div className="flex justify-between items-center">
         <div>
           <div className="flex items-center gap-4 mb-2">
-            <h1 className="text-3xl font-black text-on-surface font-headline italic tracking-tight">Book of Business</h1>
+            <h1 className="text-3xl font-black text-on-surface tracking-tight">Book of Business</h1>
             <div className="hidden sm:flex items-center gap-2 bg-secondary/5 px-3 py-1 rounded-full border border-secondary/10">
               <span className="w-2 h-2 bg-secondary rounded-full animate-pulse"></span>
               <span className="text-[10px] font-black text-secondary uppercase tracking-widest">Live Status</span>
             </div>
           </div>
-          <p className="text-on-surface/60 font-medium italic">Complete view of all current placements and health</p>
+          <p className="text-on-surface/60 font-medium">Complete view of all current placements and health</p>
         </div>
         <div className="flex items-center gap-3">
           <ImportCSVButton agencyId="demo-agency" />
@@ -52,7 +52,7 @@ export default function DemoClientsPage() {
               <span className="material-symbols-outlined text-secondary bg-secondary/10 p-2 rounded-lg">people</span>
             </div>
             <div>
-              <h3 className="text-4xl font-black tracking-tighter text-on-surface font-headline italic">{totalClients}</h3>
+              <h3 className="text-4xl font-black tracking-tighter text-on-surface">{totalClients}</h3>
               <p className="text-[10px] font-black text-secondary uppercase tracking-widest mt-1">Active Accounts</p>
             </div>
           </div>
@@ -62,7 +62,7 @@ export default function DemoClientsPage() {
               <span className="material-symbols-outlined text-secondary bg-secondary/10 p-2 rounded-lg">account_balance_wallet</span>
             </div>
             <div>
-              <h3 className="text-4xl font-black tracking-tighter text-on-surface font-headline italic">${totalPremium.toLocaleString()}</h3>
+              <h3 className="text-4xl font-black tracking-tighter text-on-surface">${totalPremium.toLocaleString()}</h3>
               <p className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest mt-1">Book of Business Volume</p>
             </div>
           </div>
@@ -72,7 +72,7 @@ export default function DemoClientsPage() {
               <span className="material-symbols-outlined text-secondary bg-secondary/10 p-2 rounded-lg">description</span>
             </div>
             <div>
-              <h3 className="text-4xl font-black tracking-tighter text-on-surface font-headline italic">{totalPolicies}</h3>
+              <h3 className="text-4xl font-black tracking-tighter text-on-surface">{totalPolicies}</h3>
               <p className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest mt-1">Policies in Force</p>
             </div>
           </div>

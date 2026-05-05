@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { agencies, users } from '@/db/schema';
 import { eq, and, count } from 'drizzle-orm';
+import { logger } from '@/lib/logger';
 import { createAgency } from '@/actions/data';
 import { handlePaddleBillingEvent } from '@/lib/billing';
 
@@ -76,7 +77,7 @@ async function paddleAPI(endpoint: string, method: 'GET' | 'POST' | 'PATCH' | 'D
 
   if (!response.ok) {
     const error = await response.text();
-    console.error('Paddle API error:', error);
+    logger.error('Paddle API error', error);
     throw new Error(`Paddle API error: ${response.status} ${error}`);
   }
 
@@ -146,7 +147,7 @@ export async function createSubscription(
       checkoutId: checkout.data?.id || checkout.id,
     };
   } catch (error) {
-    console.error('Failed to create Paddle checkout:', error);
+    logger.error('Failed to create Paddle checkout', error);
     throw error;
   }
 }
@@ -190,7 +191,7 @@ export async function updateSubscription(
 
     return { success: true };
   } catch (error) {
-    console.error('Failed to update subscription:', error);
+    logger.error('Failed to update subscription', error);
     return { success: false, error: 'Failed to update subscription' };
   }
 }
@@ -223,7 +224,7 @@ export async function cancelSubscription(agencyId: string) {
 
     return { success: true };
   } catch (error) {
-    console.error('Failed to cancel subscription:', error);
+    logger.error('Failed to cancel subscription', error);
     return { success: false, error: 'Failed to cancel subscription' };
   }
 }
@@ -251,7 +252,7 @@ export async function getSubscriptionStatus(agencyId: string) {
       currentPeriodEnd: subscription.data?.current_billing_period?.ends_at,
     };
   } catch (error) {
-    console.error('Failed to get subscription status:', error);
+    logger.error('Failed to get subscription status', error);
     return { status: 'error', tier: agency.subscriptionTier };
   }
 }
@@ -334,7 +335,7 @@ export async function handleWebhook(event: any) {
                 .where(eq(agencies.id, user.agencyId));
             }
           } catch (error) {
-            console.error('Failed to create agency for user:', userId, error);
+            logger.error('Failed to create agency for user', error);
           }
         }
       }
@@ -410,7 +411,7 @@ export async function handleWebhook(event: any) {
 
       if (agencyId) {
         // Could trigger email notification here
-        console.log(`Trial ending for agency ${agencyId}, subscription ${subscription.id}`);
+        logger.info('Trial ending for agency', { agencyId, subscriptionId: subscription.id });
       }
       break;
     }
@@ -460,7 +461,7 @@ export async function handleWebhook(event: any) {
     }
 
     default:
-      console.log(`Unhandled Paddle event type: ${eventType}`);
+      logger.warn('Unhandled Paddle event type', { eventType });
   }
 
   // Also handle billing events (invoices, payments)

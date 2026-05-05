@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { toast } from '@/hooks/use-toast';
 
 export interface PDFExportData {
   title: string;
@@ -65,7 +66,7 @@ export function exportAnalyticsToPDF(stats: any, data: any[], fileName: string =
   
   exportToPDF({
     title: 'Portfolio Analytics Report',
-    subtitle: 'BookGuard Agency Command Center',
+    subtitle: 'RetainVault Agency Command Center',
     headers,
     data: tableData,
     fileName,
@@ -74,7 +75,7 @@ export function exportAnalyticsToPDF(stats: any, data: any[], fileName: string =
 
 export function exportPolicyLedgerToPDF(ledger: any[], fileName: string = 'policy-ledger') {
   if (ledger.length === 0) {
-    alert('No data to export');
+    toast.error('No data to export');
     return;
   }
   

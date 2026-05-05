@@ -49,8 +49,8 @@ export function calculatePolicyRiskScore(policy: any, client: any): number {
   }
 
   // Factor 3: Policy type
-  const highChurnTypes = ['Commercial Auto', 'General Liability'];
-  if (highChurnTypes.includes(policy.policyType)) {
+  const highLeakageTypes = ['Commercial Auto', 'General Liability'];
+  if (highLeakageTypes.includes(policy.policyType)) {
     riskScore += 10;
   }
 
@@ -207,7 +207,7 @@ export async function getLeakagePreventionRecommendations(agencyId: string) {
   const recommendations: string[] = [];
 
   if (summary.highRiskCount > 10) {
-    recommendations.push('Launch automated renewal reminder campaign for high-risk policies');
+    recommendations.push('Review high-risk policies and prepare manual outreach');
   }
 
   if (summary.topRiskFactors.some(f => f.factor === 'No portal access')) {

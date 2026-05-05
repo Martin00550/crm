@@ -1,12 +1,20 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { auth } from "@/lib/better-auth";
+import { withAuth } from "@workos-inc/authkit-nextjs";
 import { getUserAgencyId, getPolicyLeakageRisk, getAgency } from "@/actions/data";
 import { checkAgencySubscription } from "@/lib/subscription-check";
 import { isFeatureEnabled } from "@/lib/features";
 import { AlertTriangle, Shield, TrendingUp, DollarSign, AlertCircle, ChevronRight, Lock } from "lucide-react";
 import Link from "next/link";
 import { GenerateAIReportButton } from "@/components/dashboard/GenerateAIReportButton";
+import { lazy } from "react";
+import nextDynamic from "next/dynamic";
+
+// Lazy load heavy dashboard component
+const PolicyLeakageDashboard = nextDynamic(() => import("@/components/dashboard/PolicyLeakageDashboard").then(m => ({ default: m.PolicyLeakageDashboard })), {
+  loading: () => <div className="p-8 text-center text-on-surface/40">Loading risk dashboard...</div>,
+  ssr: false
+});
 
 export const dynamic = "force-dynamic";
 
@@ -31,11 +39,10 @@ function getRiskScoreColor(score: number) {
 }
 
 export default async function RiskPage() {
-  const headersList = await headers();
-  const session = await auth.api.getSession({ headers: headersList });
+  const session = await withAuth();
   
   if (!session?.user?.id) {
-    redirect("/sign-in");
+    redirect("/api/auth/login");
   }
 
   const agencyId = await getUserAgencyId(session.user.id);
@@ -93,6 +100,9 @@ export default async function RiskPage() {
 
   const riskData = await getPolicyLeakageRisk(agencyId);
   const { policies, summary } = riskData;
+
+  // Check if we should use the client-side dashboard component
+  const useClientDashboard = policies.length > 50; // Use client component for large datasets
 
   // Get top 5 highest risk policies for AI report
   const topRiskPolicies = policies.slice(0, 5);
@@ -251,129 +261,133 @@ export default async function RiskPage() {
       </div>
 
       {/* Policies Table */}
-      <div className="bg-surface rounded-[32px] border border-black/5 shadow-sm overflow-hidden">
-        <div className="px-8 py-6 border-b border-black/5 bg-slate-50/50 flex justify-between items-center">
-          <h3 className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em]">At-Risk Policy Registry</h3>
-          <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest">
-            Showing top {policies.length} highest risk
-          </span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-black/5 bg-slate-50/50">
-                <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Policy</th>
-                <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Client</th>
-                <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Carrier</th>
-                <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Premium</th>
-                <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Days to Renewal</th>
-                <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Risk Score</th>
-                <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Risk Level</th>
-                <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Risk Factors</th>
-                <th className="px-6 py-4 text-center text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-black/5">
-              {policies.map((policy: any) => (
-                <tr key={policy.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-6 py-5">
-                    <Link 
-                      href={`/dashboard/policy/${policy.id}`}
-                      className="font-headline italic font-bold text-on-surface hover:text-primary transition-colors text-base tracking-tight"
-                    >
-                      {policy.policyNumber}
-                    </Link>
-                  </td>
-                  <td className="px-6 py-5">
-                    <div>
-                      <p className="font-bold text-on-surface text-sm">{policy.clientName}</p>
-                      <p className="text-[10px] text-on-surface/40 font-medium">{policy.clientIndustry || 'General Industry'}</p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-2 text-on-surface font-medium text-sm">
-                      <span className="material-symbols-outlined text-xs text-on-surface/20">shield</span>
-                      {policy.carrier}
-                    </div>
-                  </td>
-                  <td className="px-6 py-5">
-                    <span className="font-headline italic font-black text-lg text-on-surface tracking-tighter">
-                      {policy.premium}
-                    </span>
-                  </td>
-                  <td className="px-6 py-5">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
-                      policy.daysUntilRenewal <= 30 
-                        ? 'bg-red-50 text-red-600 border-red-100' 
-                        : policy.daysUntilRenewal <= 60 
-                        ? 'bg-amber-50 text-amber-600 border-amber-100'
-                        : 'bg-blue-50 text-blue-600 border-blue-100'
-                    }`}>
-                      {policy.daysUntilRenewal} days
-                    </span>
-                  </td>
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full rounded-full transition-all ${
-                            policy.riskScore >= 70 ? 'bg-red-500' :
-                            policy.riskScore >= 50 ? 'bg-orange-500' :
-                            policy.riskScore >= 30 ? 'bg-amber-500' : 'bg-green-500'
-                          }`}
-                          style={{ width: `${policy.riskScore}%` }}
-                        />
-                      </div>
-                      <span className={`text-sm font-black ${getRiskScoreColor(policy.riskScore)}`}>
-                        {policy.riskScore}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-5">
-                    <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${getRiskLevelColor(policy.riskLevel)}`}>
-                      {policy.riskLevel}
-                    </span>
-                  </td>
-                  <td className="px-6 py-5">
-                    <div className="flex flex-wrap gap-1.5">
-                      {policy.riskFactors.slice(0, 2).map((factor: string, i: number) => (
-                        <span key={i} className="px-2 py-0.5 bg-slate-100 text-on-surface/60 text-[9px] font-bold rounded-full">
-                          {factor}
-                        </span>
-                      ))}
-                      {policy.riskFactors.length > 2 && (
-                        <span className="px-2 py-0.5 bg-slate-100 text-on-surface/40 text-[9px] font-bold rounded-full">
-                          +{policy.riskFactors.length - 2} more
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-5">
-                    <div className="flex items-center justify-center">
-                      <Link
-                        href={`/dashboard/policy/${policy.id}`}
-                        className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 border border-black/5 text-on-surface/40 hover:text-primary hover:bg-white hover:shadow-sm transition-all"
-                        title="View Policy Details"
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </Link>
-                    </div>
-                  </td>
+      {useClientDashboard ? (
+        <PolicyLeakageDashboard policies={policies} summary={summary} />
+      ) : (
+        <div className="bg-surface rounded-[32px] border border-black/5 shadow-sm overflow-hidden">
+          <div className="px-8 py-6 border-b border-black/5 bg-slate-50/50 flex justify-between items-center">
+            <h3 className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em]">At-Risk Policy Registry</h3>
+            <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest">
+              Showing top {policies.length} highest risk
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-black/5 bg-slate-50/50">
+                  <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Policy</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Client</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Carrier</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Premium</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Days to Renewal</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Risk Score</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Risk Level</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Risk Factors</th>
+                  <th className="px-6 py-4 text-center text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {policies.length === 0 && (
-            <div className="p-12 text-center bg-white">
-              <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
-                <Shield className="w-8 h-8 text-green-500" />
+              </thead>
+              <tbody className="divide-y divide-black/5">
+                {policies.map((policy: any) => (
+                  <tr key={policy.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-6 py-5">
+                      <Link 
+                        href={`/dashboard/policy/${policy.id}`}
+                        className="font-headline italic font-bold text-on-surface hover:text-primary transition-colors text-base tracking-tight"
+                      >
+                        {policy.policyNumber}
+                      </Link>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div>
+                        <p className="font-bold text-on-surface text-sm">{policy.clientName}</p>
+                        <p className="text-[10px] text-on-surface/40 font-medium">{policy.clientIndustry || 'General Industry'}</p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-2 text-on-surface font-medium text-sm">
+                        <span className="material-symbols-outlined text-xs text-on-surface/20">shield</span>
+                        {policy.carrier}
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className="font-headline italic font-black text-lg text-on-surface tracking-tighter">
+                        {policy.premium}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                        policy.daysUntilRenewal <= 30 
+                          ? 'bg-red-50 text-red-600 border-red-100' 
+                          : policy.daysUntilRenewal <= 60 
+                          ? 'bg-amber-50 text-amber-600 border-amber-100'
+                          : 'bg-blue-50 text-blue-600 border-blue-100'
+                      }`}>
+                        {policy.daysUntilRenewal} days
+                      </span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full transition-all ${
+                              policy.riskScore >= 70 ? 'bg-red-500' :
+                              policy.riskScore >= 50 ? 'bg-orange-500' :
+                              policy.riskScore >= 30 ? 'bg-amber-500' : 'bg-green-500'
+                            }`}
+                            style={{ width: `${policy.riskScore}%` }}
+                          />
+                        </div>
+                        <span className={`text-sm font-black ${getRiskScoreColor(policy.riskScore)}`}>
+                          {policy.riskScore}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${getRiskLevelColor(policy.riskLevel)}`}>
+                        {policy.riskLevel}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex flex-wrap gap-1.5">
+                        {policy.riskFactors.slice(0, 2).map((factor: string, i: number) => (
+                          <span key={i} className="px-2 py-0.5 bg-slate-100 text-on-surface/60 text-[9px] font-bold rounded-full">
+                            {factor}
+                          </span>
+                        ))}
+                        {policy.riskFactors.length > 2 && (
+                          <span className="px-2 py-0.5 bg-slate-100 text-on-surface/40 text-[9px] font-bold rounded-full">
+                            +{policy.riskFactors.length - 2} more
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex items-center justify-center">
+                        <Link
+                          href={`/dashboard/policy/${policy.id}`}
+                          className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 border border-black/5 text-on-surface/40 hover:text-primary hover:bg-white hover:shadow-sm transition-all"
+                          title="View Policy Details"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {policies.length === 0 && (
+              <div className="p-12 text-center bg-white">
+                <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                  <Shield className="w-8 h-8 text-green-500" />
+                </div>
+                <p className="text-sm font-black text-on-surface/40 uppercase tracking-widest">No At-Risk Policies Detected</p>
+                <p className="text-xs text-on-surface/30 font-medium mt-2">Your portfolio is in excellent condition</p>
               </div>
-              <p className="text-sm font-black text-on-surface/40 uppercase tracking-widest">No At-Risk Policies Detected</p>
-              <p className="text-xs text-on-surface/30 font-medium mt-2">Your portfolio is in excellent condition</p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* AI Insights Card */}
       {summary.criticalRisk > 0 && aiReportPrompt && (

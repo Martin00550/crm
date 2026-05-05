@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@/lib/auth-wrapper';
 import { getUserAgencyId } from '@/actions/data';
 import { upsertNotificationSettings } from '@/lib/notification-settings';
+import { logger } from '@/lib/logger';
 
 // POST /api/notification-settings/push-subscription - Save push subscription
 export async function POST(request: NextRequest) {
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
       message: 'Push subscription saved',
     });
   } catch (error) {
-    console.error('Error saving push subscription:', error);
+    logger.error('Error saving push subscription', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -70,7 +71,7 @@ export async function DELETE() {
       message: 'Push subscription removed',
     });
   } catch (error) {
-    console.error('Error removing push subscription:', error);
+    logger.error('Error removing push subscription', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { calculatePolicyRisk, getAgencyRiskSummary } from '@/lib/risk-scoring';
 import { isFeatureEnabled, SubscriptionTier } from '@/lib/features';
 import { getUserAgencyId } from '@/actions/data';
+import { logger } from '@/lib/logger';
 
 // GET /api/risk/dashboard - Get risk dashboard data
 export async function GET(request: NextRequest) {
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Error fetching risk dashboard data:', error);
+    logger.error('Error fetching risk dashboard data', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

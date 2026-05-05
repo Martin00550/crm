@@ -3,6 +3,7 @@ import { getAuth } from '@/lib/auth-wrapper';
 import { db } from '@/lib/db';
 import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { logger } from '@/lib/logger';
 import { 
   createPolicyRenewalNotification,
   createCommissionPaymentNotification,
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
       count: notifications.filter(n => n.success).length,
     });
   } catch (error) {
-    console.error('Error seeding notifications:', error);
+    logger.error('Error seeding notifications', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

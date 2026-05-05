@@ -6,7 +6,7 @@ export default function DemoSettingsPage() {
   const [demoAgency] = useState({
     name: "Demo Agency Group",
     subdomain: "demo-agency",
-    contactEmail: "demo@bookguard.tech",
+    contactEmail: "demo@retainvault.tech",
     tier: "Growth",
   });
 

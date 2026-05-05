@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { rateLimits } from '@/db/schema';
-import { eq, lt } from 'drizzle-orm';
+import { eq, and, gte, lte, lt } from 'drizzle-orm';
+import { logger } from '@/lib/logger';
 
 interface RateLimitConfig {
   windowMs: number; // Time window in milliseconds
@@ -121,7 +122,7 @@ async function checkDatabaseRateLimit(
       resetAt: recordResetAt,
     };
   } catch (error) {
-    console.error('Database rate limit error:', error);
+    logger.error('Database rate limit error', error);
     // Fail closed on error
     return {
       success: false,

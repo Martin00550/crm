@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { documents, clients } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { getUserAgencyId } from '@/actions/data';
+import { logger } from '@/lib/logger';
 
 export async function GET(
   request: NextRequest,
@@ -60,7 +61,7 @@ export async function GET(
       documents: clientDocuments,
     });
   } catch (error) {
-    console.error('Error fetching client documents:', error);
+    logger.error('Error fetching client documents', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

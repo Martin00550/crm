@@ -6,12 +6,12 @@
 export const openAPIDocument = {
   openapi: '3.0.0',
   info: {
-    title: 'BookGuard CRM API',
+    title: 'RetainVault CRM API',
     version: '1.0.0',
-    description: 'API for BookGuard CRM - Executive Command Center for Insurance Agencies',
+    description: 'API for RetainVault CRM - Executive Command Center for Insurance Agencies',
     contact: {
-      name: 'BookGuard Support',
-      email: 'support@bookguard.tech',
+      name: 'RetainVault Support',
+      email: 'support@retainvault.tech',
     },
   },
   servers: [
@@ -20,7 +20,7 @@ export const openAPIDocument = {
       description: 'Development server',
     },
     {
-      url: 'https://api.bookguard.tech',
+      url: 'https://api.retainvault.tech',
       description: 'Production server',
     },
   ],

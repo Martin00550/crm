@@ -35,17 +35,10 @@ export function TrialExpiredModal({ tier, trialEndDate }: TrialExpiredModalProps
         </div>
 
         {/* Title */}
-        <h2 className="text-2xl font-black text-on-surface text-center mb-2 font-headline italic">
-          Trial Period Expired
-        </h2>
+        <h2 className="text-3xl font-black text-on-surface italic font-headline tracking-tight mb-2 text-center">RetainVault Access Suspended</h2>
         
-        <p className="text-on-surface/60 text-center mb-6 font-medium">
-          Your 14-day free trial ended on{' '}
-          {trialEndDate?.toLocaleDateString('en-US', {
-            month: 'long',
-            day: 'numeric',
-            year: 'numeric',
-          })}.
+        <p className="text-on-surface/60 font-medium italic mb-8 text-center">
+          Your free trial has concluded. Upgrade to a full deployment to secure your book and continue leveraging AI-driven rate analysis.
         </p>
 
         {/* Selected Plan */}
@@ -74,7 +67,7 @@ export function TrialExpiredModal({ tier, trialEndDate }: TrialExpiredModalProps
         {/* Help Link */}
         <p className="text-center text-xs text-on-surface/40 mt-4">
           Need help?{' '}
-          <a href="mailto:support@bookguard.tech" className="text-primary font-bold hover:underline">
+          <a href="mailto:support@retainvault.tech" className="text-primary font-bold hover:underline">
             Contact Support
           </a>
         </p>

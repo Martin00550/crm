@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Upload } from "lucide-react";
 import { ImportCSVModal } from "@/components/modals/ImportCSVModal";
+import { Button } from "@/components/ui/button";
 
 interface ImportCSVButtonProps {
   agencyId: string;
@@ -14,13 +15,14 @@ export function ImportCSVButton({ agencyId, onImportComplete }: ImportCSVButtonP
 
   return (
     <>
-      <button
+      <Button
         onClick={() => setIsModalOpen(true)}
-        className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white bg-secondary rounded-xl hover:shadow-lg transition-all flex items-center gap-2"
+        variant="secondary"
+        size="sm"
+        leftIcon={<Upload className="w-3.5 h-3.5" />}
       >
-        <Upload className="w-3.5 h-3.5" />
-        Provision Registry
-      </button>
+        Add Entry
+      </Button>
       <ImportCSVModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

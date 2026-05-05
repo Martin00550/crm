@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@/lib/auth-wrapper';
+import { logger } from '@/lib/logger';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { sanitizeFilename, validateUUID, validateMagicBytes } from '@/lib/validation';
 
@@ -90,7 +91,8 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(arrayBuffer);
 
     // Additional validation: Check file magic bytes to verify actual file type
-    const magicBytes = buffer.subarray(0, 4);
+    // We take the first 16 bytes to cover most common image signatures (PNG needs 8)
+    const magicBytes = buffer.subarray(0, 16);
     const isValidMagicBytes = validateMagicBytes(magicBytes, file.type);
     if (!isValidMagicBytes) {
       return NextResponse.json({ 
@@ -99,7 +101,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Upload to Backblaze B2 via unified storage utility
-    const { url } = await uploadFile(buffer, {
+    const { key } = await uploadFile(buffer, {
       ...storagePresets.logo,
       path: storagePath,
       metadata: {
@@ -109,10 +111,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const publicUrl = url;
+    // Generate a temporary signed URL for immediate preview
+    const { getPresignedUrl } = await import('@/lib/storage');
+    const publicUrl = await getPresignedUrl(key);
 
     // Log upload for audit trail
-    console.log('File uploaded:', {
+    logger.info('File uploaded', {
       userId,
       agencyId,
       storagePath,
@@ -124,14 +128,19 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ 
       url: publicUrl,
+      key: key,
       success: true,
       filename: sanitizedName,
     });
   } catch (error: any) {
-    console.error('Logo upload error:', error);
-    // Don't expose internal error details
+    logger.error('Logo upload error', error);
+    // In development, expose the error message to help debug
+    const errorMessage = process.env.NODE_ENV === 'development' 
+      ? `Upload failed: ${error.message || 'Unknown error'}`
+      : 'Upload failed. Please try again.';
+      
     return NextResponse.json({ 
-      error: 'Upload failed. Please try again.' 
+      error: errorMessage 
     }, { status: 500 });
   }
 }

@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { getPortalConfig, updatePortalConfig } from '@/lib/client-portal';
 import { isFeatureEnabled, SubscriptionTier } from '@/lib/features';
 import { getUserAgencyId } from '@/actions/data';
+import { logger } from '@/lib/logger';
 
 // GET /api/portal/config - Get portal configuration
 export async function GET(request: NextRequest) {
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
       config,
     });
   } catch (error) {
-    console.error('Error fetching portal config:', error);
+    logger.error('Error fetching portal config', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -119,7 +120,7 @@ export async function PUT(request: NextRequest) {
       config: updatedConfig,
     });
   } catch (error) {
-    console.error('Error updating portal config:', error);
+    logger.error('Error updating portal config', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

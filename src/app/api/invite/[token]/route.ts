@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { invitations, agencies } from '@/db/schema';
 import { eq, and, gt } from 'drizzle-orm';
+import { logger } from '@/lib/logger';
 
 // GET /api/invite/[token] - Verify invitation
 export async function GET(
@@ -60,7 +61,7 @@ export async function GET(
       }
     });
   } catch (error) {
-    console.error('Error verifying invitation:', error);
+    logger.error('Error verifying invitation', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

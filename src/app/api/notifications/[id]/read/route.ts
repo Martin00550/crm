@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { notifications } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { getUserAgencyId } from '@/actions/data';
+import { logger } from '@/lib/logger';
 
 // POST /api/notifications/[id]/read - Mark notification as read
 export async function POST(
@@ -50,7 +51,7 @@ export async function POST(
       },
     });
   } catch (error) {
-    console.error('Error marking notification as read:', error);
+    logger.error('Error marking notification as read', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

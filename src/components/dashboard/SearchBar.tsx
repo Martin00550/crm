@@ -39,7 +39,7 @@ export function SearchBar({ agencyId }: SearchBarProps) {
             title: 'Auto Insurance - POL123',
             subtitle: 'State Farm • $1,200/year',
             icon: '📄',
-            href: '/dashboard/policies'
+            href: '/dashboard/clients'
           },
           {
             id: '3',
@@ -115,7 +115,7 @@ export function SearchBar({ agencyId }: SearchBarProps) {
               <>
                 <div className="p-2">
                   <div className="px-4 py-2 mb-1">
-                    <p className="text-[10px] font-black text-on-surface/20 uppercase tracking-[0.2em]">Forensic Match Results</p>
+                    <p className="text-[10px] font-black text-on-surface/20 uppercase tracking-[0.2em]">Policy Match Results</p>
                   </div>
                   {results.map((result) => (
                     <a
@@ -149,14 +149,14 @@ export function SearchBar({ agencyId }: SearchBarProps) {
                 </div>
                 <div className="p-4 border-t border-black/5 bg-slate-50/50">
                   <a
-                    href="/dashboard/search"
+                    href="/dashboard/clients"
                     className="flex items-center justify-center gap-2 text-[10px] font-black text-primary uppercase tracking-[0.2em] hover:text-secondary transition-colors"
                     onClick={() => {
                       setIsOpen(false);
                       setQuery('');
                     }}
                   >
-                    Authorize Advanced Forensic Search
+                    Authorize Advanced Policy Search
                     <ArrowRight className="w-3 h-3" />
                   </a>
                 </div>

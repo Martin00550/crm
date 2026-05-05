@@ -1,7 +1,7 @@
 // Service Worker for PWA with Offline Support
-const CACHE_NAME = 'bookguard-v1';
-const STATIC_CACHE = 'bookguard-static-v1';
-const API_CACHE = 'bookguard-api-v1';
+const CACHE_NAME = 'retainvault-v1';
+const STATIC_CACHE = 'retainvault-static-v1';
+const API_CACHE = 'retainvault-api-v1';
 
 // Static assets to cache
 const STATIC_ASSETS = [
@@ -86,7 +86,7 @@ self.addEventListener('push', (event) => {
   const data = event.data?.json() ?? {};
   
   const options = {
-    body: data.body || 'New notification from BookGuard',
+    body: data.body || 'New notification from RetainVault',
     icon: data.icon || '/icon-192.png',
     badge: data.badge || '/badge-72.png',
     tag: data.tag || 'default',
@@ -96,7 +96,7 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification(data.title || 'BookGuard', options)
+    self.registration.showNotification(data.title || 'RetainVault', options)
   );
 });
 

@@ -69,14 +69,14 @@ const now = new Date();
 
 // High-value enterprise clients - impressive portfolio
 const initialClients: Client[] = [
-  { id: "1", name: "Meridian Real Estate Holdings", email: "insurance@meridianre.com", phone: "(212) 555-0100", industry: "Real Estate", totalPolicies: 8, totalPremium: 2850000, healthStatus: "healthy", createdAt: now, updatedAt: now },
-  { id: "2", name: "Apex Manufacturing Group", email: "risk@apex-mfg.com", phone: "(312) 555-0200", industry: "Manufacturing", totalPolicies: 12, totalPremium: 4200000, healthStatus: "at-risk", createdAt: now, updatedAt: now },
-  { id: "3", name: "Summit Healthcare Systems", email: "coverage@summit-health.com", phone: "(713) 555-0300", industry: "Healthcare", totalPolicies: 6, totalPremium: 1950000, healthStatus: "warning", createdAt: now, updatedAt: now },
-  { id: "4", name: "Coastal Logistics & Transport", email: "operations@coastallogistics.com", phone: "(305) 555-0400", industry: "Transportation", totalPolicies: 15, totalPremium: 3100000, healthStatus: "healthy", createdAt: now, updatedAt: now },
-  { id: "5", name: "Velocity Tech Ventures", email: "legal@velocitytech.io", phone: "(415) 555-0500", industry: "Technology", totalPolicies: 4, totalPremium: 1650000, healthStatus: "at-risk", createdAt: now, updatedAt: now },
-  { id: "6", name: "Heritage Construction Corp", email: "safety@heritagebuilds.com", phone: "(602) 555-0600", industry: "Construction", totalPolicies: 9, totalPremium: 2400000, healthStatus: "healthy", createdAt: now, updatedAt: now },
-  { id: "7", name: "Atlas Energy Solutions", email: "risk@atlasenergy.com", phone: "(713) 555-0700", industry: "Energy", totalPolicies: 7, totalPremium: 3800000, healthStatus: "warning", createdAt: now, updatedAt: now },
-  { id: "8", name: "Sterling Financial Advisors", email: "compliance@sterlingfa.com", phone: "(212) 555-0800", industry: "Finance", totalPolicies: 5, totalPremium: 1450000, healthStatus: "healthy", createdAt: now, updatedAt: now },
+  { id: "1", name: "Meridian Real Estate Holdings", email: "insurance@meridianre.com", phone: "(212) 555-0100", industry: "Real Estate", totalPolicies: 3, totalPremium: 990000, healthStatus: "healthy", createdAt: now, updatedAt: now },
+  { id: "2", name: "Apex Manufacturing Group", email: "risk@apex-mfg.com", phone: "(312) 555-0200", industry: "Manufacturing", totalPolicies: 4, totalPremium: 1920000, healthStatus: "at-risk", createdAt: now, updatedAt: now },
+  { id: "3", name: "Summit Healthcare Systems", email: "coverage@summit-health.com", phone: "(713) 555-0300", industry: "Healthcare", totalPolicies: 3, totalPremium: 1455000, healthStatus: "warning", createdAt: now, updatedAt: now },
+  { id: "4", name: "Coastal Logistics & Transport", email: "operations@coastallogistics.com", phone: "(305) 555-0400", industry: "Transportation", totalPolicies: 3, totalPremium: 1145000, healthStatus: "healthy", createdAt: now, updatedAt: now },
+  { id: "5", name: "Velocity Tech Ventures", email: "legal@velocitytech.io", phone: "(415) 555-0500", industry: "Technology", totalPolicies: 3, totalPremium: 1315000, healthStatus: "at-risk", createdAt: now, updatedAt: now },
+  { id: "6", name: "Heritage Construction Corp", email: "safety@heritagebuilds.com", phone: "(602) 555-0600", industry: "Construction", totalPolicies: 4, totalPremium: 1605000, healthStatus: "healthy", createdAt: now, updatedAt: now },
+  { id: "7", name: "Atlas Energy Solutions", email: "risk@atlasenergy.com", phone: "(713) 555-0700", industry: "Energy", totalPolicies: 3, totalPremium: 1935000, healthStatus: "warning", createdAt: now, updatedAt: now },
+  { id: "8", name: "Sterling Financial Advisors", email: "compliance@sterlingfa.com", phone: "(212) 555-0800", industry: "Finance", totalPolicies: 4, totalPremium: 1345000, healthStatus: "healthy", createdAt: now, updatedAt: now },
 ];
 
 // High-value policies with premiums ranging from $200K to $850K

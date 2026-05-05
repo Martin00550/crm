@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runRenewalCheck } from '@/lib/renewal-monitor';
 import { runCommissionCheck } from '@/lib/commission-monitor';
+import { logger } from '@/lib/logger';
 
 // POST /api/jobs/scheduler - Run all scheduled notification jobs
 export async function POST(request: NextRequest) {
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Error running scheduled job:', error);
+    logger.error('Error running scheduled job', error);
     return NextResponse.json({ 
       error: 'Internal server error' 
     }, { status: 500 });

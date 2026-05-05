@@ -1,11 +1,12 @@
 import crypto from 'crypto';
 import { db } from '@/lib/db';
-import { users, agencies, invitations } from '@/db/schema';
-import { eq, and, count, lt, gt, ne, or } from 'drizzle-orm';
+import { invitations, users, agencies } from '@/db/schema';
+import { eq, and, lte, sql } from 'drizzle-orm';
+import { logger } from '@/lib/logger';
 import { getFeatureLimit, type SubscriptionTier } from '@/lib/features';
 import { sendTeamInvitationEmail } from '@/lib/email';
 import { UserRole, type UserRole as UserRoleType } from '@/lib/permissions';
-import { createTeamInvitationNotification, createTeamMemberJoinedNotification } from '@/lib/notifications';
+import { dispatchNotification } from '@/lib/notification-dispatcher';
 import { logAuditEvent } from '@/lib/audit';
 
 export interface TeamMember {
@@ -188,8 +189,8 @@ export async function addTeamMember(
     });
 
     return { success: true };
-  } catch (error: any) {
-    if (error.code === '23505') {
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && (error as any).code === '23505') {
       return { success: false, error: 'User already exists' };
     }
     return { success: false, error: 'Failed to add team member' };
@@ -387,19 +388,22 @@ export async function createInvitation(
         .then((r: any[]) => r[0]);
 
       if (owner) {
-        // Create notification for team owner
-        await createTeamInvitationNotification(
+        // Dispatch unified notification (DB + Push + Email)
+        await dispatchNotification(
           agencyId,
           owner.id,
-          name || email,
-          email
+          {
+            type: 'team_invitation',
+            memberName: name || email,
+            memberEmail: email
+          }
         );
       }
     }
 
     return { success: true, invitationId: result.id };
-  } catch (error: any) {
-    console.error('Error creating invitation:', error);
+  } catch (error) {
+    logger.error('Error creating invitation', error);
     return { success: false, error: 'Failed to create invitation' };
   }
 }
@@ -467,12 +471,15 @@ export async function acceptInvitation(
       .then((r: any[]) => r[0]);
 
     if (owner) {
-      // Create notification for team owner about new member
-      await createTeamMemberJoinedNotification(
+      // Dispatch unified notification (DB + Push + Email)
+      await dispatchNotification(
         invitation.agencyId,
         owner.id,
-        invitation.name || invitation.email,
-        invitation.role
+        {
+          type: 'team_member_joined',
+          memberName: invitation.name || invitation.email,
+          memberRole: invitation.role
+        }
       );
     }
 
@@ -489,8 +496,8 @@ export async function acceptInvitation(
       });
 
     return { success: true };
-  } catch (error: any) {
-    console.error('Error accepting invitation:', error);
+  } catch (error) {
+    logger.error('Error accepting invitation', error);
     return { success: false, error: 'Failed to accept invitation' };
   }
 }
@@ -517,8 +524,8 @@ export async function cancelInvitation(
       ));
 
     return { success: true };
-  } catch (error: any) {
-    console.error('Error cancelling invitation:', error);
+  } catch (error) {
+    logger.error('Error cancelling invitation', error);
     return { success: false, error: 'Failed to cancel invitation' };
   }
 }
@@ -589,8 +596,8 @@ export async function resendInvitation(
     }
 
     return { success: true, newToken };
-  } catch (error: any) {
-    console.error('Error resending invitation:', error);
+  } catch (error) {
+    logger.error('Error resending invitation', error);
     return { success: false, error: 'Failed to resend invitation' };
   }
 }
@@ -611,7 +618,7 @@ export async function cleanupExpiredInvitations(): Promise<void> {
         lt(invitations.expiresAt, new Date())
       ));
   } catch (error) {
-    console.error('Error cleaning up expired invitations:', error);
+    logger.error('Error cleaning up expired invitations', error);
   }
 }
 

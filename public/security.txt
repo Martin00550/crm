@@ -1,4 +1,4 @@
-# Security Policy for PolicyPulse CRM
+# Security Policy for RetainVault CRM
 
 ## Reporting Security Vulnerabilities
 
@@ -10,7 +10,7 @@ We take security seriously. If you discover a security vulnerability, please rep
 
 Instead, please report them via:
 
-1. **Email**: security@policypulse.com
+1. **Email**: security@retainvault.com
 2. **Encrypted Email**: Use our PGP key (see below)
 
 ### What to Include
@@ -31,8 +31,8 @@ Please include the following information:
 ### Scope
 
 **In Scope:**
-- policypulse.com and all subdomains
-- API endpoints (*.policypulse.com/api/*)
+- retainvault.com and all subdomains
+- API endpoints (*.retainvault.com/api/*)
 - Authentication mechanisms
 - Data storage and processing
 

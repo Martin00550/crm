@@ -1,13 +1,14 @@
 /**
  * Real-time Policy Expiration Alerts
- * Prevents silent churn by alerting agents before policies lapse
+ * Prevents silent leakage by alerting agents before policies lapse
  */
 
 import { db } from '@/lib/db';
 import { policies, clients, users, agencies } from '@/db/schema';
 import { eq, and, gte, lte, sql } from 'drizzle-orm';
+import { logger } from '@/lib/logger';
 import { Resend } from 'resend';
-import { sendCampaign, emailTemplates } from '@/lib/email-campaigns';
+
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
@@ -84,98 +85,54 @@ export async function getExpiringPolicies(
  * Send expiration alert to agent
  */
 export async function sendAgentAlert(agencyId: string, alert: ExpirationAlert) {
-  if (!resend) return;
-
-  // Get agency owner email
-  const agency = await db
-    .select()
-    .from(agencies)
-    .where(eq(agencies.id, agencyId))
-    .limit(1)
-    .then((r: any[]) => r[0]);
-
+  // Find the agency owner or primary agent
   const agent = await db
     .select()
     .from(users)
-    .where(eq(users.agencyId, agencyId))
+    .where(and(eq(users.agencyId, agencyId), eq(users.role, 'owner')))
     .limit(1)
     .then((r: any[]) => r[0]);
 
-  if (!agent?.email) return;
+  if (!agent) {
+    logger.warn('No owner found to receive expiration alert', { agencyId, policyId: alert.policyId });
+    return;
+  }
 
-  const urgencyColors = {
-    critical: '🔴',
-    high: '🟠',
-    medium: '🟡',
-    low: '🟢',
-  };
-
-  await resend.emails.send({
-    from: 'BookGuard <noreply@bookguard.tech>',
-    to: agent.email,
-    subject: `${urgencyColors[alert.urgency]} Policy Expiring Soon: ${alert.policyNumber}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background: ${alert.urgency === 'critical' ? '#dc2626' : alert.urgency === 'high' ? '#ea580c' : '#22c55e'}; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
-          <h1 style="margin: 0;">${urgencyColors[alert.urgency]} Policy Expiration Alert</h1>
-        </div>
-        <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb;">
-          <h2 style="color: #374151;">${alert.policyNumber}</h2>
-          <p style="color: #6b7280; margin: 0 0 20px 0;">
-            Insured: <strong>${alert.insuredName}</strong><br>
-            Expires: <strong>${alert.expirationDate.toLocaleDateString()}</strong> (${alert.daysUntilExpiration} days)<br>
-            Premium: <strong>$${alert.premium}</strong>
-          </p>
-          <p style="color: #374151; margin-bottom: 20px;">
-            <strong>Urgency:</strong> ${alert.urgency.toUpperCase()}
-          </p>
-          <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/policies/${alert.policyId}" style="display: inline-block; background: #22c55e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
-            View Policy
-          </a>
-        </div>
-      </div>
-    `,
+  const { dispatchNotification } = await import('@/lib/notification-dispatcher');
+  await dispatchNotification(agencyId, agent.id, {
+    type: 'policy_renewal',
+    policyId: alert.policyId,
+    policyNumber: alert.policyNumber,
+    daysOut: alert.daysUntilExpiration,
+    premium: alert.premium,
+    clientName: alert.insuredName,
+    clientEmail: alert.email,
   });
 }
 
 /**
  * Send automated expiration reminder to insured
  */
-export async function sendInsuredReminder(alert: ExpirationAlert) {
-  if (!resend) return;
+export async function sendInsuredReminder(agencyId: string, alert: ExpirationAlert) {
+  // We still need an agent/user ID for the dispatcher context, 
+  // even if it's an insured reminder (for audit/ownership)
+  const agent = await db
+    .select()
+    .from(users)
+    .where(and(eq(users.agencyId, agencyId), eq(users.role, 'owner')))
+    .limit(1)
+    .then((r: any[]) => r[0]);
 
-  const template = emailTemplates.find(t => t.id === 'renewal_reminder_30_days');
-  if (!template) return;
+  if (!agent) return;
 
-  await resend.emails.send({
-    from: 'BookGuard <noreply@bookguard.tech>',
-    to: alert.email,
-    subject: `Your policy renewal is approaching - ${alert.daysUntilExpiration} days`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background: #22c55e; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
-          <h1 style="margin: 0;">Policy Renewal Reminder</h1>
-        </div>
-        <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb;">
-          <p style="color: #374151;">
-            Dear ${alert.insuredName},
-          </p>
-          <p style="color: #374151;">
-            Your policy <strong>${alert.policyNumber}</strong> is set to expire on <strong>${alert.expirationDate.toLocaleDateString()}</strong>.
-          </p>
-          <p style="color: #374151;">
-            That's <strong>${alert.daysUntilExpiration} days</strong> from now. We want to ensure you have continuous coverage without any gaps.
-          </p>
-          <p style="color: #374151;">
-            If you have any questions or would like to discuss coverage options, please don't hesitate to reach out.
-          </p>
-          <p style="color: #6b7280;">
-            Best regards,<br>
-            Your Insurance Team
-          </p>
-        </div>
-      </div>
-    `,
+  const { dispatchNotification } = await import('@/lib/notification-dispatcher');
+  await dispatchNotification(agencyId, agent.id, {
+    type: 'insured_reminder',
+    policyId: alert.policyId,
+    policyNumber: alert.policyNumber,
+    daysOut: alert.daysUntilExpiration,
+    clientName: alert.insuredName,
+    clientEmail: alert.email,
   });
 }
 
@@ -200,7 +157,7 @@ export async function sendExpirationAlerts(agencyId: string, daysThreshold: numb
 
       // Send reminder to insured (only for high urgency)
       if (alert.urgency === 'critical' || alert.urgency === 'high') {
-        await sendInsuredReminder(alert);
+        await sendInsuredReminder(agencyId, alert);
         results.insuredRemindersSent++;
       }
     } catch (error) {
@@ -216,7 +173,7 @@ export async function sendExpirationAlerts(agencyId: string, daysThreshold: numb
  */
 export async function scheduleExpirationChecks(agencyId: string) {
   // Scheduling is handled by Inngest functions in inngest-schedule.ts
-  console.log('Expiration checks scheduled via Inngest for agency:', agencyId);
+  logger.info('Expiration checks scheduled via Inngest for agency', { agencyId });
 }
 
 /**

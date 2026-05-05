@@ -1,5 +1,5 @@
-# Robots.txt for PolicyPulse CRM
-# https://policypulse.com
+# Robots.txt for RetainVault CRM
+# https://retainvault.com
 
 # Allow all crawlers on public pages
 User-agent: *
@@ -31,7 +31,7 @@ Disallow: /*/team
 Disallow: /*/api-keys
 
 # Sitemap location
-Sitemap: https://policypulse.com/sitemap.xml
+Sitemap: https://retainvault.com/sitemap.xml
 
 # Crawl delay for respectful crawling
 Crawl-delay: 1

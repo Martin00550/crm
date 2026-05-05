@@ -24,7 +24,7 @@ export function ExportModal({ isOpen, onClose, onExport, dataType }: ExportModal
       <div className="space-y-8 font-body p-2">
         <div className="bg-slate-50/50 p-6 rounded-[24px] border border-black/5 shadow-inner">
           <p className="text-sm font-medium text-on-surface/70 leading-relaxed italic">
-            Select the forensic protocol for your executive portfolio records. Authorized exports utilize 256-bit encryption.
+            Select the policy protocol for your executive portfolio records. Authorized exports utilize 256-bit encryption.
           </p>
         </div>
         

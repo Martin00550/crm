@@ -2,6 +2,7 @@ import { db } from '@/lib/db';
 import { agencies, clients, policies, users } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { generatePortalToken } from '@/lib/auth';
+import { getPresignedUrl } from '@/lib/storage';
 
 export interface PortalConfig {
   agencyId: string;
@@ -38,17 +39,27 @@ export async function getPortalConfig(agencyId: string): Promise<PortalConfig | 
     .limit(1)
     .then((r: any[]) => r[0]);
 
-  if (!agency || !agency.whiteLabelEnabled) {
+  if (!agency) {
     return null;
   }
 
   const branding = agency.branding || {};
+  let logoUrl = branding.logoUrl;
+
+  // Resolve logo key to full URL if it exists
+  if (logoUrl && !logoUrl.startsWith('http')) {
+    try {
+      logoUrl = await getPresignedUrl(logoUrl);
+    } catch (e) {
+      console.error('Failed to resolve logo URL:', e);
+    }
+  }
 
   return {
     agencyId: agency.id,
     subdomain: agency.subdomain || `${agency.name.toLowerCase().replace(/\s+/g, '-')}`,
     branding: {
-      logo: branding.logoUrl,
+      logo: logoUrl,
       primaryColor: branding.primaryColor || '#3b82f6',
       secondaryColor: branding.secondaryColor || '#10b981',
       companyName: agency.name,
@@ -121,29 +132,47 @@ export async function getClientPortalData(clientId: string, agencyId: string) {
 export async function generateClientPortalInvite(clientId: string, agencyId: string) {
   if (!db) return null;
 
-  // Generate portal token
-  const token = generatePortalToken();
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
+  // 1. Fetch the client to get their name
+  const client = await db
+    .select({ name: clients.name, subdomain: clients.subdomain })
+    .from(clients)
+    .where(and(eq(clients.id, clientId), eq(clients.agencyId, agencyId)))
+    .limit(1)
+    .then((r: any[]) => r[0]);
 
-  // Update client with portal access
-  await db
-    .update(clients)
-    .set({
-      portalAccessEnabled: true,
-      portalInviteSent: true,
-      portalToken: token,
-      portalTokenExpires: expiresAt,
-    })
-    .where(and(
-      eq(clients.id, clientId),
-      eq(clients.agencyId, agencyId)
-    ));
+  if (!client) return null;
+
+  // 2. Generate the permanent portal slug if it doesn't exist
+  let permanentSlug = client.subdomain;
+  
+  if (!permanentSlug) {
+    // Clean name: lowercase, remove non-alphanumeric, max 15 chars
+    const cleanName = client.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15);
+    // Generate 6 random characters
+    const randomStr = Math.random().toString(36).substring(2, 8);
+    permanentSlug = `${cleanName}-${randomStr}`;
+
+    // Save to database
+    await db
+      .update(clients)
+      .set({
+        subdomain: permanentSlug,
+        portalAccessEnabled: true,
+        portalInviteSent: true,
+      })
+      .where(and(
+        eq(clients.id, clientId),
+        eq(clients.agencyId, agencyId)
+      ));
+  }
+
+  // 3. Return the Permanent Portal URL
+  const portalUrl = `https://${permanentSlug}.retainvault.com`;
 
   return {
-    token,
-    expiresAt,
-    portalUrl: `https://${(await getPortalConfig(agencyId))?.subdomain}.policypulse.app/invite/${token}`,
+    token: permanentSlug, // For backwards compatibility with UI if needed
+    expiresAt: null, // Permanent!
+    portalUrl,
   };
 }
 

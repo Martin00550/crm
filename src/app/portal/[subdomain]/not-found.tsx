@@ -12,13 +12,13 @@ export default function PortalNotFound() {
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
-            href="https://bookguard.tech"
-            className="px-6 py-3 bg-primary text-white font-bold rounded-lg hover:opacity-90 transition-all"
+            href="https://retainvault.com"
+            className="flex-1 px-8 py-4 bg-primary text-white font-black text-xs uppercase tracking-[0.2em] rounded-full hover:shadow-2xl transition-all text-center"
           >
-            Go to BookGuard
+            Go to RetainVault
           </Link>
           <Link
-            href="https://bookguard.tech/sign-in"
+            href="https://retainvault.com/sign-in"
             className="px-6 py-3 border-2 border-primary text-primary font-bold rounded-lg hover:bg-primary hover:text-white transition-all"
           >
             Agent Sign In

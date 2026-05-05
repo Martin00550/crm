@@ -50,7 +50,7 @@ export default function DemoSupportPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <a href="mailto:support@bookguard.tech" className="bg-surface p-10 rounded-[32px] border border-black/5 text-center hover:shadow-2xl hover:scale-[1.02] transition-all group">
+        <a href="mailto:support@retainvault.com" className="bg-surface p-10 rounded-[32px] border border-black/5 text-center hover:shadow-2xl hover:scale-[1.02] transition-all group">
           <div className="w-16 h-16 bg-secondary/5 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:bg-secondary group-hover:text-white transition-all shadow-sm">
             <span className="material-symbols-outlined text-3xl text-secondary group-hover:text-white">email</span>
           </div>

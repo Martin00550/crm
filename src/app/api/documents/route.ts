@@ -26,7 +26,7 @@ const s3Client = new S3Client({
   },
 });
 
-const BUCKET_NAME = process.env.B2_BUCKET_NAME || 'bookguard-logos';
+const BUCKET_NAME = process.env.B2_BUCKET_NAME || 'retainvault-logos';
 const B2_PUBLIC_URL = process.env.B2_PUBLIC_URL || `https://${BUCKET_NAME}.s3.us-west-004.backblazeb2.com`;
 
 export const POST = withApiSecurity(

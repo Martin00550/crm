@@ -1,27 +1,26 @@
-/**
- * Unified Storage Utility using Backblaze B2
- * Optimized for performance with Cloudflare CDN
- */
-
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-// Backblaze B2 configuration with Cloudflare CDN support
+// Backblaze B2 configuration
+const rawEndpoint = process.env.B2_ENDPOINT || 'https://s3.us-east-005.backblazeb2.com';
+const formattedEndpoint = rawEndpoint.startsWith('http') ? rawEndpoint : `https://${rawEndpoint}`;
+
 const s3Client = new S3Client({
-  region: process.env.B2_REGION || 'us-west-004',
-  endpoint: process.env.B2_ENDPOINT || `https://s3.us-west-004.backblazeb2.com`,
+  region: process.env.B2_REGION || 'us-east-005',
+  endpoint: formattedEndpoint,
   credentials: {
     accessKeyId: process.env.B2_ACCESS_KEY_ID!,
     secretAccessKey: process.env.B2_SECRET_ACCESS_KEY!,
   },
 });
 
-const BUCKET_NAME = process.env.B2_BUCKET_NAME || 'policypulse-storage';
-const CDN_URL = process.env.CDN_URL || `https://${BUCKET_NAME}.s3.us-west-004.backblazeb2.com`;
+const BUCKET_NAME = process.env.B2_BUCKET_NAME || 'bookguard-vault';
 
 export interface StorageConfig {
   bucket?: string;
   path: string;
   contentType: string;
+  visibility: 'public' | 'private';
   metadata?: Record<string, string>;
   cacheControl?: string;
 }
@@ -33,24 +32,44 @@ export async function uploadFile(
   file: Buffer,
   config: StorageConfig
 ): Promise<{ url: string; key: string }> {
-  const { bucket = BUCKET_NAME, path, contentType, metadata, cacheControl = 'public, max-age=31536000, immutable' } = config;
+  const { 
+    bucket = BUCKET_NAME, 
+    path, 
+    contentType, 
+    visibility,
+    metadata, 
+    cacheControl = 'public, max-age=31536000, immutable' 
+  } = config;
+
+  // We still use prefixes for organization, but everything is now private at the B2 level
+  const finalPath = visibility === 'public' ? `public/${path}` : `private/${path}`;
 
   const command = new PutObjectCommand({
     Bucket: bucket,
-    Key: path,
+    Key: finalPath,
     Body: file,
     ContentType: contentType,
-    ACL: 'public-read',
     CacheControl: cacheControl,
     Metadata: metadata,
   });
 
   await s3Client.send(command);
 
-  // Return CDN URL if configured, otherwise direct B2 URL
-  const url = `${CDN_URL}/${path}`;
+  // We return the KEY, not a public URL, because we'll sign it later
+  return { url: finalPath, key: finalPath };
+}
 
-  return { url, key: path };
+/**
+ * Generate a secure, time-limited Signed URL for a file
+ */
+export async function getPresignedUrl(key: string, expiresInSeconds: number = 3600): Promise<string> {
+  const command = new GetObjectCommand({
+    Bucket: BUCKET_NAME,
+    Key: key,
+  });
+
+  // Generate a URL that expires in the specified time (default 1 hour)
+  return await getSignedUrl(s3Client, command, { expiresIn: expiresInSeconds });
 }
 
 /**
@@ -101,30 +120,28 @@ export function generateStoragePath(
 }
 
 /**
- * Get public URL for a file
- */
-export function getPublicUrl(key: string): string {
-  return `${CDN_URL}/${key}`;
-}
-
-/**
  * Storage presets for common use cases
  */
 export const storagePresets = {
   logo: {
     contentType: 'image/png',
+    visibility: 'public' as const,
     cacheControl: 'public, max-age=31536000, immutable',
   },
   document: {
     contentType: 'application/pdf',
-    cacheControl: 'public, max-age=86400',
+    visibility: 'private' as const,
+    cacheControl: 'private, no-cache',
   },
   certificate: {
     contentType: 'application/pdf',
-    cacheControl: 'public, max-age=2592000',
+    visibility: 'private' as const,
+    cacheControl: 'private, no-cache',
   },
   avatar: {
     contentType: 'image/jpeg',
+    visibility: 'public' as const,
     cacheControl: 'public, max-age=31536000, immutable',
   },
 };
+

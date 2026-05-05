@@ -2,6 +2,7 @@
 
 import { db } from '@/lib/db';
 import { sql } from 'drizzle-orm';
+import { logger } from '@/lib/logger';
 
 /**
  * Security Monitoring Utilities
@@ -235,7 +236,7 @@ export async function runSecurityMonitors(
 
   // Log all alerts
   for (const alert of alerts) {
-    console.warn('SECURITY ALERT:', alert);
+    logger.warn('SECURITY ALERT', alert);
     
     // Store in database
     await storeSecurityAlert(alert, context);
@@ -259,7 +260,7 @@ async function storeSecurityAlert(
       VALUES (${alert.type}, ${alert.severity}, ${context.userId || null}, ${context.agencyId || null}, ${alert.message}, ${JSON.stringify(alert.details)})
     `);
   } catch (error) {
-    console.error('Failed to store security alert:', error);
+    logger.error('Failed to store security alert', error);
   }
 }
 

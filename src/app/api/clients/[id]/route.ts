@@ -6,12 +6,12 @@ import { withApiSecurity } from '@/lib/api-security';
 
 export const GET = withApiSecurity(
   async (request: NextRequest, context) => {
-    const { userId, agencyId } = context;
+    const { userId, agencyId, params } = context;
     if (!agencyId) {
       return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
     }
 
-    const { id: clientId } = await (request as any).params;
+    const { id: clientId } = params;
 
     // Get client details
     const client = await db
@@ -22,6 +22,7 @@ export const GET = withApiSecurity(
         phone: clients.phone,
         address: clients.address,
         industry: clients.industry,
+        subdomain: clients.subdomain,
         portalAccessEnabled: clients.portalAccessEnabled,
         portalInviteSent: clients.portalInviteSent,
         createdAt: clients.createdAt,
@@ -55,12 +56,12 @@ export const GET = withApiSecurity(
 // PUT /api/clients/[id] - Update client
 export const PUT = withApiSecurity(
   async (request: NextRequest, context) => {
-    const { userId, agencyId } = context;
+    const { userId, agencyId, params } = context;
     if (!agencyId) {
       return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
     }
 
-    const { id: clientId } = await (request as any).params;
+    const { id: clientId } = params;
     const updateData = await request.json();
 
     // Verify client belongs to agency
@@ -87,6 +88,7 @@ export const PUT = withApiSecurity(
         phone: updateData.phone,
         address: updateData.address,
         industry: updateData.industry,
+        subdomain: updateData.subdomain,
         updatedAt: new Date(),
       })
       .where(eq(clients.id, clientId))
@@ -97,6 +99,7 @@ export const PUT = withApiSecurity(
         phone: clients.phone,
         address: clients.address,
         industry: clients.industry,
+        subdomain: clients.subdomain,
         updatedAt: clients.updatedAt,
       })
       .then((r: any[]) => r[0]);
@@ -119,12 +122,12 @@ export const PUT = withApiSecurity(
 // DELETE /api/clients/[id] - Delete client
 export const DELETE = withApiSecurity(
   async (request: NextRequest, context) => {
-    const { userId, agencyId } = context;
+    const { userId, agencyId, params } = context;
     if (!agencyId) {
       return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
     }
 
-    const { id: clientId } = await (request as any).params;
+    const { id: clientId } = params;
 
     // Verify client belongs to agency
     const existingClient = await db

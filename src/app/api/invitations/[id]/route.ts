@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@/lib/auth-wrapper';
 import { cancelInvitation, resendInvitation } from '@/lib/team-access';
 import { getUserAgencyId } from '@/actions/data';
+import { logger } from '@/lib/logger';
 
 // DELETE /api/invitations/[id] - Cancel invitation
 export async function DELETE(
@@ -32,7 +33,7 @@ export async function DELETE(
       message: 'Invitation cancelled successfully'
     });
   } catch (error) {
-    console.error('Error cancelling invitation:', error);
+    logger.error('Error cancelling invitation', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -67,7 +68,7 @@ export async function POST(
       newToken: result.newToken
     });
   } catch (error) {
-    console.error('Error resending invitation:', error);
+    logger.error('Error resending invitation', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

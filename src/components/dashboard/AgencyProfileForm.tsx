@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Building2, Globe, Phone, Mail, MapPin, Clock, Check, AlertCircle, Lock } from 'lucide-react';
+import { Building2, Globe, Phone, Mail, MapPin, Clock, Check, AlertCircle, Lock, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
 
 interface Agency {
   id: string;
@@ -9,6 +9,7 @@ interface Agency {
   subdomain: string;
   subscriptionTier: string;
   branding: {
+    logoUrl?: string;
     phone?: string;
     email?: string;
     address?: string;
@@ -27,6 +28,7 @@ export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
   const [formData, setFormData] = useState({
     name: agency?.name || '',
     subdomain: agency?.subdomain || '',
+    logoUrl: agency?.branding?.logoUrl || '',
     phone: agency?.branding?.phone || '',
     email: agency?.branding?.email || '',
     address: agency?.branding?.address || '',
@@ -34,8 +36,64 @@ export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
     description: agency?.branding?.description || '',
   });
 
+  const [logoPreview, setLogoPreview] = useState<string | null>(agency?.branding?.logoUrl || null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement> | React.DragEvent) => {
+    e.preventDefault();
+    let file: File | null = null;
+    
+    if ('files' in e.target && e.target.files) {
+      file = e.target.files[0];
+    } else if ('dataTransfer' in e && e.dataTransfer.files) {
+      file = e.dataTransfer.files[0];
+    }
+
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setMessage({ type: 'error', text: 'Please upload an image file (PNG, JPG, etc.)' });
+        return;
+      }
+
+      setIsUploadingLogo(true);
+      setMessage(null);
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('agencyId', agency?.id || '');
+
+        const res = await fetch('/api/upload/logo', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to upload logo');
+        }
+
+        setLogoPreview(data.url); // Temporary signed URL for preview
+        setFormData(prev => ({ ...prev, logoUrl: data.key })); // Permanent key for database storage
+      } catch (error: any) {
+        console.error('Logo upload error:', error);
+        setMessage({ type: 'error', text: error.message || 'Failed to upload logo' });
+      } finally {
+        setIsUploadingLogo(false);
+      }
+    }
+    setIsDragging(false);
+  };
+
+  const removeLogo = () => {
+    setLogoPreview(null);
+    setFormData(prev => ({ ...prev, logoUrl: '' }));
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -51,6 +109,7 @@ export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isUploadingLogo) return;
     setIsSubmitting(true);
     setMessage(null);
 
@@ -81,16 +140,16 @@ export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
   };
 
   const getSubdomainPreview = () => {
-    if (!formData.subdomain) return 'your-subdomain.bookguard.tech';
-    return `${formData.subdomain}.bookguard.tech`;
+    if (!formData.subdomain) return 'your-subdomain.retainvault.com';
+    return `${formData.subdomain}.retainvault.com`;
   };
 
   return (
     <div className="bg-surface rounded-[32px] border border-black/5 shadow-sm overflow-hidden font-body">
-      <div className="px-6 py-5 border-b border-black/5 bg-slate-50/50">
+      <div className="px-6 py-5 border-b border-black/5 bg-background">
         <h2 className="text-lg font-black text-on-surface italic font-headline flex items-center gap-2 tracking-tight">
-          <Building2 className="w-5 h-5 text-primary" />
-          Agency Identity Protocol
+          <Building2 className="w-5 h-5 text-secondary" />
+          Agency Profile
         </h2>
       </div>
 
@@ -111,6 +170,84 @@ export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
           </div>
         )}
 
+        {/* Agency Logo Upload */}
+        <div className="space-y-4">
+          <label className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block">
+            Agency Logo
+          </label>
+          
+          <div 
+            className={`relative group transition-all duration-300 ${
+              isDragging ? 'scale-[1.02]' : ''
+            }`}
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleLogoChange}
+          >
+            <div className={`flex flex-col md:flex-row items-center gap-8 p-8 rounded-[24px] border-2 border-dashed transition-all ${
+              isDragging 
+                ? 'border-secondary bg-secondary/5' 
+                : logoPreview 
+                  ? 'border-black/5 bg-background' 
+                  : 'border-black/10 bg-background hover:border-secondary/30 hover:bg-white hover:shadow-inner'
+            }`}>
+              {/* Preview Circle */}
+              <div className="relative shrink-0">
+                <div className={`w-32 h-32 rounded-full bg-white border border-black/5 shadow-sm overflow-hidden flex items-center justify-center group-hover:shadow-md transition-all ${isUploadingLogo ? 'opacity-50' : ''}`}>
+                  {isUploadingLogo ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-6 h-6 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : logoPreview ? (
+                    <img src={logoPreview} alt="Agency Logo" className="w-full h-full object-contain p-4" />
+                  ) : (
+                    <ImageIcon className="w-10 h-10 text-on-surface/10" />
+                  )}
+                </div>
+                {logoPreview && !isUploadingLogo && (
+                  <button
+                    type="button"
+                    onClick={removeLogo}
+                    className="absolute -top-2 -right-2 w-8 h-8 bg-white text-red-500 rounded-full shadow-lg border border-red-50/50 flex items-center justify-center hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Upload Controls */}
+              <div className="flex-1 text-center md:text-left space-y-2">
+                <p className="text-sm font-black text-on-surface uppercase tracking-tight italic">
+                  {isUploadingLogo ? "Uploading..." : logoPreview ? "Update Agency Logo" : "Upload Agency Logo"}
+                </p>
+                <p className="text-xs text-on-surface/50 font-medium italic mb-4 max-w-sm">
+                  Recommended: 400x400px. PNG or SVG with a transparent background for best results on the portal.
+                </p>
+                
+                <div className="flex flex-wrap justify-center md:justify-start gap-3">
+                  <button
+                    type="button"
+                    disabled={isUploadingLogo}
+                    onClick={() => document.getElementById('logo-upload')?.click()}
+                    className="px-6 py-2.5 bg-white border border-black/10 text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-black/5 transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    {isUploadingLogo ? "Processing..." : "Select File"}
+                  </button>
+                  <input
+                    id="logo-upload"
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleLogoChange}
+                    disabled={isUploadingLogo}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Basic Info */}
         <div className="grid md:grid-cols-2 gap-8">
           <div>
@@ -122,7 +259,7 @@ export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className="w-full px-4 py-3 bg-slate-50/50 border border-black/10 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
+              className="w-full px-4 py-3 bg-background border border-black/10 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
               placeholder="Your Agency Name"
               required
             />
@@ -130,7 +267,7 @@ export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
 
           <div className="relative">
             <label className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block mb-2">
-              Exclusive Deployment Subdomain *
+              Client Portal Subdomain *
             </label>
             <div className="relative">
               <input
@@ -141,7 +278,7 @@ export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
                 className={`w-full px-4 py-3 border border-black/10 rounded-xl transition-all font-bold text-sm ${
                   !isEnterprise 
                     ? 'bg-slate-100 text-on-surface/20 cursor-not-allowed' 
-                    : 'bg-slate-50/50 text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20'
+                    : 'bg-background text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20'
                 }`}
                 placeholder="your-agency"
                 required
@@ -150,12 +287,12 @@ export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
                 disabled={!isEnterprise}
               />
               <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-on-surface/20 uppercase tracking-widest italic">
-                .bookguard.tech
+                .retainvault.com
               </div>
             </div>
             {formData.subdomain && (
               <p className="text-[10px] font-bold text-on-surface/40 uppercase tracking-widest mt-2 italic">
-                Deployment: {getSubdomainPreview()}
+                Your Portal: {getSubdomainPreview()}
               </p>
             )}
 
@@ -166,12 +303,12 @@ export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
                   <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-black/5">
                     <Lock className="w-5 h-5 text-on-surface/20" />
                   </div>
-                  <p className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest mb-3">Enterprise Exclusive Protocol</p>
+                  <p className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest mb-3">Enterprise Feature</p>
                   <a 
                     href="/pricing" 
                     className="inline-flex items-center gap-2 px-6 py-2 bg-secondary text-white text-[10px] font-black uppercase tracking-widest rounded-full hover:shadow-lg transition-all"
                   >
-                    Authorize Expansion
+                    Upgrade to Enterprise
                   </a>
                 </div>
               </div>
@@ -188,9 +325,9 @@ export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
                 <Globe className="w-6 h-6" />
               </div>
               <div className="flex-1">
-                <h3 className="text-sm font-black text-on-surface uppercase tracking-[0.1em] mb-2">Agency Command Portal</h3>
+                <h3 className="text-sm font-black text-on-surface uppercase tracking-[0.1em] mb-2">Client Portal Branding</h3>
                 <p className="text-sm text-on-surface/60 font-medium leading-relaxed mb-6 italic">
-                  Provision a dedicated, branded gateway for your premium insureds. Project authority with exclusive subdomains and carrier-grade identity protection.
+                  Set up a dedicated, branded gateway for your clients. Enhance your agency's professional image with a custom subdomain and personalized branding.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   <div className="flex items-center gap-2">
@@ -199,11 +336,11 @@ export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
                   </div>
                   <div className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-secondary" />
-                    <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Seal Branding</span>
+                    <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Logo Branding</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-secondary" />
-                    <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Secure Auth</span>
+                    <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Secure Login</span>
                   </div>
                 </div>
                 <div className="pt-6 border-t border-black/5">
@@ -211,7 +348,7 @@ export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
                     href="/pricing" 
                     className="inline-flex items-center gap-2 px-8 py-3 bg-secondary text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-full hover:shadow-xl transition-all"
                   >
-                    Authorize Enterprise Deployment — $499/cycle
+                    Upgrade to Enterprise — $499/mo
                   </a>
                 </div>
               </div>
@@ -222,23 +359,23 @@ export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
         {/* Description */}
         <div>
           <label className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block mb-2">
-            Agency Value Proposition
+            Agency Description
           </label>
           <textarea
             name="description"
             value={formData.description}
             onChange={handleChange}
             rows={3}
-            className="w-full px-4 py-3 bg-slate-50/50 border border-black/10 rounded-xl text-sm font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all resize-none italic"
-            placeholder="Define your unique market authority and service level commitments..."
+            className="w-full px-4 py-3 bg-background border border-black/10 rounded-xl text-sm font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all resize-none italic"
+            placeholder="Describe your agency and the services you provide to your clients..."
           />
         </div>
 
         {/* Contact Information */}
         <div className="space-y-6 pt-4 border-t border-black/5">
           <h3 className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] flex items-center gap-2">
-            <Phone className="w-4 h-4 text-primary" />
-            Command Contact Protocols
+            <Phone className="w-4 h-4 text-secondary" />
+            Agency Contact Information
           </h3>
 
           <div className="grid md:grid-cols-2 gap-8">
@@ -251,21 +388,21 @@ export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                className="w-full px-4 py-3 bg-slate-50/50 border border-black/10 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
+                className="w-full px-4 py-3 bg-background border border-black/10 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
                 placeholder="(555) 123-4567"
               />
             </div>
 
             <div>
               <label className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block mb-2">
-                Official Intelligence Email
+                Contact Email
               </label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-4 py-3 bg-slate-50/50 border border-black/10 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
+                className="w-full px-4 py-3 bg-background border border-black/10 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
                 placeholder="contact@agency.com"
               />
             </div>
@@ -273,29 +410,29 @@ export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
 
           <div>
             <label className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block mb-2">
-              Physical Headquarters
+              Office Address
             </label>
             <input
               type="text"
               name="address"
               value={formData.address}
               onChange={handleChange}
-              className="w-full px-4 py-3 bg-slate-50/50 border border-black/10 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
-              placeholder="123 Command Way, Metropolitan District"
+              className="w-full px-4 py-3 bg-background border border-black/10 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
+              placeholder="123 Main St, Anytown, USA"
             />
           </div>
 
           <div>
             <label className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block mb-2">
-              Operational Window (Business Hours)
+              Business Hours
             </label>
             <input
               type="text"
               name="businessHours"
               value={formData.businessHours}
               onChange={handleChange}
-              className="w-full px-4 py-3 bg-slate-50/50 border border-black/10 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
-              placeholder="Mon-Fri 0900-1700, Sat 1000-1400"
+              className="w-full px-4 py-3 bg-background border border-black/10 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
+              placeholder="Mon-Fri 9am-5pm"
             />
           </div>
         </div>
@@ -305,9 +442,9 @@ export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-10 py-4 bg-primary text-white font-black text-xs uppercase tracking-[0.2em] rounded-full hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-10 py-4 bg-secondary text-white font-black text-xs uppercase tracking-[0.2em] rounded-full hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? 'Syncing...' : 'Commit Profile Updates'}
+            {isSubmitting ? 'Saving...' : 'Save Profile'}
           </button>
           
           <button
@@ -315,7 +452,7 @@ export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
             onClick={() => window.history.back()}
             className="px-10 py-4 border border-black/10 text-on-surface/60 font-black text-xs uppercase tracking-widest rounded-full hover:bg-black/5 transition-all"
           >
-            Abort Changes
+            Cancel
           </button>
         </div>
       </form>

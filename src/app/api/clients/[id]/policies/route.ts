@@ -4,24 +4,12 @@ import { db } from '@/lib/db';
 import { policies, clients } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { getUserAgencyId } from '@/actions/data';
+import { logger } from '@/lib/logger';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { userId } = await getAuth();
-    
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const agencyId = await getUserAgencyId(userId);
-    if (!agencyId) {
-      return NextResponse.json({ error: 'Agency not found' }, { status: 404 });
-    }
-
-    const { id: clientId } = await params;
+export const GET = withApiSecurity(
+  async (request: NextRequest, context) => {
+    const { agencyId, params } = context;
+    const { id: clientId } = params;
 
     // Verify client belongs to agency
     const client = await db
@@ -67,8 +55,11 @@ export async function GET(
       success: true,
       policies: clientPolicies,
     });
-  } catch (error) {
-    console.error('Error fetching client policies:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  },
+  {
+    requireAuth: true,
+    requireAgency: true,
+    rateLimit: 'api',
+    auditAction: 'client.policies.view',
   }
-}
+);

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { policies, clients } from '@/db/schema';
 import { getAuth } from '@/lib/auth-wrapper';
+import { logger } from '@/lib/logger';
 
 // Sample data for seeding
 const SAMPLE_CLIENTS = [
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
       policiesCreated: policiesData.length,
     });
   } catch (error) {
-    console.error('Seed sample data error:', error);
+    logger.error('Seed sample data error', error);
     return NextResponse.json({ error: 'Failed to seed sample data' }, { status: 500 });
   }
 }

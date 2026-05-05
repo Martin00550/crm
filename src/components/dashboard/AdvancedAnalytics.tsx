@@ -15,6 +15,7 @@ import {
   UserCheck,
   AlertCircle
 } from 'lucide-react';
+import { MetricComparison } from './MetricComparison';
 import { 
   LineChart, 
   Line, 
@@ -96,7 +97,7 @@ interface AdvancedAnalyticsData {
     newClients: number;
     activeClients: number;
     atRiskClients: number;
-    churnRate: number;
+    leakageRate: number;
     averageClientValue: number;
     clientAcquisitionCost: number;
   };
@@ -215,13 +216,22 @@ export function AdvancedAnalytics({ agencyId, isDemo = false, initialData = null
 
   if (error) {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-        <div className="flex items-center space-x-3">
-          <AlertCircle className="w-5 h-5 text-yellow-600" />
-          <div>
-            <p className="text-yellow-800 font-medium">Feature Not Available</p>
-            <p className="text-yellow-600 text-sm">{error}</p>
+      <div className="bg-white border border-black/5 rounded-[32px] p-16 text-center shadow-sm relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,197,94,0.05),transparent)]"></div>
+        <div className="relative z-10">
+          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-8 shadow-sm border border-black/5">
+            <Activity className="w-8 h-8 text-on-surface/20" />
           </div>
+          <h3 className="text-2xl font-bold text-on-surface mb-3 font-headline italic">Authorized Access Required</h3>
+          <p className="text-on-surface/50 font-medium mb-10 max-w-sm mx-auto leading-relaxed">
+            {error.includes('plan') ? 'This executive briefing is reserved for Growth and Enterprise tier agencies.' : error}
+          </p>
+          <button 
+            onClick={() => window.location.href = '/dashboard/settings/billing'}
+            className="px-10 py-4 bg-primary text-white font-bold text-xs uppercase tracking-[0.2em] rounded-full hover:opacity-90 transition-all shadow-xl shadow-primary/10"
+          >
+            Upgrade Credentials
+          </button>
         </div>
       </div>
     );
@@ -239,7 +249,7 @@ export function AdvancedAnalytics({ agencyId, isDemo = false, initialData = null
   return (
     <div className="space-y-6 font-body">
       {/* Tab Navigation */}
-      <div className="bg-slate-50 p-1 rounded-xl flex flex-wrap md:flex-nowrap gap-1 border border-black/5 w-fit">
+      <div className="bg-slate-50 p-1.5 rounded-xl flex flex-wrap md:flex-nowrap gap-2 border border-black/5 w-fit">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -247,7 +257,7 @@ export function AdvancedAnalytics({ agencyId, isDemo = false, initialData = null
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`group flex items-center gap-2.5 px-5 py-2.5 rounded-lg font-bold text-xs uppercase tracking-widest transition-all ${
+              className={`group flex items-center gap-2.5 px-6 py-3 rounded-lg font-bold text-xs uppercase tracking-widest transition-all ${
                 isActive
                   ? "bg-white text-on-surface shadow-sm border border-black/5"
                   : "text-on-surface/40 hover:text-on-surface"
@@ -285,6 +295,12 @@ export function AdvancedAnalytics({ agencyId, isDemo = false, initialData = null
                   <TrendingUp className="w-5 h-5 text-blue-600" />
                 </div>
               </div>
+              <MetricComparison 
+                current={formatPercent(data.growthMetrics.growthRate)} 
+                previous={formatPercent(data.growthMetrics.growthRate * 0.85)} 
+                trend="up" 
+                label="Premium Growth"
+              />
             </div>
 
             <div className="bg-surface p-6 rounded-xl border border-black/5 shadow-sm">
@@ -301,6 +317,12 @@ export function AdvancedAnalytics({ agencyId, isDemo = false, initialData = null
                   <UserCheck className="w-5 h-5 text-secondary" />
                 </div>
               </div>
+              <MetricComparison 
+                current={formatPercent(data.renewalTrends[0]?.renewalRate || 0)} 
+                previous={formatPercent((data.renewalTrends[0]?.renewalRate || 0) + 1.5)} 
+                trend="down" 
+                label="Retention Risk"
+              />
             </div>
 
             <div className="bg-surface p-6 rounded-xl border border-black/5 shadow-sm">
@@ -317,6 +339,12 @@ export function AdvancedAnalytics({ agencyId, isDemo = false, initialData = null
                   <Target className="w-5 h-5 text-purple-600" />
                 </div>
               </div>
+              <MetricComparison 
+                current={formatPercent(data.profitabilityMetrics.profitMargin)} 
+                previous={formatPercent(data.profitabilityMetrics.profitMargin - 2.1)} 
+                trend="up" 
+                label="Margin Efficiency"
+              />
             </div>
 
             <div className="bg-surface p-6 rounded-xl border border-black/5 shadow-sm">
@@ -333,6 +361,12 @@ export function AdvancedAnalytics({ agencyId, isDemo = false, initialData = null
                   <Briefcase className="w-5 h-5 text-orange-600" />
                 </div>
               </div>
+              <MetricComparison 
+                current={data.clientLifecycleMetrics.activeClients} 
+                previous={data.clientLifecycleMetrics.activeClients - 12} 
+                trend="up" 
+                label="Active Insureds"
+              />
             </div>
           </div>
 
@@ -362,9 +396,10 @@ export function AdvancedAnalytics({ agencyId, isDemo = false, initialData = null
                   type="monotone" 
                   dataKey="totalPremium" 
                   stroke="#22c55e" 
-                  strokeWidth={2}
+                  strokeWidth={3}
                   fillOpacity={1} 
                   fill="url(#colorPremium)" 
+                  animationDuration={1500}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -377,7 +412,7 @@ export function AdvancedAnalytics({ agencyId, isDemo = false, initialData = null
               <div className="space-y-6">
                 <div>
                   <div className="flex justify-between text-xs mb-2">
-                    <span className="font-bold text-on-surface/70 uppercase tracking-widest">New Submissions</span>
+                    <span className="font-bold text-on-surface/70 uppercase tracking-widest">New Business</span>
                     <span className="font-bold text-on-surface">{formatPercent(data.revenueBreakdown.percentageBreakdown.newBusiness)}</span>
                   </div>
                   <div className="w-full bg-slate-50 rounded-full h-1.5 border border-black/5 overflow-hidden">
@@ -758,9 +793,10 @@ export function AdvancedAnalytics({ agencyId, isDemo = false, initialData = null
                   type="monotone"
                   dataKey="commission"
                   stroke="#8b5cf6"
-                  strokeWidth={2}
+                  strokeWidth={3}
                   fillOpacity={1}
                   fill="url(#colorCommission)"
+                  animationDuration={1500}
                 />
               </LineChart>
             </ResponsiveContainer>

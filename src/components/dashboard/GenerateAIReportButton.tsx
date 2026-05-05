@@ -1,6 +1,7 @@
 'use client';
 
 import { Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface GenerateAIReportButtonProps {
   prompt: string;
@@ -18,25 +19,15 @@ export function GenerateAIReportButton({
     window.dispatchEvent(event);
   };
 
-  if (variant === 'secondary') {
-    return (
-      <button
-        onClick={handleClick}
-        className="px-6 py-3 bg-white text-primary font-black text-[10px] uppercase tracking-widest rounded-full hover:shadow-lg transition-all flex items-center gap-2 flex-shrink-0"
-      >
-        <Sparkles className="w-4 h-4" />
-        {label}
-      </button>
-    );
-  }
-
   return (
-    <button
+    <Button
       onClick={handleClick}
-      className="px-6 py-3 bg-primary text-white font-black text-[10px] uppercase tracking-widest rounded-full hover:shadow-lg transition-all flex items-center gap-2"
+      variant={variant === 'secondary' ? 'white' : 'default'}
+      size="sm"
+      leftIcon={<Sparkles className="w-4 h-4" />}
+      className={variant === 'secondary' ? "text-primary flex-shrink-0" : ""}
     >
-      <span className="material-symbols-outlined text-sm">auto_awesome</span>
       {label}
-    </button>
+    </Button>
   );
 }

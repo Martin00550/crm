@@ -11,21 +11,22 @@ const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is required');
 
 interface PortalDashboardProps {
-  params: { subdomain: string };
+  params: Promise<{ subdomain: string }>;
 }
 
 export default async function PortalDashboard({ params }: PortalDashboardProps) {
+  const { subdomain } = await params;
   const token = (await cookies()).get('portal_token')?.value;
 
   if (!token) {
-    redirect(`/portal/${params.subdomain}/login`);
+    redirect(`/portal/${subdomain}/login`);
   }
 
   let decoded: { clientId: string; agencyId: string; email: string; subdomain: string };
   try {
     decoded = verify(token, JWT_SECRET || '') as unknown as typeof decoded;
   } catch {
-    redirect(`/portal/${params.subdomain}/login`);
+    redirect(`/portal/${subdomain}/login`);
   }
 
   // Get agency branding

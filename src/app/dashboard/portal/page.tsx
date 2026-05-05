@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
-import { auth } from '@/lib/better-auth';
+import { withAuth } from "@workos-inc/authkit-nextjs";
 import { getUserAgencyId, getAgency } from '@/actions/data';
 import { isFeatureEnabled } from '@/lib/features';
 import { WhiteLabelPortal } from '@/components/dashboard/WhiteLabelPortal';
@@ -10,11 +10,10 @@ import { ArrowLeft } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 export default async function PortalPage() {
-  const headersList = await headers();
-  const session = await auth.api.getSession({ headers: headersList });
+  const session = await withAuth();
   
   if (!session?.user?.id) {
-    redirect('/sign-in');
+    redirect("/api/auth/login");
   }
 
   const agencyId = await getUserAgencyId(session?.user?.id);
@@ -41,8 +40,8 @@ export default async function PortalPage() {
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
         </Link>
         <div>
-          <h1 className="text-3xl font-black text-on-surface font-headline italic tracking-tight leading-none">Branded Insured Gateway</h1>
-          <p className="text-on-surface/60 mt-2 font-medium italic">Configure your exclusive white-label portal deployment for premium insured servicing</p>
+          <h1 className="text-3xl font-black text-on-surface font-headline italic tracking-tight leading-none">White-Label Portal</h1>
+          <p className="text-on-surface/60 mt-2 font-medium italic">Customize your branded client portal with logo and colors</p>
         </div>
       </div>
 

@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { auth } from "@/lib/better-auth";
+import { withAuth } from "@workos-inc/authkit-nextjs";
 import { Sidebar } from "@/components/dashboard/Sidebar";
+import { MobileNav } from "@/components/dashboard/MobileNav";
 import { TopBar } from "@/components/dashboard/TopBar";
+import { ChatBubbleButton } from "@/components/dashboard/DashboardButtons";
 import { getUserAgencyId, getAgency } from "@/actions/data";
 import { TrialExpiredModal } from "@/components/dashboard/TrialExpiredModal";
 
@@ -11,18 +13,17 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const headersList = await headers();
-  const session = await auth.api.getSession({ headers: headersList });
+  const session = await withAuth();
   
   if (!session?.user) {
-    redirect("/sign-in");
+    redirect("/api/auth/login");
   }
 
   const user = session.user;
   const agencyId = await getUserAgencyId(user.id);
   
   if (!agencyId) {
-    redirect('/pricing'); // Redirect to pricing to select a plan and checkout
+    redirect('/onboarding');
   }
 
   const agency = await getAgency(agencyId);
@@ -39,11 +40,18 @@ export default async function DashboardLayout({
     return (
       <div className="flex min-h-screen bg-slate-50 font-body text-on-surface">
         <div className="w-64 flex-none hidden md:block">
-          <Sidebar />
+          <Sidebar 
+            agencyLogo={agency?.branding?.logoUrl}
+            agencyName={agency?.name}
+          />
         </div>
+        <MobileNav 
+          agencyLogo={agency?.branding?.logoUrl}
+          agencyName={agency?.name}
+        />
         <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
           <TopBar 
-            userName={user.name || user.email?.split("@")[0]}
+            userName={user.email?.split("@")[0]}
             userEmail={user.email}
             agencyId={agencyId || undefined}
             tier={tier}
@@ -64,11 +72,14 @@ export default async function DashboardLayout({
   return (
     <div className="flex min-h-screen bg-slate-50 font-body text-on-surface">
       <div className="w-64 flex-none hidden md:block">
-        <Sidebar />
+        <Sidebar 
+          agencyLogo={agency?.branding?.logoUrl}
+          agencyName={agency?.name}
+        />
       </div>
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         <TopBar 
-          userName={user.name || user.email?.split("@")[0]}
+          userName={user.email?.split("@")[0]}
           userEmail={user.email}
           agencyId={agencyId || undefined}
           tier={tier}
@@ -78,6 +89,11 @@ export default async function DashboardLayout({
             {children}
           </div>
         </main>
+      </div>
+      
+      {/* Global Intelligence Interface */}
+      <div className="fixed bottom-8 right-8 z-50">
+        <ChatBubbleButton />
       </div>
     </div>
   );

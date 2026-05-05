@@ -18,7 +18,7 @@ export default function DemoLayout({ children }: { children: React.ReactNode }) 
           <TopBar 
             isDemo={true} 
             userName="Demo Principal" 
-            userEmail="demo@bookguard.tech" 
+            userEmail="demo@retainvault.tech" 
             agencyId="demo-agency" 
             tier="growth" 
           />

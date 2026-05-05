@@ -3,6 +3,7 @@
 import { db } from '@/lib/db';
 import { auditLogs, securityAlerts } from '@/db/schema';
 import { sql } from 'drizzle-orm';
+import { logger } from '@/lib/logger';
 
 /**
  * Audit logging for security-sensitive operations
@@ -76,7 +77,7 @@ export async function logAuditEvent(entry: AuditLogEntry): Promise<void> {
     await checkSuspiciousActivity(entry);
   } catch (error) {
     // Don't fail the main operation if audit logging fails
-    console.error('Audit logging failed:', error);
+    logger.error('Audit logging failed', error);
   }
 }
 
@@ -97,6 +98,7 @@ async function checkSuspiciousActivity(entry: AuditLogEntry): Promise<void> {
     const failureCount = (recentFailures?.rows[0] as any)?.count || 0;
     
     if (failureCount >= 5) {
+      logger.warn('SECURITY ALERT', { alert: 'Multiple failed actions detected', userId: entry.userId, count: failureCount });
       await logSecurityAlert({
         type: 'multiple_failures',
         severity: 'warning',
@@ -158,10 +160,10 @@ export async function logSecurityAlert(alert: {
 
     // Log critical alerts immediately
     if (alert.severity === 'critical') {
-      console.error('SECURITY ALERT:', alert);
+      logger.error('SECURITY ALERT', alert);
     }
   } catch (error) {
-    console.error('Security alert logging failed:', error);
+    logger.error('Security alert logging failed', error);
   }
 }
 

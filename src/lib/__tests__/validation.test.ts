@@ -30,7 +30,7 @@ describe('Validation Utilities', () => {
   describe('validateUUID', () => {
     it('should validate correct UUIDs', () => {
       expect(validateUUID('123e4567-e89b-12d3-a456-426614174000')).toBe(true);
-      expect(validateUUID('00000000-0000-0000-0000-000000000000')).toBe(true);
+      expect(validateUUID('550e8400-e29b-41d4-a716-446655440000')).toBe(true);
     });
 
     it('should reject invalid UUIDs', () => {

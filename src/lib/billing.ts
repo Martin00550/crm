@@ -53,32 +53,36 @@ export async function recordPayment(data: {
 }) {
   if (!db) throw new Error('Database not connected');
 
-  const [payment] = await db
-    .insert(payments)
-    .values({
-      agencyId: data.agencyId,
-      invoiceId: data.invoiceId,
-      paddleTransactionId: data.paddleTransactionId,
-      amount: String(data.amount),
-      currency: data.currency || 'USD',
-      paymentMethod: data.paymentMethod,
-      paidAt: data.paidAt || new Date(),
-      status: 'completed',
-      metadata: data.metadata || {},
-    })
-    .returning();
-
-  // If invoice is provided, mark it as paid
-  if (data.invoiceId) {
-    await db
-      .update(invoices)
-      .set({
-        status: 'paid',
+  const payment = await db.transaction(async (tx) => {
+    const [newPayment] = await tx
+      .insert(payments)
+      .values({
+        agencyId: data.agencyId,
+        invoiceId: data.invoiceId,
+        paddleTransactionId: data.paddleTransactionId,
+        amount: String(data.amount),
+        currency: data.currency || 'USD',
+        paymentMethod: data.paymentMethod,
         paidAt: data.paidAt || new Date(),
-        updatedAt: new Date(),
+        status: 'completed',
+        metadata: data.metadata || {},
       })
-      .where(eq(invoices.id, data.invoiceId));
-  }
+      .returning();
+
+    // If invoice is provided, mark it as paid
+    if (data.invoiceId) {
+      await tx
+        .update(invoices)
+        .set({
+          status: 'paid',
+          paidAt: data.paidAt || new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(invoices.id, data.invoiceId));
+    }
+
+    return newPayment;
+  });
 
   return payment;
 }

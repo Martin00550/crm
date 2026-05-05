@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
-import { commissions, users } from '@/db/schema';
-import { eq, and, gte } from 'drizzle-orm';
+import { commissions, users, agencies } from '@/db/schema';
+import { eq, and, gte, lte } from 'drizzle-orm';
+import { logger } from '@/lib/logger';
 import { createCommissionPaymentNotification } from '@/lib/notifications';
 
 export async function checkCommissionNotifications() {
@@ -50,7 +51,7 @@ export async function checkCommissionNotifications() {
 
 
     if (!isNotificationEnabled(settings, 'commissionAlerts')) {
-      console.log(`Commission alerts disabled for agency ${agentData.agencyId}`);
+      logger.info('Commission alerts disabled for agency', { agencyId: agentData.agencyId });
       continue;
     }
 
@@ -66,8 +67,8 @@ export async function checkCommissionNotifications() {
 export async function runCommissionCheck() {
   try {
     await checkCommissionNotifications();
-    console.log('Commission notifications check completed');
+    logger.info('Commission notifications check completed');
   } catch (error) {
-    console.error('Error checking commission notifications:', error);
+    logger.error('Error checking commission notifications', error);
   }
 }

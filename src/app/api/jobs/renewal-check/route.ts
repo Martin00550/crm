@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runRenewalCheck } from '@/lib/renewal-monitor';
+import { logger } from '@/lib/logger';
 
 // POST /api/jobs/renewal-check - Run renewal notification check
 export async function POST(request: NextRequest) {
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
       message: 'Renewal check completed successfully',
     });
   } catch (error) {
-    console.error('Error running renewal check:', error);
+    logger.error('Error running renewal check', error);
     return NextResponse.json({ 
       error: 'Internal server error' 
     }, { status: 500 });

@@ -44,10 +44,7 @@ export type Permission =
   | 'run_risk_reports'
   // Portal
   | 'manage_client_portal'
-  // Email Campaigns
-  | 'view_email_campaigns'
-  | 'create_email_campaigns'
-  | 'send_email_campaigns';
+  | 'manage_client_portal';
 
 // Comprehensive permission matrix
 const PERMISSION_MATRIX: Record<UserRole, Permission[]> = {
@@ -72,8 +69,6 @@ const PERMISSION_MATRIX: Record<UserRole, Permission[]> = {
     'view_risk_analysis', 'run_risk_reports',
     // Portal
     'manage_client_portal',
-    // Email Campaigns
-    'view_email_campaigns', 'create_email_campaigns', 'send_email_campaigns',
   ],
   admin: [
     // Dashboard
@@ -92,10 +87,7 @@ const PERMISSION_MATRIX: Record<UserRole, Permission[]> = {
     'view_billing',
     // Settings
     'view_settings', 'edit_agency_profile',
-    // Risk
     'view_risk_analysis', 'run_risk_reports',
-    // Email Campaigns
-    'view_email_campaigns', 'create_email_campaigns', 'send_email_campaigns',
   ],
   csr: [
     // Dashboard
@@ -122,8 +114,6 @@ const PERMISSION_MATRIX: Record<UserRole, Permission[]> = {
     'view_renewals', 'manage_renewals', 'send_renewal_notifications',
     // Documents
     'view_documents', 'upload_documents',
-    // Email Campaigns
-    'view_email_campaigns',
   ],
 };
 
@@ -197,9 +187,5 @@ export const PERMISSION_GROUPS = {
   portal: {
     name: 'Client Portal',
     permissions: ['manage_client_portal'] as Permission[],
-  },
-  email_campaigns: {
-    name: 'Email Campaigns',
-    permissions: ['view_email_campaigns', 'create_email_campaigns', 'send_email_campaigns'] as Permission[],
   },
 };

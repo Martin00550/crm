@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { getAdvancedAnalytics } from '@/lib/advanced-analytics';
 import { isFeatureEnabled, SubscriptionTier } from '@/lib/features';
 import { getUserAgencyId } from '@/actions/data';
+import { logger } from '@/lib/logger';
 
 // GET /api/analytics/advanced - Get advanced analytics data
 export async function GET(request: NextRequest) {
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
       lastUpdated: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Error fetching advanced analytics:', error);
+    logger.error('Error fetching advanced analytics', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

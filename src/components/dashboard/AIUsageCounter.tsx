@@ -37,7 +37,7 @@ export function AIUsageCounter({ agencyId, tier }: AIUsageCounterProps) {
     return (
       <div className="flex items-center gap-2 px-4 py-2 bg-secondary/5 border border-secondary/10 rounded-xl shadow-sm">
         <Sparkles className="w-4 h-4 text-secondary" style={{ fontVariationSettings: "'FILL' 1" }} />
-        <span className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">Unlimited Forensic Intelligence</span>
+        <span className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">Unlimited AI Analysis</span>
       </div>
     );
   }
@@ -72,7 +72,7 @@ export function AIUsageCounter({ agencyId, tier }: AIUsageCounterProps) {
           }`}>
             {usage.current}/{usage.limit}
           </span>
-          <span className="text-[10px] font-black text-on-surface/20 uppercase tracking-widest">Forensic Credits</span>
+          <span className="text-[10px] font-black text-on-surface/20 uppercase tracking-widest">Analysis Credits</span>
         </div>
       </div>
 

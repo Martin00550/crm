@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { logger } from '@/lib/logger';
 
 export interface TeamInvitation {
   id: string;
@@ -51,15 +52,15 @@ export async function sendEmailWithRetry(
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       await resend.emails.send({
-        from: 'PolicyPulse <noreply@policypulse.app>',
+        from: 'RetainVault <noreply@retainvault.com>',
         to,
         subject,
         html,
       });
       return { success: true };
-    } catch (error: any) {
+    } catch (error) {
       lastError = error;
-      console.error(`Email send attempt ${attempt}/${maxRetries} failed:`, error.message);
+      logger.error('Email send attempt failed', { attempt, maxRetries, error: error instanceof Error ? error.message : 'Unknown error' });
       // Wait before retry (exponential backoff)
       if (attempt < maxRetries) {
         await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
@@ -83,7 +84,7 @@ export async function sendRenewalEmail(
   daysUntilRenewal: number
 ) {
   if (!client.email) {
-    console.log('No email address for client:', client.name);
+    logger.info('No email address for client', { clientName: client.name });
     return { success: false, error: 'No email' };
   }
 
@@ -104,7 +105,7 @@ export async function sendRenewalEmail(
     <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
       <tr>
         <td align="center">
-          <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">PolicyPulse</h1>
+          <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">RetainVault</h1>
           <p style="color: #8192a7; margin: 10px 0 0; font-size: 13px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase;">Insurance Renewal Management</p>
         </td>
       </tr>
@@ -172,7 +173,7 @@ export async function sendRenewalEmail(
     <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin: 32px 0;">
       <tr>
         <td align="center">
-          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://policypulse.app'}/renewals/${policy.id}" 
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://retainvault.com'}/renewals/${policy.id}" 
              style="display: inline-block; background: linear-gradient(135deg, #006c49 0%, #008059 100%); color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 15px; box-shadow: 0 4px 12px rgba(0,108,73,0.3);">
             Review Your Renewal →
           </a>
@@ -190,7 +191,7 @@ export async function sendRenewalEmail(
           <td align="center">
             <p style="margin: 0 0 4px; font-size: 13px; color: #191c1e; font-weight: 600;">Your Insurance Team</p>
             <p style="margin: 0; font-size: 12px; color: #74777d;">
-              \u00A9 ${new Date().getFullYear()} PolicyPulse Insurance Technologies. All rights reserved.
+              \u00A9 ${new Date().getFullYear()} RetainVault Insurance Technologies. All rights reserved.
             </p>
           </td>
         </tr>
@@ -208,7 +209,7 @@ export async function sendRenewalEmail(
     }
     return { success: false, error: result.error };
   } catch (error) {
-    console.error('Resend email error:', error);
+    logger.error('Resend email error', error);
     return { success: false, error };
   }
 }
@@ -232,7 +233,7 @@ export async function sendRateExplainerEmail(
 </head>
 <body style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #191c1e; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="background: #041627; padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-      <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 800;">PolicyPulse</h1>
+      <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 800;">RetainVault</h1>
       <p style="color: #8192a7; margin: 8px 0 0; font-size: 14px;">AI-Powered Rate Analysis</p>
     </div>
     
@@ -251,7 +252,7 @@ export async function sendRateExplainerEmail(
       </p>
       
       <div style="text-align: center; margin: 30px 0;">
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://policypulse.app'}/policies/${policy.id}"
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://retainvault.com'}/policies/${policy.id}"
            style="display: inline-block; background: #006c49; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px;">
           View Full Policy Details
         </a>
@@ -259,7 +260,7 @@ export async function sendRateExplainerEmail(
 
       <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e3e5; text-align: center;">
         <p style="margin: 0; font-size: 12px; color: #74777d;">
-          \u00A9 ${new Date().getFullYear()} PolicyPulse Insurance Technologies. All rights reserved.
+          \u00A9 ${new Date().getFullYear()} RetainVault Insurance Technologies. All rights reserved.
         </p>
       </div>
     </div>
@@ -270,7 +271,7 @@ export async function sendRateExplainerEmail(
   try {
     const result = await sendEmailWithRetry(
       client.email,
-      `Your ${policy.policyType} Rate Explanation - PolicyPulse AI Analysis`,
+      `Your ${policy.policyType} Rate Explanation - RetainVault AI Analysis`,
       html
     );
     if (result.success) {
@@ -278,7 +279,7 @@ export async function sendRateExplainerEmail(
     }
     return { success: false, error: result.error };
   } catch (error) {
-    console.error('Resend email error:', error);
+    logger.error('Resend email error', error);
     return { success: false, error };
   }
 }
@@ -293,7 +294,7 @@ export async function sendTeamInvitationEmail(
     producer: 'Sales Producer',
   };
 
-  const acceptUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://policypulse.app'}/invite/${invitation.token}`;
+  const acceptUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://retainvault.com'}/invite/${invitation.token}`;
   const expiresInDays = Math.ceil((new Date(invitation.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
   const html = `
@@ -309,7 +310,7 @@ export async function sendTeamInvitationEmail(
     <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
       <tr>
         <td align="center">
-          <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">PolicyPulse</h1>
+          <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">RetainVault</h1>
           <p style="color: #8192a7; margin: 10px 0 0; font-size: 13px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase;">Team Invitation</p>
         </td>
       </tr>
@@ -322,7 +323,7 @@ export async function sendTeamInvitationEmail(
     </p>
     
     <p style="margin: 0 0 24px; font-size: 16px; color: #44474c;">
-      You've been invited to join <strong style="color: #191c1e;">${invitation.agencyName}</strong> on PolicyPulse as a <strong style="color: #006c49;">${roleLabels[invitation.role] || invitation.role}</strong>.
+      You've been invited to join <strong style="color: #191c1e;">${invitation.agencyName}</strong> on RetainVault as a <strong style="color: #006c49;">${roleLabels[invitation.role] || invitation.role}</strong>.
     </p>
     
     <div style="background: linear-gradient(135deg, #f7f9fb 0%, #ffffff 100%); padding: 24px; border-radius: 16px; margin: 28px 0; border: 1px solid #e8eaed;">
@@ -355,7 +356,7 @@ export async function sendTeamInvitationEmail(
     </div>
     
     <p style="margin: 0 0 24px; font-size: 16px; color: #44474c; line-height: 1.7;">
-      PolicyPulse is a modern insurance agency management platform that helps teams manage clients, policies, and renewals efficiently. As a team member, you'll have access to powerful tools to serve your clients better.
+      RetainVault is a modern insurance agency management platform that helps teams manage clients, policies, and renewals efficiently. As a team member, you'll have access to powerful tools to serve your clients better.
     </p>
     
     <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin: 32px 0;">
@@ -379,7 +380,7 @@ export async function sendTeamInvitationEmail(
           <td align="center">
             <p style="margin: 0 0 4px; font-size: 13px; color: #191c1e; font-weight: 600;">The ${invitation.agencyName} Team</p>
             <p style="margin: 0; font-size: 12px; color: #74777d;">
-              \u00A9 ${new Date().getFullYear()} PolicyPulse Insurance Technologies. All rights reserved.
+              \u00A9 ${new Date().getFullYear()} RetainVault Insurance Technologies. All rights reserved.
             </p>
           </td>
         </tr>
@@ -393,7 +394,7 @@ export async function sendTeamInvitationEmail(
   try {
     const result = await sendEmailWithRetry(
       invitation.email,
-      `You're invited to join ${invitation.agencyName} on PolicyPulse`,
+      `You're invited to join ${invitation.agencyName} on RetainVault`,
       html
     );
     if (result.success) {
@@ -401,7 +402,7 @@ export async function sendTeamInvitationEmail(
     }
     return { success: false, error: result.error };
   } catch (error) {
-    console.error('Resend email error:', error);
+    logger.error('Resend email error', error);
     return { success: false, error };
   }
 }
@@ -476,9 +477,9 @@ export async function sendWeeklyReportEmail(
 
       <!-- Footer -->
       <div style="background: #f6f7f9; padding: 24px 40px; border-top: 1px solid #e5e7eb;">
-        <p style="margin: 0 0 4px; font-size: 13px; color: #191c1e; font-weight: 600;">The PolicyPulse Team</p>
+        <p style="margin: 0 0 4px; font-size: 13px; color: #191c1e; font-weight: 600;">The RetainVault Team</p>
         <p style="margin: 0; font-size: 12px; color: #74777d;">
-          \u00A9 ${new Date().getFullYear()} PolicyPulse Insurance Technologies. All rights reserved.
+          \u00A9 ${new Date().getFullYear()} RetainVault Insurance Technologies. All rights reserved.
         </p>
       </div>
     </div>
@@ -497,8 +498,55 @@ export async function sendWeeklyReportEmail(
       return { success: true };
     }
     return { success: false, error: result.error };
-  } catch (error: any) {
-    console.error('Weekly report email error:', error);
-    return { success: false, error: error?.message || 'Unknown error' };
+  } catch (error) {
+    logger.error('Weekly report email error', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
+}
+
+export async function sendTeamJoinEmail(
+  to: string,
+  data: { memberName: string; role: string }
+): Promise<{ success: boolean; error?: string }> {
+  const html = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h1 style="color: #006c49;">New Team Member Joined</h1>
+      <p>Hello,</p>
+      <p><strong>${data.memberName}</strong> has successfully joined your agency as a <strong>${data.role}</strong>.</p>
+      <p>They now have access to the Command Center and can begin managing clients and policies.</p>
+      <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings/team" style="display: inline-block; background: #006c49; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Manage Team</a>
+    </div>
+  `;
+  return sendEmailWithRetry(to, `New Team Member: ${data.memberName}`, html);
+}
+
+export async function sendCommissionEmail(
+  to: string,
+  data: { amount: number; date: Date }
+): Promise<{ success: boolean; error?: string }> {
+  const html = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h1 style="color: #006c49;">Commission Payment Processed</h1>
+      <p>Hello,</p>
+      <p>Your commission payment of <strong>$${data.amount.toLocaleString()}</strong> has been processed and is scheduled for <strong>${data.date.toLocaleDateString()}</strong>.</p>
+      <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/commissions" style="display: inline-block; background: #006c49; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">View Statement</a>
+    </div>
+  `;
+  return sendEmailWithRetry(to, `Commission Payment Processed - $${data.amount.toLocaleString()}`, html);
+}
+
+export async function sendInsuredReminderEmail(
+  to: string,
+  data: { policyNumber: string; clientName: string; daysOut: number }
+): Promise<{ success: boolean; error?: string }> {
+  const html = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h1 style="color: #006c49;">Policy Renewal Reminder</h1>
+      <p>Dear ${data.clientName},</p>
+      <p>Your policy <strong>${data.policyNumber}</strong> is set to renew in <strong>${data.daysOut} days</strong>.</p>
+      <p>We want to ensure you have continuous coverage without any gaps. If you have any questions or would like to review your options, please reach out.</p>
+      <p>Best regards,<br>Your Insurance Team</p>
+    </div>
+  `;
+  return sendEmailWithRetry(to, `Renewal Reminder: Your policy renews in ${data.daysOut} days`, html);
 }

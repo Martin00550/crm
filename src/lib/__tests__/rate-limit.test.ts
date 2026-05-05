@@ -2,13 +2,21 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { checkRateLimit } from '@/lib/rate-limit';
 
 // Mock database
-vi.mock('@/lib/db', () => ({
-  db: {
-    select: vi.fn(),
-    insert: vi.fn(),
-    delete: vi.fn(),
-  },
-}));
+vi.mock('@/lib/db', () => {
+  const mockDb = {
+    select: vi.fn().mockReturnThis(),
+    from: vi.fn().mockReturnThis(),
+    where: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockResolvedValue([]),
+    insert: vi.fn().mockReturnThis(),
+    values: vi.fn().mockReturnThis(),
+    onConflictDoUpdate: vi.fn().mockResolvedValue({}),
+    delete: vi.fn().mockReturnThis(),
+    update: vi.fn().mockReturnThis(),
+    set: vi.fn().mockReturnThis(),
+  };
+  return { db: mockDb };
+});
 
 describe('Rate Limiting', () => {
   beforeEach(() => {

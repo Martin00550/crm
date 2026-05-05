@@ -2,17 +2,20 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { useSession } from "@/lib/auth-client";
+import { useWorkOSClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
-import { SignInModal } from "@/components/ui/SignInModal";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, BarChart3, Lock, ShieldCheck } from "lucide-react";
 
 export default function HomePage() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isSignInOpen, setIsSignInOpen] = useState(false);
-  const sessionData = useSession();
-  const session = sessionData?.data;
-  const isPending = sessionData?.isPending ?? true;
+
+  const handleStartTrial = (tier: string = 'solo') => {
+    document.cookie = `selected_tier=${tier}; path=/; max-age=3600`;
+    window.location.href = '/api/auth/signup';
+  };
+  const { isAuthenticated, isLoading, user } = useWorkOSClient();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,22 +37,31 @@ export default function HomePage() {
       )}>
         <div className="flex justify-between items-center px-8 w-full max-w-7xl mx-auto">
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-black tracking-tight text-primary font-headline italic">BookGuard</span>
+            <span className="text-2xl font-black tracking-tight text-primary font-headline italic">RetainVault</span>
           </div>
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-8 font-body">
             <Link href="/pricing" className="text-on-surface/70 hover:text-on-surface transition-colors text-sm font-medium">Pricing</Link>
-            {session?.user ? (
-              <Link href="/dashboard" className="px-6 py-3 bg-secondary text-white font-bold rounded-full text-sm hover:opacity-90 transition-all">
-                Go to Dashboard
-              </Link>
+            {isAuthenticated ? (
+              <Button asChild variant="secondary" size="sm">
+                <Link href="/dashboard">
+                  Access Command Center
+                </Link>
+              </Button>
             ) : (
               <>
-                <button onClick={() => setIsSignInOpen(true)} className="text-on-surface/70 hover:text-on-surface transition-colors text-sm font-medium">Login</button>
-                <Link href="/demo" className="px-6 py-3 bg-black text-white font-bold rounded-full text-sm hover:opacity-90 transition-all">
-                  Try Demo
+                <Link 
+                  href="/api/auth/login"
+                  className="text-on-surface/70 hover:text-on-surface transition-colors text-sm font-medium"
+                >
+                  Login
                 </Link>
+                <Button asChild variant="default" size="sm">
+                  <Link href="/demo">
+                    Try Demo
+                  </Link>
+                </Button>
               </>
             )}
           </div>
@@ -71,13 +83,19 @@ export default function HomePage() {
           <div className="lg:hidden absolute top-full left-0 w-full bg-background/95 backdrop-blur-md border-b border-black/5 shadow-lg">
             <div className="flex flex-col gap-4 p-6 font-body">
               <Link href="/pricing" className="text-on-surface/70 hover:text-on-surface transition-colors text-sm font-medium py-2" onClick={() => setMobileMenuOpen(false)}>Pricing</Link>
-              {session?.user ? (
+              {isAuthenticated ? (
                 <Link href="/dashboard" className="px-6 py-3 bg-secondary text-white font-bold rounded-full text-sm hover:opacity-90 transition-all text-center" onClick={() => setMobileMenuOpen(false)}>
-                  Go to Dashboard
+                  Access Command Center
                 </Link>
               ) : (
                 <>
-                  <button onClick={() => { setIsSignInOpen(true); setMobileMenuOpen(false); }} className="text-on-surface/70 hover:text-on-surface transition-colors text-sm font-medium py-2 text-left">Login</button>
+                  <Link 
+                    href="/api/auth/login"
+                    className="text-on-surface/70 hover:text-on-surface transition-colors text-sm font-medium py-2 text-left"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Login
+                  </Link>
                   <Link href="/demo" className="px-6 py-3 bg-black text-white font-bold rounded-full text-sm hover:opacity-90 transition-all text-center" onClick={() => setMobileMenuOpen(false)}>
                     Try Demo
                   </Link>
@@ -104,16 +122,23 @@ export default function HomePage() {
               Protect Your Book.
             </h1>
             <p className="text-xl text-on-surface/70 max-w-2xl mx-auto mb-10 leading-relaxed font-medium font-body">
-              Legacy systems are built for accounting. BookGuard is built for <span className="text-secondary font-bold underline underline-offset-4">retention.</span> Stop the silent churn with 90-day renewal alerts and AI rate forensic analysis.
+              Legacy systems are built for accounting. RetainVault is built for <span className="text-secondary font-bold underline underline-offset-4">retention.</span> Stop the silent leakage with 90-day renewal alerts and AI rate analysis.
             </p>
-            <div className="flex justify-center gap-4 mb-20 font-body">
-              <Link href="/demo" className="px-10 py-5 bg-black text-white font-bold rounded-full hover:shadow-2xl transition-all text-lg flex items-center gap-2 group">
-                Review My Book
-                <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-              </Link>
-              <button onClick={() => setIsSignInOpen(true)} className="px-10 py-5 bg-white text-black font-bold rounded-full border-2 border-black hover:bg-slate-50 transition-all text-lg">
+            <div className="flex flex-col sm:flex-row justify-center gap-4 mb-20 font-body">
+              <Button asChild variant="default" size="lg" className="group shadow-2xl">
+                <Link href="/demo">
+                  Review My Book
+                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </Button>
+              <Button 
+                onClick={() => handleStartTrial()}
+                variant="outline"
+                size="lg"
+                className="border-black hover:bg-slate-50"
+              >
                 Start 14-Day Trial
-              </button>
+              </Button>
             </div>
 
             {/* Dashboard Mockup */}
@@ -200,10 +225,10 @@ export default function HomePage() {
                 <span className="text-secondary italic">"Bad Guy"</span>
               </h2>
               <p className="text-lg text-on-surface/70 mb-8 font-body leading-relaxed">
-                When rates spike 20%, our AI Rate Forensics analyzes carrier shifts and generates professional 1-pagers to help you explain premium increases to your insureds. Focus on the relationship, let us handle the data.
+                When rates spike 20%, our AI Rate Analysis analyzes carrier shifts and generates professional 1-pagers to help you explain premium increases to your insureds. Focus on the relationship, let us handle the data.
               </p>
               <Link href="/demo" className="text-black font-bold border-b-2 border-black pb-1 hover:border-secondary transition-colors font-body">
-                Generate your first Forensics Report
+                Generate your first Analysis Report
               </Link>
             </div>
             <div className="bg-white rounded-3xl p-8 shadow-xl border border-slate-100 relative overflow-hidden">
@@ -236,10 +261,10 @@ export default function HomePage() {
               </div>
               <h2 className="text-5xl font-bold mb-6 font-headline leading-tight">
                 No more <br />
-                <span className="text-secondary italic">"Silent Churn"</span>
+                <span className="text-secondary italic">"Silent Leakage"</span>
               </h2>
               <p className="text-lg text-on-surface/70 mb-8 font-body leading-relaxed">
-                Legacy systems alert you when a policy has already lapsed. BookGuard identifies renewals 90 days out, giving you the time you need to round out the account or re-shop the coverage.
+                Legacy systems alert you when a policy has already lapsed. RetainVault identifies renewals 90 days out, giving you the time you need to round out the account or re-shop the coverage.
               </p>
             </div>
           </div>
@@ -306,7 +331,7 @@ export default function HomePage() {
                 <span className="material-symbols-outlined text-secondary text-3xl">verified_user</span>
               </div>
               <div>
-                <h3 className="text-2xl font-bold font-headline">The BookGuard Commitment</h3>
+                <h3 className="text-2xl font-bold font-headline">The RetainVault Commitment</h3>
                 <p className="text-on-surface/50 font-body italic text-sm">A note to the Independent Agent</p>
               </div>
             </div>
@@ -316,7 +341,7 @@ export default function HomePage() {
                 We'll be honest: We don't have 5,000 corporate logos to show you. We don't have venture capital funding pushing us to sell your data to carriers.
               </p>
               <p>
-                We built BookGuard because we saw independent agency owners getting squeezed. You're running $5M+ books of business on messy Excel sheets because legacy AMS tools feel like they were built in 1995.
+                We built RetainVault because we saw independent agency owners getting squeezed. You're running $5M+ books of business on messy Excel sheets because legacy AMS tools feel like they were built in 1995.
               </p>
               <p className="font-bold text-on-surface">
                 Our promise is simple: We will never sell your data, we will never charge you for "seats," and if you ever want to leave, we'll export your data and hand it back to you within 24 hours. 
@@ -402,7 +427,7 @@ export default function HomePage() {
                   "The Command Center & Priority Ledger",
                   "90-60-30 Day Automated Renewal Engine",
                   "CSV Import/Export",
-                  "10 AI Rate Forensics Reports / month"
+                  "10 AI Rate Analysis Reports / month"
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-4 text-sm font-bold text-on-surface/70 font-body">
                     <span className="material-symbols-outlined text-secondary text-xl">check_circle</span>
@@ -410,9 +435,14 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-              <Link href="/pricing" className="block w-full py-5 border-2 border-primary bg-slate-50 text-on-surface font-black rounded-full hover:bg-primary hover:text-primary-foreground transition-all text-center font-body">
+              <Button 
+                onClick={() => handleStartTrial('solo')} 
+                variant="outline" 
+                size="lg"
+                className="w-full border-primary text-on-surface hover:bg-primary hover:text-white"
+              >
                 Start 14-Day Free Trial
-              </Link>
+              </Button>
             </div>
 
             {/* Growth Agency */}
@@ -443,15 +473,20 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-              <Link href="/pricing" className="block w-full py-6 bg-black text-white font-black rounded-full hover:shadow-2xl transition-all text-center relative z-10 text-lg font-body">
+              <Button 
+                onClick={() => handleStartTrial('growth')} 
+                variant="default" 
+                size="lg"
+                className="w-full relative z-10"
+              >
                 Start 14-Day Free Trial
-              </Link>
+              </Button>
             </div>
 
             {/* Authority Agency */}
             <div className="bg-white p-12 rounded-[40px] border border-black/5 shadow-sm hover:shadow-xl transition-all flex flex-col h-full">
               <div className="mb-10">
-                <h3 className="text-on-surface font-bold text-2xl mb-3 font-headline italic">Authority Agency</h3>
+                <h3 className="text-on-surface font-bold text-2xl mb-3 font-headline italic">Enterprise</h3>
                 <p className="text-on-surface/50 text-sm font-medium mb-8">Established agencies ready to fully modernize their renewal operations.</p>
                 <div className="flex items-baseline gap-2">
                   <span className="text-5xl font-black text-on-surface tracking-tighter">$499</span>
@@ -465,7 +500,7 @@ export default function HomePage() {
                   "Everything in Growth",
                   "White-Labeled Client Portal",
                   "Unlimited team members (All roles free)",
-                  "Unlimited AI Rate Forensics Reports"
+                  "Unlimited AI Rate Analysis Reports"
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-4 text-sm font-bold text-on-surface/70">
                     <span className="material-symbols-outlined text-secondary text-xl">check_circle</span>
@@ -473,9 +508,14 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-              <Link href="/pricing" className="block w-full py-5 border-2 border-primary text-primary font-black rounded-full hover:bg-primary hover:text-primary-foreground transition-all text-center font-body">
-                Contact for Migration
-              </Link>
+              <Button 
+                onClick={() => handleStartTrial('enterprise')} 
+                variant="outline" 
+                size="lg"
+                className="w-full border-primary text-primary hover:bg-primary hover:text-white"
+              >
+                Start 14-Day Free Trial
+              </Button>
             </div>
           </div>
 
@@ -492,7 +532,7 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto px-8">
           <div className="text-center mb-16">
             <h2 className="text-5xl font-bold mb-6 font-headline">Frequently Asked Questions</h2>
-            <p className="text-lg text-on-surface/60 font-body">Everything you need to know about BookGuard.</p>
+            <p className="text-lg text-on-surface/60 font-body">Everything you need to know about RetainVault.</p>
           </div>
 
           <div className="space-y-6">
@@ -515,7 +555,7 @@ export default function HomePage() {
               },
               {
                 q: "Do I need to install anything?",
-                a: "No. BookGuard is 100% cloud-based. Access from any device with a browser. No software downloads, no IT overhead."
+                a: "No. RetainVault is 100% cloud-based. Access from any device with a browser. No software downloads, no IT overhead."
               },
               {
                 q: "What if I need help?",
@@ -535,7 +575,7 @@ export default function HomePage() {
       <section className="py-24 bg-background border-t border-black/5">
         <div className="max-w-7xl mx-auto px-8">
           <div className="text-center mb-20">
-            <h2 className="text-5xl font-bold mb-6 font-headline">BookGuard vs Traditional AMS</h2>
+            <h2 className="text-5xl font-bold mb-6 font-headline">RetainVault vs Traditional AMS</h2>
             <p className="text-lg text-on-surface/60 font-body">Built for retention, not just accounting.</p>
           </div>
 
@@ -544,7 +584,7 @@ export default function HomePage() {
               <thead className="bg-slate-50">
                 <tr>
                   <th className="text-left p-6 font-headline font-bold text-lg">Feature</th>
-                  <th className="text-center p-6 font-headline font-bold text-lg">BookGuard</th>
+                  <th className="text-center p-6 font-headline font-bold text-lg">RetainVault</th>
                   <th className="text-center p-6 font-headline font-bold text-lg">Traditional AMS</th>
                   <th className="text-center p-6 font-headline font-bold text-lg">Spreadsheets</th>
                 </tr>
@@ -552,7 +592,7 @@ export default function HomePage() {
               <tbody>
                 {[
                   { feature: "90-day renewal automation", bookGuard: "✓", ams: "✗", spreadsheets: "✗" },
-                  { feature: "AI rate forensics", bookGuard: "✓", ams: "✗", spreadsheets: "✗" },
+                  { feature: "AI rate analysis", bookGuard: "✓", ams: "✗", spreadsheets: "✗" },
                   { feature: "Real-time carrier sync", bookGuard: "✓", ams: "Manual", spreadsheets: "✗" },
                   { feature: "Health score tracking", bookGuard: "✓", ams: "✗", spreadsheets: "✗" },
                   { feature: "Mobile app", bookGuard: "✓", ams: "Limited", spreadsheets: "✗" },
@@ -583,15 +623,17 @@ export default function HomePage() {
             Never open <br /> <span className="text-secondary italic">another tab</span>
           </h2>
           <p className="text-xl text-white/60 mb-12 font-body max-w-2xl mx-auto leading-relaxed">
-            Stop switching between carrier portals and spreadsheets. BookGuard brings your entire Book of Business into one unified command center.
+            Stop switching between carrier portals and spreadsheets. RetainVault brings your entire Book of Business into one unified command center.
           </p>
           <div className="flex flex-col items-center gap-6 justify-center">
-            <Link href="/demo" className="px-10 py-4 bg-white text-black font-bold rounded-full hover:opacity-90 transition-all text-lg shadow-xl shadow-white/5 flex items-center gap-2">
-              Review My Book
-              <span className="material-symbols-outlined">analytics</span>
-            </Link>
+            <Button asChild variant="white" size="lg" className="shadow-xl shadow-white/5">
+              <Link href="/demo">
+                Review My Book
+                <BarChart3 className="ml-2 w-5 h-5" />
+              </Link>
+            </Button>
             <div className="flex items-center gap-2 text-white/40 text-sm font-body">
-              <span className="material-symbols-outlined text-xs">lock</span>
+              <Lock className="w-3.5 h-3.5" />
               100% Book Ownership Guarantee — Export Your Data Anytime
             </div>
           </div>
@@ -607,40 +649,40 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-8 border-t border-black/5 pt-12">
           <div className="grid md:grid-cols-4 gap-12 mb-12">
             <div>
-              <span className="text-xl font-black tracking-tight text-primary font-headline italic">BookGuard</span>
+              <span className="text-xl font-black tracking-tight text-primary font-headline italic">RetainVault</span>
               <p className="text-on-surface/50 text-sm mt-4 font-body">Built for the Independent Agent.</p>
-              <p className="text-on-surface/40 text-sm mt-2 font-body">hello@bookguard.tech</p>
+              <p className="text-on-surface/40 text-sm mt-2 font-body">hello@retainvault.com</p>
             </div>
             <div>
               <h4 className="font-bold mb-4 font-headline">Product</h4>
               <div className="space-y-3 font-body">
                 <Link href="/pricing" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Pricing</Link>
                 <Link href="/demo" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Demo</Link>
-                <Link href="#" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Integrations</Link>
-                <Link href="#" className="block text-on-surface/50 hover:text-black text-sm transition-colors">API</Link>
+                <Link href="/features/integrations" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Integrations</Link>
+                <Link href="/api-docs" className="block text-on-surface/50 hover:text-black text-sm transition-colors">API</Link>
               </div>
             </div>
             <div>
               <h4 className="font-bold mb-4 font-headline">Company</h4>
               <div className="space-y-3 font-body">
-                <Link href="#" className="block text-on-surface/50 hover:text-black text-sm transition-colors">About</Link>
-                <Link href="#" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Blog</Link>
-                <Link href="#" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Careers</Link>
-                <Link href="#" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Contact</Link>
+                <Link href="/about" className="block text-on-surface/50 hover:text-black text-sm transition-colors">About</Link>
+                <Link href="/blog" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Blog</Link>
+                <Link href="/careers" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Careers</Link>
+                <Link href="/contact" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Contact</Link>
               </div>
             </div>
             <div>
               <h4 className="font-bold mb-4 font-headline">Legal</h4>
               <div className="space-y-3 font-body">
-                <Link href="#" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Privacy Policy</Link>
-                <Link href="#" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Terms of Service</Link>
-                <Link href="#" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Security</Link>
-                <Link href="#" className="block text-on-surface/50 hover:text-black text-sm transition-colors">GDPR</Link>
+                <Link href="/privacy" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Privacy Policy</Link>
+                <Link href="/terms" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Terms of Service</Link>
+                <Link href="/security" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Security</Link>
+                <Link href="/gdpr" className="block text-on-surface/50 hover:text-black text-sm transition-colors">GDPR</Link>
               </div>
             </div>
           </div>
           <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-black/5">
-            <span className="text-on-surface/30 text-xs font-body">© {new Date().getFullYear()} BookGuard Insurance Technologies. All rights reserved.</span>
+            <span className="text-on-surface/30 text-xs font-body">© {new Date().getFullYear()} RetainVault Insurance Technologies. All rights reserved.</span>
             <div className="flex gap-6 mt-4 md:mt-0">
               <Link href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-on-surface/40 hover:text-black transition-colors text-sm font-medium">Twitter</Link>
               <Link href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-on-surface/40 hover:text-black transition-colors text-sm font-medium">LinkedIn</Link>
@@ -649,12 +691,6 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
-
-      {/* Sign In Modal */}
-      <SignInModal
-        isOpen={isSignInOpen}
-        onClose={() => setIsSignInOpen(false)}
-      />
     </main>
   );
 }

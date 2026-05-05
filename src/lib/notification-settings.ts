@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { notificationSettings } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { logger } from '@/lib/logger';
 
 export interface NotificationSettingsType {
   id: string;
@@ -200,7 +201,7 @@ export async function upsertNotificationSettings(
       };
     }
   } catch (error) {
-    console.error('Error upserting notification settings:', error);
+    logger.error('Error upserting notification settings', error);
     return { success: false, error: 'Failed to save settings' };
   }
 }

@@ -84,7 +84,7 @@ export function BrandingSettings({
   };
 
   const portalUrl = subdomain 
-    ? `https://${subdomain}.bookguard.tech`
+    ? `https://${subdomain}.retainvault.tech`
     : 'Set up your subdomain first';
 
   return (
@@ -93,8 +93,8 @@ export function BrandingSettings({
       <div className="bg-surface rounded-[32px] border border-black/5 shadow-sm p-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-sm font-black text-on-surface uppercase tracking-widest">Portal Deployment Status</h3>
-            <p className="text-xs text-on-surface/40 font-medium italic mt-1">Authorize or decommissioning your white-label gateway</p>
+            <h3 className="text-sm font-black text-on-surface uppercase tracking-widest">Client Portal Status</h3>
+            <p className="text-xs text-on-surface/40 font-medium italic mt-1">Enable or disable your client portal</p>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
             <input
@@ -113,7 +113,7 @@ export function BrandingSettings({
               <span className="material-symbols-outlined text-secondary">check_circle</span>
             </div>
             <div className="flex-1">
-              <div className="text-[10px] font-black text-secondary uppercase tracking-widest">Deployment Active</div>
+              <div className="text-[10px] font-black text-secondary uppercase tracking-widest">Portal Active</div>
               <a 
                 href={portalUrl} 
                 target="_blank" 
@@ -127,15 +127,19 @@ export function BrandingSettings({
               onClick={() => navigator.clipboard.writeText(portalUrl)}
               className="px-4 py-2 text-[10px] font-black text-secondary bg-white border border-secondary/10 rounded-full hover:bg-secondary/5 transition-all uppercase tracking-widest shadow-sm"
             >
-              Copy Protocol URL
+              Copy Portal URL
             </button>
           </div>
         )}
       </div>
 
       {/* Logo Upload */}
+      <div className="bg-slate-50 border border-black/5 rounded-2xl p-4 text-center">
+        <p className="text-[10px] font-black text-on-surface/30 uppercase tracking-[0.2em] mb-1">Portal Gateway Protocol</p>
+        <p className="text-sm font-bold text-on-surface italic">{subdomain || 'agency'}.retainvault.com</p>
+      </div>
       <div className="bg-surface rounded-[32px] border border-black/5 shadow-sm p-8">
-        <h3 className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] mb-6">Agency Seal Branding</h3>
+        <h3 className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] mb-6">Agency Logo</h3>
         
         <div className="flex items-start gap-8">
           <div 
@@ -156,13 +160,13 @@ export function BrandingSettings({
           
           <div className="flex-1 space-y-4">
             <p className="text-sm text-on-surface/60 font-medium italic leading-relaxed max-w-md">
-              Authorize your agency's official seal. Recommended: 200x200px (PNG, SVG, or high-res JPG). 
-              This identifier will be projected across all insured-facing deployment protocols.
+              Upload your agency's official logo. Recommended: 200x200px (PNG, SVG, or high-res JPG). 
+              This logo will be displayed on your client portal.
             </p>
             
             <div className="flex items-center gap-3">
               <label className="inline-block px-8 py-3 bg-primary text-white font-black text-[10px] uppercase tracking-widest rounded-full cursor-pointer hover:shadow-lg transition-all">
-                {branding.logoUrl ? 'Update Agency Seal' : 'Provision Logo Asset'}
+                {branding.logoUrl ? 'Update Logo' : 'Upload Logo'}
                 <input
                   type="file"
                   accept="image/png,image/jpeg,image/svg+xml"
@@ -179,7 +183,7 @@ export function BrandingSettings({
                   onClick={() => setBranding({ ...branding, logoUrl: undefined })}
                   className="px-6 py-3 text-red-600 font-black text-[10px] uppercase tracking-widest hover:bg-red-50 rounded-full border border-red-100 transition-all"
                 >
-                  Decommission
+                  Remove Logo
                 </button>
               )}
             </div>
@@ -189,12 +193,12 @@ export function BrandingSettings({
 
       {/* Color Customization */}
       <div className="bg-surface rounded-[32px] border border-black/5 shadow-sm p-8">
-        <h3 className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] mb-8">Agency Palette Protocols</h3>
+        <h3 className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] mb-8">Agency Colors</h3>
         
         <div className="grid md:grid-cols-2 gap-10">
           <div className="space-y-4">
             <label className="block text-[10px] font-black text-on-surface/60 uppercase tracking-widest">
-              Primary Authority Color
+              Primary Brand Color
             </label>
             <div className="flex items-center gap-4">
               <input
@@ -211,12 +215,12 @@ export function BrandingSettings({
                 placeholder="#1e40af"
               />
             </div>
-            <p className="text-[10px] font-medium text-on-surface/40 uppercase tracking-widest italic">Core identity color for commands and primary interface elements</p>
+            <p className="text-[10px] font-medium text-on-surface/40 uppercase tracking-widest italic">Core brand color for buttons and primary interface elements</p>
           </div>
           
           <div className="space-y-4">
             <label className="block text-[10px] font-black text-on-surface/60 uppercase tracking-widest">
-              Secondary Accent Protocol
+              Secondary Color
             </label>
             <div className="flex items-center gap-4">
               <input
@@ -233,19 +237,19 @@ export function BrandingSettings({
                 placeholder="#7c3aed"
               />
             </div>
-            <p className="text-[10px] font-medium text-on-surface/40 uppercase tracking-widest italic">Highlights and secondary intelligence visualization</p>
+            <p className="text-[10px] font-medium text-on-surface/40 uppercase tracking-widest italic">Highlights and secondary data visualization</p>
           </div>
         </div>
         
         {/* Preview */}
         <div className="mt-10 p-8 rounded-3xl bg-slate-50/50 border border-black/5">
-          <div className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] mb-6">Interface Projection Preview</div>
+          <div className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] mb-6">Interface Preview</div>
           <div className="flex flex-wrap items-center gap-6">
             <button
               className="px-8 py-3 text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-lg"
               style={{ backgroundColor: branding.primaryColor }}
             >
-              Commit Protocol
+              Save Changes
             </button>
             <button
               className="px-8 py-3 font-black text-[10px] uppercase tracking-widest rounded-full border-2 transition-all bg-white"
@@ -254,7 +258,7 @@ export function BrandingSettings({
               Analyze Data
             </button>
             <a href="#" className="text-sm font-bold underline underline-offset-4 decoration-2" style={{ color: branding.primaryColor }}>
-              Download Forensic Report
+              Download Report
             </a>
           </div>
         </div>
@@ -262,26 +266,26 @@ export function BrandingSettings({
 
       {/* Agency Information */}
       <div className="bg-surface rounded-[32px] border border-black/5 shadow-sm p-8">
-        <h3 className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] mb-8">Command Center Registry</h3>
+        <h3 className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] mb-8">Agency Information</h3>
         
         <div className="space-y-6">
           <div>
             <label className="text-[10px] font-black text-on-surface/60 uppercase tracking-widest block mb-2">
-              Agency Value Proposition (Public)
+              Agency Description
             </label>
             <textarea
               value={branding.description}
               onChange={(e) => setBranding({ ...branding, description: e.target.value })}
               rows={3}
               className="w-full px-4 py-3 rounded-xl border border-black/10 bg-slate-50/50 text-sm font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all resize-none italic"
-              placeholder="Define your unique market authority and service level commitments..."
+              placeholder="Describe your agency and the services you provide..."
             />
           </div>
           
           <div className="grid md:grid-cols-2 gap-8">
             <div>
               <label className="text-[10px] font-black text-on-surface/60 uppercase tracking-widest block mb-2">
-                Command Direct Line
+                Phone Number
               </label>
               <input
                 type="tel"
@@ -294,7 +298,7 @@ export function BrandingSettings({
             
             <div>
               <label className="text-[10px] font-black text-on-surface/60 uppercase tracking-widest block mb-2">
-                Official Intelligence Email
+                Email Address
               </label>
               <input
                 type="email"
@@ -308,7 +312,7 @@ export function BrandingSettings({
           
           <div>
             <label className="text-[10px] font-black text-on-surface/60 uppercase tracking-widest block mb-2">
-              Physical Headquarters
+              Office Address
             </label>
             <input
               type="text"
@@ -321,7 +325,7 @@ export function BrandingSettings({
           
           <div>
             <label className="text-[10px] font-black text-on-surface/60 uppercase tracking-widest block mb-2">
-              Operational Window (Business Hours)
+              Business Hours
             </label>
             <input
               type="text"
@@ -352,7 +356,7 @@ export function BrandingSettings({
           }}
           className="px-10 py-4 border border-black/10 text-on-surface/60 font-black text-xs uppercase tracking-widest rounded-full hover:bg-black/5 transition-all"
         >
-          Abort Changes
+          Cancel
         </button>
         
         <button
@@ -360,7 +364,7 @@ export function BrandingSettings({
           disabled={isLoading}
           className="px-12 py-4 bg-primary text-white font-black text-xs uppercase tracking-[0.2em] rounded-full hover:shadow-2xl transition-all disabled:opacity-50"
         >
-          {isLoading ? 'Syncing...' : 'Commit Configuration'}
+          {isLoading ? 'Saving...' : 'Save Settings'}
         </button>
       </div>
     </div>

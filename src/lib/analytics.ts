@@ -7,6 +7,43 @@ import { db } from '@/lib/db';
 import { policies, clients } from '@/db/schema';
 import { eq, and, sql, desc, gte, lte } from 'drizzle-orm';
 
+interface Policy {
+  id: string;
+  agencyId: string;
+  premium: string;
+  status: string;
+  expirationDate: Date;
+  createdAt: Date;
+  healthStatus?: string;
+  carrier?: string;
+  policyType?: string;
+}
+
+interface Client {
+  id: string;
+  agencyId: string;
+}
+
+interface CountResult {
+  count: number;
+}
+
+interface TotalResult {
+  total: string;
+}
+
+interface CarrierBreakdownRaw {
+  carrier: string;
+  policyCount: number;
+  totalPremium: string;
+}
+
+interface PolicyTypeBreakdownRaw {
+  policyType: string;
+  policyCount: number;
+  totalPremium: string;
+}
+
 export interface AnalyticsMetrics {
   totalBookOfBusiness: string;
   totalPolicies: number;
@@ -77,19 +114,19 @@ export async function getAgencyAnalytics(agencyId: string): Promise<AnalyticsMet
     .select({ total: sql<string>`COALESCE(SUM(CAST(${policies.premium} AS NUMERIC)), 0)` })
     .from(policies)
     .where(and(eq(policies.agencyId, agencyId), eq(policies.status, 'active')))
-    .then((r: any[]) => r[0]?.total || '0');
+    .then((r: Array<TotalResult>) => r[0]?.total || '0');
 
   const totalPolicies = await db
     .select({ count: sql<number>`COUNT(*)` })
     .from(policies)
     .where(and(eq(policies.agencyId, agencyId), eq(policies.status, 'active')))
-    .then((r: any[]) => r[0]?.count || 0);
+    .then((r: Array<CountResult>) => r[0]?.count || 0);
 
   const totalInsureds = await db
     .select({ count: sql<number>`COUNT(*)` })
     .from(clients)
     .where(eq(clients.agencyId, agencyId))
-    .then((r: any[]) => r[0]?.count || 0);
+    .then((r: Array<CountResult>) => r[0]?.count || 0);
 
   const averagePremium = totalPolicies > 0 
     ? (parseFloat(totalPremium) / totalPolicies).toFixed(2)
@@ -107,7 +144,7 @@ export async function getAgencyAnalytics(agencyId: string): Promise<AnalyticsMet
         lte(policies.expirationDate, startOfNextMonth)
       )
     )
-    .then((r: any[]) => r[0]?.count || 0);
+    .then((r: Array<CountResult>) => r[0]?.count || 0);
 
   const renewalsNextMonth = await db
     .select({ count: sql<number>`COUNT(*)` })
@@ -120,7 +157,7 @@ export async function getAgencyAnalytics(agencyId: string): Promise<AnalyticsMet
         lte(policies.expirationDate, startOfNextQuarter)
       )
     )
-    .then((r: any[]) => r[0]?.count || 0);
+    .then((r: Array<CountResult>) => r[0]?.count || 0);
 
   const renewalsNextQuarter = await db
     .select({ count: sql<number>`COUNT(*)` })
@@ -132,7 +169,7 @@ export async function getAgencyAnalytics(agencyId: string): Promise<AnalyticsMet
         gte(policies.expirationDate, startOfNextQuarter)
       )
     )
-    .then((r: any[]) => r[0]?.count || 0);
+    .then((r: Array<CountResult>) => r[0]?.count || 0);
 
   const atRiskPolicies = await db
     .select()
@@ -145,7 +182,7 @@ export async function getAgencyAnalytics(agencyId: string): Promise<AnalyticsMet
       )
     );
 
-  const atRiskVolume = atRiskPolicies.reduce((sum: number, p: any) => sum + parseFloat(p.premium || 0), 0);
+  const atRiskVolume = atRiskPolicies.reduce((sum: number, p: Policy) => sum + parseFloat(p.premium || '0'), 0);
 
   const healthyPolicies = await db
     .select()
@@ -158,7 +195,7 @@ export async function getAgencyAnalytics(agencyId: string): Promise<AnalyticsMet
       )
     );
 
-  const healthyVolume = healthyPolicies.reduce((sum: number, p: any) => sum + parseFloat(p.premium || 0), 0);
+  const healthyVolume = healthyPolicies.reduce((sum: number, p: Policy) => sum + parseFloat(p.premium || '0'), 0);
 
   // Policy leakage metrics
   const lapsedPolicies = await db
@@ -171,7 +208,7 @@ export async function getAgencyAnalytics(agencyId: string): Promise<AnalyticsMet
       )
     );
 
-  const lapsedVolume = lapsedPolicies.reduce((sum: number, p: any) => sum + parseFloat(p.premium || 0), 0);
+  const lapsedVolume = lapsedPolicies.reduce((sum: number, p: Policy) => sum + parseFloat(p.premium || '0'), 0);
 
   const leakageRate = totalPolicies > 0 ? (lapsedPolicies.length / totalPolicies) * 100 : 0;
   const projectedLoss = (atRiskVolume * (leakageRate / 100)).toFixed(2);
@@ -187,12 +224,12 @@ export async function getAgencyAnalytics(agencyId: string): Promise<AnalyticsMet
     .where(and(eq(policies.agencyId, agencyId), eq(policies.status, 'active')))
     .groupBy(policies.carrier)
     .orderBy(desc(sql`COUNT(*)`))
-    .then((r: any[]) => r.map(c => ({
+    .then((r: Array<CarrierBreakdownRaw>) => r.map(c => ({
       carrier: c.carrier,
       policyCount: c.policyCount,
       totalPremium: c.totalPremium,
       averagePremium: c.policyCount > 0 ? (parseFloat(c.totalPremium) / c.policyCount).toFixed(2) : '0',
-      atRiskCount: atRiskPolicies.filter((p: any) => p.carrier === c.carrier).length,
+      atRiskCount: atRiskPolicies.filter((p: Policy) => p.carrier === c.carrier).length,
     })));
 
   // Policy type breakdown
@@ -206,7 +243,7 @@ export async function getAgencyAnalytics(agencyId: string): Promise<AnalyticsMet
     .where(and(eq(policies.agencyId, agencyId), eq(policies.status, 'active')))
     .groupBy(policies.policyType)
     .orderBy(desc(sql`COUNT(*)`))
-    .then((r: any[]) => r.map(pt => ({
+    .then((r: Array<PolicyTypeBreakdownRaw>) => r.map(pt => ({
       policyType: pt.policyType,
       policyCount: pt.policyCount,
       totalPremium: pt.totalPremium,
@@ -215,68 +252,45 @@ export async function getAgencyAnalytics(agencyId: string): Promise<AnalyticsMet
     })));
 
   // Monthly trends (last 6 months)
-  const monthlyTrends: MonthlyTrend[] = [];
-  for (let i = 5; i >= 0; i--) {
-    const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
-    
-    const newBusiness = await db
-      .select({ count: sql<number>`COUNT(*)` })
-      .from(policies)
-      .where(
-        and(
-          eq(policies.agencyId, agencyId),
-          gte(policies.createdAt, monthDate),
-          lte(policies.createdAt, monthEnd)
-        )
-      )
-      .then((r: any[]) => r[0]?.count || 0);
+  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  
+  const rawTrends = await db.execute(sql`
+    WITH months AS (
+      SELECT generate_series(
+        date_trunc('month', ${sixMonthsAgo}::timestamp),
+        date_trunc('month', ${now}::timestamp),
+        '1 month'::interval
+      ) AS month_date
+    )
+    SELECT
+      to_char(m.month_date, 'Mon YY') as month,
+      m.month_date as raw_date,
+      COUNT(p_new.id)::int as "newBusiness",
+      COUNT(p_ren.id)::int as "renewals",
+      COUNT(p_lapse.id)::int as "lapses",
+      COALESCE(SUM(CAST(p_new.premium AS NUMERIC)), 0)::text as "premiumVolume"
+    FROM months m
+    LEFT JOIN ${policies} p_new 
+      ON p_new."agencyId" = ${agencyId} 
+      AND date_trunc('month', p_new."createdAt") = m.month_date
+    LEFT JOIN ${policies} p_ren 
+      ON p_ren."agencyId" = ${agencyId} 
+      AND date_trunc('month', p_ren."expirationDate") = m.month_date
+    LEFT JOIN ${policies} p_lapse 
+      ON p_lapse."agencyId" = ${agencyId} 
+      AND p_lapse.status = 'expired'
+      AND date_trunc('month', p_lapse."expirationDate") = m.month_date
+    GROUP BY m.month_date
+    ORDER BY m.month_date ASC
+  `);
 
-    const renewals = await db
-      .select({ count: sql<number>`COUNT(*)` })
-      .from(policies)
-      .where(
-        and(
-          eq(policies.agencyId, agencyId),
-          gte(policies.expirationDate, monthDate),
-          lte(policies.expirationDate, monthEnd)
-        )
-      )
-      .then((r: any[]) => r[0]?.count || 0);
-
-    const lapses = await db
-      .select({ count: sql<number>`COUNT(*)` })
-      .from(policies)
-      .where(
-        and(
-          eq(policies.agencyId, agencyId),
-          eq(policies.status, 'expired'),
-          gte(policies.expirationDate, monthDate),
-          lte(policies.expirationDate, monthEnd)
-        )
-      )
-      .then((r: any[]) => r[0]?.count || 0);
-
-    const premiumVolume = await db
-      .select({ total: sql<string>`COALESCE(SUM(CAST(${policies.premium} AS NUMERIC)), 0)` })
-      .from(policies)
-      .where(
-        and(
-          eq(policies.agencyId, agencyId),
-          gte(policies.createdAt, monthDate),
-          lte(policies.createdAt, monthEnd)
-        )
-      )
-      .then((r: any[]) => r[0]?.total || '0');
-
-    monthlyTrends.push({
-      month: monthDate.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
-      newBusiness,
-      renewals,
-      lapses,
-      premiumVolume,
-    });
-  }
+  const monthlyTrends: MonthlyTrend[] = rawTrends.rows.map((row: any) => ({
+    month: row.month,
+    newBusiness: row.newBusiness,
+    renewals: row.renewals,
+    lapses: row.lapses,
+    premiumVolume: row.premiumVolume,
+  }));
 
   return {
     totalBookOfBusiness: totalPremium,

@@ -8,6 +8,7 @@
 
 import { db } from '@/lib/db';
 import { notifications } from '@/db/schema';
+import { logger } from '@/lib/logger';
 import { eq } from 'drizzle-orm';
 
 export async function createNotification({
@@ -44,7 +45,7 @@ export async function createNotification({
 
     return { success: true, notification: result };
   } catch (error) {
-    console.error('Error creating notification:', error);
+    logger.error('Error creating notification', error);
     return { success: false, error: 'Failed to create notification' };
   }
 }

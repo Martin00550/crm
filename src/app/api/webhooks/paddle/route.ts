@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleWebhook } from '@/lib/paddle';
+import { logger } from '@/lib/logger';
 import crypto from 'crypto';
 
 const PADDLE_WEBHOOK_SECRET = process.env.PADDLE_WEBHOOK_SECRET;
@@ -28,7 +29,7 @@ function verifyPaddleSignature(
     }
     
     if (!timestamp || !signature) {
-      console.error('Invalid signature format');
+      logger.error('Invalid signature format');
       return false;
     }
     
@@ -38,7 +39,7 @@ function verifyPaddleSignature(
     const fiveMinutes = 5 * 60 * 1000;
     
     if (Math.abs(now - timestampMs) > fiveMinutes) {
-      console.error('Webhook timestamp expired');
+      logger.error('Webhook timestamp expired');
       return false;
     }
     
@@ -57,7 +58,7 @@ function verifyPaddleSignature(
       Buffer.from(expectedSignature, 'hex')
     );
   } catch (error) {
-    console.error('Signature verification error:', error);
+    logger.error('Signature verification error', error);
     return false;
   }
 }
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
     const signatureHeader = request.headers.get('paddle-signature');
     
     if (!PADDLE_WEBHOOK_SECRET) {
-      console.error('PADDLE_WEBHOOK_SECRET not configured');
+      logger.error('PADDLE_WEBHOOK_SECRET not configured');
       return NextResponse.json(
         { error: 'Webhook secret not configured' },
         { status: 500 }
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest) {
     
     // Require signature in production
     if (!signatureHeader) {
-      console.error('Missing Paddle webhook signature');
+      logger.error('Missing Paddle webhook signature');
       
       // Only allow missing signature in development with explicit flag
       if (process.env.NODE_ENV !== 'development' || process.env.ALLOW_UNSIGNED_WEBHOOKS !== 'true') {
@@ -90,14 +91,14 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      console.warn('WARNING: Processing unsigned webhook (development only)');
+      logger.warn('Processing unsigned webhook (development only)');
     } else {
       // Parse body to get event_id for signature verification
       const parsedBody = JSON.parse(rawBody);
       const eventId = parsedBody.id || parsedBody.event_id;
       
       if (!eventId) {
-        console.error('Missing event ID in webhook payload');
+        logger.error('Missing event ID in webhook payload');
         return NextResponse.json(
           { error: 'Invalid webhook payload: missing event ID' },
           { status: 400 }
@@ -113,7 +114,7 @@ export async function POST(request: NextRequest) {
       );
       
       if (!isValid) {
-        console.error('Invalid Paddle webhook signature');
+        logger.error('Invalid Paddle webhook signature');
         return NextResponse.json(
           { error: 'Invalid signature' },
           { status: 401 }
@@ -133,7 +134,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Log webhook event for audit trail
-    console.log(`Paddle webhook received: ${body.event_type}`, {
+    logger.info(`Paddle webhook received: ${body.event_type}`, {
       eventId: body.id,
       timestamp: new Date().toISOString(),
     });
@@ -143,7 +144,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error('Paddle webhook error:', error);
+    logger.error('Paddle webhook error', error);
     return NextResponse.json(
       { error: 'Webhook handler failed' },
       { status: 500 }

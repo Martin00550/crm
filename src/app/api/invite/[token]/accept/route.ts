@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@/lib/auth-wrapper';
 import { acceptInvitation } from '@/lib/team-access';
+import { logger } from '@/lib/logger';
 
 // POST /api/invite/[token]/accept - Accept invitation
 export async function POST(
@@ -26,7 +27,7 @@ export async function POST(
       message: 'Invitation accepted successfully'
     });
   } catch (error) {
-    console.error('Error accepting invitation:', error);
+    logger.error('Error accepting invitation', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -1,8 +1,8 @@
-import { headers } from 'next/headers';
+import { withAuth, getSignInUrl, signOut } from '@workos-inc/authkit-nextjs';
+import { logger } from '@/lib/logger';
 import { db } from '@/lib/db';
 import { users, agencies } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { auth } from '@/lib/better-auth';
 
 /**
  * Auth wrapper utilities for Server Actions and API routes
@@ -23,14 +23,17 @@ export interface AuthError {
 
 /**
  * Get auth - Simple function for API routes that returns userId
- * Drop-in replacement for Clerk's auth() - now uses Better Auth
  */
 export async function getAuth(): Promise<{ userId: string | null }> {
+  if (process.env.MOCK_AUTH === 'true') {
+    return { userId: process.env.MOCK_USER_ID || 'mock-user-id' };
+  }
+
   try {
-    const headersList = await headers();
-    const session = await auth.api.getSession({ headers: headersList });
-    return { userId: session?.user?.id || null };
-  } catch {
+    const session = await withAuth();
+    return { userId: session.user?.id || null };
+  } catch (err) {
+    console.error("[getAuth Error in API Route]:", err);
     return { userId: null };
   }
 }
@@ -40,21 +43,30 @@ export async function getAuth(): Promise<{ userId: string | null }> {
  * Use in Server Actions that require user context
  */
 export async function requireAuth(): Promise<AuthResult> {
-  // Get session from better-auth
-  const headersList = await headers();
-  const session = await auth.api.getSession({ headers: headersList });
+  // Allow mocking for E2E tests or development without WorkOS
+  if (process.env.MOCK_AUTH === 'true') {
+    return {
+      userId: process.env.MOCK_USER_ID || 'mock-user-id',
+      agencyId: process.env.MOCK_AGENCY_ID || 'mock-agency-id',
+      role: 'owner',
+      email: 'mock@example.com',
+    };
+  }
 
-  if (!session?.user?.id) {
+  // Get session from WorkOS
+  const session = await withAuth();
+
+  if (!session.user?.id) {
     throw new Error('Unauthorized: Please sign in to continue');
   }
 
-  const betterAuthUserId = session.user.id;
+  const authUserId = session.user.id;
 
-  // Get user from database by betterAuthUserId
+  // Get user from database by authUserId
   const user = await db
     .select()
     .from(users)
-    .where(eq(users.betterAuthUserId, betterAuthUserId))
+    .where(eq(users.workosUserId, authUserId))
     .limit(1)
     .then((r: typeof users.$inferSelect[]) => r[0]);
 
@@ -62,7 +74,7 @@ export async function requireAuth(): Promise<AuthResult> {
     // User exists in auth but not in our database
     // This can happen if webhook hasn't fired yet
     return {
-      userId: betterAuthUserId,
+      userId: authUserId,
       agencyId: null,
       role: null,
       email: session.user.email || null,
@@ -70,7 +82,7 @@ export async function requireAuth(): Promise<AuthResult> {
   }
 
   return {
-    userId: betterAuthUserId,
+    userId: authUserId,
     agencyId: user.agencyId,
     role: user.role,
     email: user.email || session.user.email || null,
@@ -150,24 +162,23 @@ export async function requireFeatureAccess(
  */
 export async function getOptionalAuth(): Promise<AuthResult | null> {
   try {
-    const headersList = await headers();
-    const session = await auth.api.getSession({ headers: headersList });
+    const session = await withAuth();
 
-    if (!session?.user?.id) {
+    if (!session.user?.id) {
       return null;
     }
 
-    const betterAuthUserId = session.user.id;
+    const authUserId = session.user.id;
 
     const user = await db
       .select()
       .from(users)
-      .where(eq(users.betterAuthUserId, betterAuthUserId))
+      .where(eq(users.workosUserId, authUserId))
       .limit(1)
       .then((r: typeof users.$inferSelect[]) => r[0]);
 
     return {
-      userId: betterAuthUserId,
+      userId: authUserId,
       agencyId: user?.agencyId || null,
       role: user?.role || null,
       email: user?.email || session.user.email || null,
@@ -181,7 +192,7 @@ export async function getOptionalAuth(): Promise<AuthResult | null> {
  * Wrapper for Server Actions with auth and error handling
  * Provides consistent error responses
  */
-export const withAuth = <TArgs extends any[], TResult>(
+export const withAuthAction = <TArgs extends any[], TResult>(
   fn: (auth: AuthResult, ...args: TArgs) => Promise<TResult>
 ): ((...args: TArgs) => Promise<{ success: true; data: TResult } | { success: false; error: string }>) => {
   return async (...args: TArgs) => {
@@ -189,8 +200,8 @@ export const withAuth = <TArgs extends any[], TResult>(
       const authResult = await requireAuth();
       const result = await fn(authResult, ...args);
       return { success: true, data: result };
-    } catch (error: any) {
-      console.error('Server action error:', error);
+    } catch (error) {
+      logger.error('Server action error', error);
       
       // Map error types to user-friendly messages
       if (error.message?.includes('Unauthorized')) {
@@ -216,8 +227,8 @@ export const withAgencyAuth = <TArgs extends any[], TResult>(
       const authResult = await requireAgencyAuth();
       const result = await fn(authResult, ...args);
       return { success: true, data: result };
-    } catch (error: any) {
-      console.error('Server action error:', error);
+    } catch (error) {
+      logger.error('Server action error', error);
       
       if (error.message?.includes('Unauthorized')) {
         return { success: false, error: 'Please sign in to continue' };

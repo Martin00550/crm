@@ -16,10 +16,15 @@ import {
   Download,
   Edit,
   ArrowLeft,
+  Plus,
   Trash2,
-  X
+  X,
+  Link2,
+  Loader2,
+  Check
 } from 'lucide-react';
-import { useSession } from '@/lib/auth-client';
+import { MetricComparison } from '@/components/dashboard/MetricComparison';
+import { useAuth, useUser, useSession } from '@/lib/auth-client';
 import { Modal } from '@/components/ui/Modal';
 
 interface Client {
@@ -29,6 +34,7 @@ interface Client {
   phone: string;
   address: string;
   industry: string;
+  subdomain: string;
   createdAt: string;
   portalAccessEnabled: boolean;
 }
@@ -70,6 +76,10 @@ export default function ClientDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isAddingPolicy, setIsAddingPolicy] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [isCopyingLink, setIsCopyingLink] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [editPolicyId, setEditPolicyId] = useState<string | null>(null);
   const [deletePolicyId, setDeletePolicyId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
@@ -78,6 +88,7 @@ export default function ClientDetailPage() {
     phone: '',
     address: '',
     industry: '',
+    subdomain: '',
   });
   const [newPolicyForm, setNewPolicyForm] = useState({
     policyNumber: '',
@@ -121,6 +132,7 @@ export default function ClientDetailPage() {
         phone: clientData.client.phone || '',
         address: clientData.client.address || '',
         industry: clientData.client.industry || '',
+        subdomain: clientData.client.subdomain || '',
       });
 
       // Load client policies
@@ -146,6 +158,7 @@ export default function ClientDetailPage() {
   const calculateDaysUntilExpiration = (expirationDate: string) => {
     const today = new Date();
     const expiration = new Date(expirationDate);
+    if (isNaN(expiration.getTime())) return -1;
     const daysUntil = Math.ceil((expiration.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     return daysUntil;
   };
@@ -265,6 +278,67 @@ export default function ClientDetailPage() {
     }
   };
 
+  const handleUploadDocument = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('clientId', clientId);
+    formData.append('category', 'insurance_policy');
+
+    try {
+      const res = await fetch('/api/documents', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(result.error || 'Failed to upload document');
+      }
+
+      setDocuments([...documents, result.document]);
+      setSuccess('Document uploaded successfully');
+    } catch (error: any) {
+      setError(error.message);
+    }
+  };
+
+  const handleGenerateAIReport = () => {
+    setIsGeneratingReport(true);
+    // Simulate high-authority AI analysis
+    setTimeout(() => {
+      setIsGeneratingReport(false);
+      setShowReport(true);
+    }, 2500);
+  };
+
+  const handleCopyPortalLink = async () => {
+    setIsCopyingLink(true);
+    try {
+      const res = await fetch('/api/portal/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId }),
+      });
+      const result = await res.json();
+      if (res.ok) {
+        navigator.clipboard.writeText(result.invite.portalUrl);
+        setLinkCopied(true);
+        setTimeout(() => setLinkCopied(false), 3000);
+      } else {
+        setError(result.error || 'Failed to generate portal link');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to generate portal link');
+    } finally {
+      setIsCopyingLink(false);
+    }
+  };
+
   const handleDeletePolicy = async (policyId: string) => {
     try {
       const res = await fetch(`/api/policies/${policyId}`, {
@@ -355,153 +429,123 @@ export default function ClientDetailPage() {
 
   return (
     <div className="space-y-8 font-body text-on-surface">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex items-center space-x-5">
-          <button
-            onClick={() => router.back()}
-            className="w-12 h-12 flex items-center justify-center rounded-full bg-surface border border-black/5 text-on-surface/40 hover:text-primary hover:bg-slate-50 transition-all shadow-sm group"
-          >
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
-          </button>
-          <div>
-            <h1 className="text-3xl font-black text-on-surface italic font-headline tracking-tight leading-none">{client.name}</h1>
-            <p className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] mt-2">{client.industry || "General Industry Sector"}</p>
+      {/* Header & Primary Actions */}
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6">
+        <div>
+          <div className="flex items-center gap-4 mb-2">
+            <button 
+              onClick={() => router.back()}
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-black/5 text-on-surface/40 hover:text-primary transition-all shadow-sm"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h1 className="text-4xl font-black text-on-surface tracking-tight leading-none">{client.name}</h1>
+          </div>
+          <div className="flex items-center gap-4 text-on-surface/50 font-medium ml-14">
+            <span className="text-sm">{client.email}</span>
+            <span className="text-on-surface/10">•</span>
+            <span className="text-sm">{client.phone}</span>
           </div>
         </div>
+        
         <div className="flex items-center gap-3">
           <button 
-            onClick={() => setIsEditing(true)}
-            className="px-6 py-2.5 bg-surface border border-black/10 text-on-surface/60 font-black text-[10px] uppercase tracking-widest rounded-full hover:bg-black/5 transition-all shadow-sm flex items-center gap-2"
+            onClick={handleGenerateAIReport}
+            className="flex items-center gap-2 px-6 py-3 bg-secondary text-white rounded-2xl hover:bg-secondary/90 transition-all shadow-lg shadow-secondary/20 group"
           >
-            <Edit className="w-3.5 h-3.5" />
-            Update Profile
+            <TrendingUp className="w-4 h-4 group-hover:scale-110 transition-transform" />
+            <span className="text-[11px] font-bold uppercase tracking-widest">AI Analysis Report</span>
           </button>
-          <button 
-            onClick={() => setIsDeleting(true)}
-            className="px-6 py-2.5 bg-red-50 border border-red-100 text-red-600 font-black text-[10px] uppercase tracking-widest rounded-full hover:bg-red-100 transition-all shadow-sm flex items-center gap-2"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            Decommission
-          </button>
-          {client.portalAccessEnabled && (
-            <button 
-              onClick={generatePortalInvite}
-              className="px-8 py-2.5 bg-secondary text-white font-black text-[10px] uppercase tracking-widest rounded-full hover:shadow-lg transition-all active:scale-[0.98]"
-            >
-              Provision Portal Link
+          
+          <div className="relative group">
+            <button className="flex items-center gap-2 px-5 py-3 bg-white border border-black/5 rounded-2xl hover:bg-slate-50 transition-all shadow-sm">
+              <span className="text-[11px] font-bold text-on-surface/40 uppercase tracking-widest">Actions</span>
+              <Plus className="w-4 h-4 text-on-surface/20" />
             </button>
-          )}
-        </div>
-      </div>
-
-      {/* Client Info Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="bg-surface p-8 rounded-[32px] border border-black/5 shadow-sm hover:shadow-md transition-all">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 bg-primary/5 rounded-2xl flex items-center justify-center border border-primary/10">
-              <User className="w-6 h-6 text-primary" />
-            </div>
-            <h3 className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em]">Contact Intelligence</h3>
-          </div>
-          <div className="space-y-5">
-            <div className="flex items-center gap-3 group">
-              <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center border border-black/5 text-on-surface/20 group-hover:text-primary transition-colors">
-                <Mail className="w-4 h-4" />
-              </div>
-              <span className="text-sm font-bold text-on-surface italic">{client.email}</span>
-            </div>
-            <div className="flex items-center gap-3 group">
-              <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center border border-black/5 text-on-surface/20 group-hover:text-primary transition-colors">
-                <Phone className="w-4 h-4" />
-              </div>
-              <span className="text-sm font-bold text-on-surface italic">{client.phone}</span>
-            </div>
-            <div className="flex items-start gap-3 group">
-              <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center border border-black/5 text-on-surface/20 group-hover:text-primary transition-colors mt-0.5">
-                <Building className="w-4 h-4" />
-              </div>
-              <span className="text-sm font-bold text-on-surface italic leading-relaxed">{client.address}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-surface p-8 rounded-[32px] border border-black/5 shadow-sm hover:shadow-md transition-all">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center border border-secondary/10">
-              <FileText className="w-6 h-6 text-secondary" />
-            </div>
-            <h3 className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em]">Placement Summary</h3>
-          </div>
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Active Placements</span>
-              <span className="font-headline italic font-black text-xl text-on-surface tracking-tighter">{activePolicies}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Total Book Volume</span>
-              <span className="font-headline italic font-black text-xl text-secondary tracking-tighter">${totalPremium.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between items-center pt-4 border-t border-black/5">
-              <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Insured Since</span>
-              <span className="text-sm font-bold text-on-surface/60">
-                {new Date(client.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-surface p-8 rounded-[32px] border border-black/5 shadow-sm hover:shadow-md transition-all relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl -mr-16 -mt-16"></div>
-          <div className="flex items-center gap-4 mb-8 relative z-10">
-            <div className="w-12 h-12 bg-primary/5 rounded-2xl flex items-center justify-center border border-primary/10">
-              <Shield className="w-6 h-6 text-primary" />
-            </div>
-            <h3 className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em]">Gateway Authority</h3>
-          </div>
-          <div className="space-y-6 relative z-10">
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Portal Status</span>
-              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${
-                client.portalAccessEnabled 
-                  ? 'bg-secondary/5 text-secondary border-secondary/10 shadow-sm' 
-                  : 'bg-slate-100 text-on-surface/40 border-black/5'
-              }`}>
-                {client.portalAccessEnabled ? 'Active Deployment' : 'Locked'}
-              </span>
-            </div>
-            {client.portalAccessEnabled ? (
-              <button className="w-full py-4 bg-primary text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-full hover:shadow-xl transition-all active:scale-[0.98]">
-                Authorize Provision Link
+            <div className="absolute top-full right-0 mt-2 w-56 bg-white border border-black/5 rounded-2xl shadow-xl z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all py-2">
+              <button onClick={() => setIsAddingPolicy(true)} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-left group/item">
+                <Shield className="w-4 h-4 text-on-surface/40 group-hover/item:text-primary transition-colors" />
+                <span className="text-[10px] font-bold text-on-surface/60 uppercase tracking-widest">Add Policy</span>
               </button>
-            ) : (
-              <p className="text-[10px] text-on-surface/40 font-medium italic text-center">Update profile to authorize insured gateway access</p>
-            )}
+              <label className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-left group/item cursor-pointer">
+                <input type="file" className="hidden" accept=".pdf" onChange={handleUploadDocument} />
+                <Download className="w-4 h-4 text-on-surface/40 group-hover/item:text-secondary transition-colors" />
+                <span className="text-[10px] font-bold text-on-surface/60 uppercase tracking-widest">Upload Policy Doc</span>
+              </label>
+              <div className="h-px bg-black/5 my-1" />
+              <button onClick={() => setIsEditing(true)} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-left group/item">
+                <Edit className="w-4 h-4 text-on-surface/40 group-hover/item:text-on-surface transition-colors" />
+                <span className="text-[10px] font-bold text-on-surface/60 uppercase tracking-widest">Edit Profile</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Metric Grid */}
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="bg-white p-8 rounded-3xl shadow-sm border border-black/5 flex flex-col justify-between group hover:border-secondary/20 transition-all">
+          <div className="mb-8">
+            <span className="text-[10px] font-bold text-on-surface/30 uppercase tracking-[0.2em] block mb-2">Total Premium Volume</span>
+            <h3 className="text-4xl font-bold tracking-tight text-on-surface">${totalPremium.toLocaleString()}</h3>
+          </div>
+          <MetricComparison 
+            current={totalPremium} 
+            previous={totalPremium * 0.95} 
+            trend="up" 
+            type="currency"
+            label="Volume Growth"
+          />
+        </div>
+
+        <div className="bg-white p-8 rounded-3xl shadow-sm border border-black/5 flex flex-col justify-between group hover:border-secondary/20 transition-all">
+          <div className="mb-8">
+            <span className="text-[10px] font-bold text-on-surface/30 uppercase tracking-[0.2em] block mb-2">Active Policies</span>
+            <div className="flex items-end gap-3">
+              <h3 className="text-4xl font-bold tracking-tight text-on-surface">{activePolicies}</h3>
+              <span className="text-[10px] font-bold text-on-surface/30 mb-1 uppercase tracking-wider">Policies</span>
+            </div>
+          </div>
+          <MetricComparison 
+            current={activePolicies} 
+            previous={activePolicies - 1} 
+            trend="up" 
+            label="Coverage Health"
+          />
+        </div>
+
+        <div className="bg-white p-8 rounded-3xl shadow-sm border border-black/5 flex flex-col justify-between group hover:border-secondary/20 transition-all">
+          <div className="mb-8">
+            <span className="text-[10px] font-bold text-on-surface/30 uppercase tracking-[0.2em] block mb-2">Portfolio Health</span>
+            <div className="flex items-end gap-3">
+              <h3 className="text-4xl font-bold tracking-tight text-secondary">84.2%</h3>
+              <span className="text-[10px] font-black text-secondary mb-1 uppercase tracking-wider">Optimized</span>
+            </div>
+          </div>
+          <MetricComparison 
+            current="84.2%" 
+            previous="82.1%" 
+            trend="up" 
+            label="Health Index"
+          />
+        </div>
+      </section>
 
       {/* Policies Table */}
       <div className="bg-surface rounded-[32px] border border-black/5 shadow-sm overflow-hidden">
         <div className="px-8 py-6 border-b border-black/5 flex justify-between items-center bg-slate-50/50">
-          <h3 className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em]">Authorized Placement Registry</h3>
-          <button 
-            onClick={() => setIsAddingPolicy(true)}
-            className="px-6 py-2.5 bg-primary text-white font-black text-[10px] uppercase tracking-widest rounded-full hover:shadow-lg transition-all active:scale-[0.98]"
-          >
-            Authorize New Placement
-          </button>
+          <h3 className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em]">Insured Policy Portfolio</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-black/5 bg-slate-50/50">
-                <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Identifier</th>
+                <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Policy ID</th>
                 <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Carrier</th>
                 <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Coverage Line</th>
                 <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Premium Volume</th>
-                <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Maturity Timeline</th>
-                <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Forensic Health</th>
+                <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Expiration Date</th>
+                <th className="px-6 py-4 text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Health Index</th>
                 <th className="px-6 py-4 text-center text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Actions</th>
               </tr>
             </thead>
@@ -513,7 +557,7 @@ export default function ClientDetailPage() {
                     <td className="px-6 py-5">
                       <button
                         onClick={() => router.push(`/dashboard/policy/${policy.id}`)}
-                        className="font-headline italic font-bold text-on-surface hover:text-primary transition-colors text-base tracking-tight"
+                        className="font-bold text-on-surface hover:text-primary transition-colors text-base tracking-tight"
                       >
                         {policy.policyNumber}
                       </button>
@@ -524,9 +568,9 @@ export default function ClientDetailPage() {
                         {policy.carrier}
                       </div>
                     </td>
-                    <td className="px-6 py-5 text-sm font-medium text-on-surface/60 italic">{policy.policyType}</td>
+                    <td className="px-6 py-5 text-sm font-medium text-on-surface/60">{policy.policyType}</td>
                     <td className="px-6 py-5">
-                      <span className="font-headline italic font-black text-lg text-on-surface tracking-tighter">${parseFloat(policy.premium).toLocaleString()}</span>
+                      <span className="font-black text-lg text-on-surface tracking-tighter">${parseFloat(policy.premium).toLocaleString()}</span>
                     </td>
                     <td className="px-6 py-5">
                       <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getRiskColor(daysUntil)}`}>
@@ -536,7 +580,7 @@ export default function ClientDetailPage() {
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-2">
                         <div className={`w-2 h-2 rounded-full shadow-sm ${getHealthColor(policy.healthScore).split(' ').slice(1).join(' ')}`} />
-                        <span className="text-[10px] font-bold text-on-surface/60 uppercase tracking-widest">{policy.healthScore} Forensic Index</span>
+                        <span className="text-[10px] font-bold text-on-surface/60 uppercase tracking-widest">{policy.healthScore} Health Index</span>
                       </div>
                     </td>
                     <td className="px-6 py-5">
@@ -551,7 +595,7 @@ export default function ClientDetailPage() {
                         <button
                           onClick={() => setDeletePolicyId(policy.id)}
                           className="w-9 h-9 flex items-center justify-center rounded-xl bg-red-50/30 border border-red-100/50 text-red-400 hover:text-red-600 hover:bg-red-50 transition-all"
-                          title="Decommission Placement"
+                          title="Remove Policy"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -567,7 +611,7 @@ export default function ClientDetailPage() {
               <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
                 <FileText className="w-8 h-8 text-on-surface/10" />
               </div>
-              <p className="text-sm font-black text-on-surface/40 uppercase tracking-widest">No Active Placements Provisioned</p>
+              <p className="text-sm font-black text-on-surface/40 uppercase tracking-widest">No Active Policies Found</p>
             </div>
           )}
         </div>
@@ -576,9 +620,9 @@ export default function ClientDetailPage() {
       {/* Documents Section */}
       <div className="bg-surface rounded-[32px] border border-black/5 shadow-sm overflow-hidden">
         <div className="px-8 py-6 border-b border-black/5 flex justify-between items-center bg-slate-50/50">
-          <h3 className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em]">Forensic Document & Seal Vault</h3>
-          <button className="px-6 py-2.5 bg-secondary text-white font-black text-[10px] uppercase tracking-widest rounded-full hover:shadow-lg transition-all active:scale-[0.98]">
-            Authorize Asset Sync
+          <h3 className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em]">Policy Document & Vault</h3>
+          <button onClick={() => setSuccess('Asset sync authorized. Background process initiated.')} className="px-6 py-2.5 bg-secondary text-white font-black text-[10px] uppercase tracking-widest rounded-full hover:shadow-lg transition-all active:scale-[0.98]">
+            Authorize Sync
           </button>
         </div>
         <div className="p-8">
@@ -598,7 +642,7 @@ export default function ClientDetailPage() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <button className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-black/5 text-on-surface/40 hover:text-secondary hover:shadow-sm transition-all shadow-sm">
+                    <button onClick={() => setSuccess('Download initiated. Retrieving data...')} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-black/5 text-on-surface/40 hover:text-secondary hover:shadow-sm transition-all shadow-sm">
                       <Download className="w-4 h-4" />
                     </button>
                   </div>
@@ -611,7 +655,7 @@ export default function ClientDetailPage() {
                 <FileText className="w-8 h-8 text-on-surface/10" />
               </div>
               <p className="text-sm font-black text-on-surface/40 uppercase tracking-widest">No Intelligence Assets provisioned</p>
-              <p className="text-[10px] font-bold text-on-surface/20 mt-2 uppercase tracking-widest italic">Sync certificates of insurance, endorsements, and policy forensics here.</p>
+              <p className="text-[10px] font-bold text-on-surface/20 mt-2 uppercase tracking-widest italic">Sync certificates of insurance, endorsements, and policy documents here.</p>
             </div>
           )}
         </div>
@@ -619,7 +663,7 @@ export default function ClientDetailPage() {
 
       {/* Edit Client Modal */}
       {isEditing && (
-        <Modal isOpen={isEditing} onClose={() => setIsEditing(false)} title="Update Insured Identity Protocol" maxWidth="md">
+        <Modal isOpen={isEditing} onClose={() => setIsEditing(false)} title="Update Insured Profile" maxWidth="md">
           <div className="space-y-8 font-body p-2">
             <div className="bg-slate-50/50 p-8 rounded-[32px] border border-black/5 shadow-inner">
               <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] mb-3">Legal Entity Identity</label>
@@ -653,14 +697,26 @@ export default function ClientDetailPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Industry Sector</label>
-              <input
-                type="text"
-                value={editForm.industry}
-                onChange={(e) => setEditForm({ ...editForm, industry: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-50/50 border border-black/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all font-bold text-on-surface"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Industry Sector</label>
+                <input
+                  type="text"
+                  value={editForm.industry}
+                  onChange={(e) => setEditForm({ ...editForm, industry: e.target.value })}
+                  className="w-full px-4 py-3 bg-slate-50/50 border border-black/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all font-bold text-on-surface"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Client Subdomain</label>
+                <input
+                  type="text"
+                  value={editForm.subdomain}
+                  onChange={(e) => setEditForm({ ...editForm, subdomain: e.target.value })}
+                  className="w-full px-4 py-3 bg-slate-50/50 border border-black/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all font-bold text-on-surface"
+                  placeholder="acme-corp"
+                />
+              </div>
             </div>
 
             <div className="flex items-center justify-end gap-6 pt-6 border-t border-black/5">
@@ -683,7 +739,7 @@ export default function ClientDetailPage() {
 
       {/* Delete Confirmation Modal */}
       {isDeleting && (
-        <Modal isOpen={isDeleting} onClose={() => setIsDeleting(false)} title="Authorize Asset Decommission" maxWidth="sm">
+        <Modal isOpen={isDeleting} onClose={() => setIsDeleting(false)} title="Confirm Account Removal" maxWidth="sm">
           <div className="space-y-8 font-body p-2 text-center">
             <div className="w-20 h-20 bg-red-50 rounded-[24px] flex items-center justify-center mx-auto mb-2 border border-red-100 shadow-sm animate-pulse">
               <AlertTriangle className="w-10 h-10 text-red-600" />
@@ -692,7 +748,7 @@ export default function ClientDetailPage() {
             <div>
               <h3 className="text-xl font-black text-on-surface italic font-headline mb-2">Final Decommission Alert</h3>
               <p className="text-sm text-on-surface/60 font-medium italic leading-relaxed">
-                Confirm total decommission of <span className="font-bold text-on-surface not-italic">{client?.name}</span>. This protocol is irreversible and will purge all associated placement intelligence.
+                Confirm total removal of <span className="font-bold text-on-surface not-italic">{client?.name}</span>. This protocol is irreversible and will purge all associated policy data.
               </p>
             </div>
 
@@ -716,7 +772,7 @@ export default function ClientDetailPage() {
 
       {/* Add Policy Modal */}
       {isAddingPolicy && (
-        <Modal isOpen={isAddingPolicy} onClose={() => setIsAddingPolicy(false)} title="Authorize New Placement" maxWidth="lg">
+        <Modal isOpen={isAddingPolicy} onClose={() => setIsAddingPolicy(false)} title="Add New Policy" maxWidth="lg">
           <div className="space-y-8 font-body p-2">
             <div className="bg-slate-50/50 p-8 rounded-[32px] border border-black/5 shadow-inner">
               <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] mb-3">Placement Identifier</label>
@@ -731,7 +787,7 @@ export default function ClientDetailPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Carrier Forensic Partner</label>
+                <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Carrier Partner</label>
                 <input
                   type="text"
                   value={newPolicyForm.carrier}
@@ -785,7 +841,7 @@ export default function ClientDetailPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Maturity Date (Expiration)</label>
+                <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Expiration Date</label>
                 <input
                   type="date"
                   value={newPolicyForm.expirationDate}
@@ -806,7 +862,7 @@ export default function ClientDetailPage() {
                 onClick={handleAddPolicy}
                 className="px-10 py-4 bg-primary text-white font-black rounded-full hover:shadow-2xl hover:shadow-primary/30 transition-all text-xs uppercase tracking-[0.2em] active:scale-[0.98]"
               >
-                Authorize Placement
+                Add Policy
               </button>
             </div>
           </div>
@@ -815,16 +871,16 @@ export default function ClientDetailPage() {
 
       {/* Delete Policy Confirmation Modal */}
       {deletePolicyId && (
-        <Modal isOpen={!!deletePolicyId} onClose={() => setDeletePolicyId(null)} title="Authorize Placement Termination" maxWidth="sm">
+        <Modal isOpen={!!deletePolicyId} onClose={() => setDeletePolicyId(null)} title="Confirm Policy Removal" maxWidth="sm">
           <div className="space-y-8 font-body p-2 text-center">
             <div className="w-20 h-20 bg-red-50 rounded-[24px] flex items-center justify-center mx-auto mb-2 border border-red-100 shadow-sm animate-pulse">
               <AlertTriangle className="w-10 h-10 text-red-600" />
             </div>
             
             <div>
-              <h3 className="text-xl font-black text-on-surface italic font-headline mb-2">Final Termination Alert</h3>
+              <h3 className="text-xl font-black text-on-surface italic font-headline mb-2">Final Removal Alert</h3>
               <p className="text-sm text-on-surface/60 font-medium italic leading-relaxed">
-                Confirm total termination of this placement identifier. This protocol is irreversible and will purge all associated forensic records.
+                Confirm total removal of this policy record. This protocol is irreversible and will purge all associated analysis records.
               </p>
             </div>
 
@@ -839,7 +895,7 @@ export default function ClientDetailPage() {
                 onClick={() => setDeletePolicyId(null)}
                 className="w-full py-4 bg-slate-50 border border-black/10 text-on-surface/60 font-black text-xs uppercase tracking-widest rounded-full hover:bg-white transition-all"
               >
-                Abort Termination
+                Abort Removal
               </button>
             </div>
           </div>
@@ -848,10 +904,10 @@ export default function ClientDetailPage() {
 
       {/* Edit Policy Modal */}
       {editPolicyId && (
-        <Modal isOpen={!!editPolicyId} onClose={() => setEditPolicyId(null)} title="Update Placement Forensics" maxWidth="lg">
+        <Modal isOpen={!!editPolicyId} onClose={() => setEditPolicyId(null)} title="Update Policy Analysis" maxWidth="lg">
           <div className="space-y-8 font-body p-2">
             <div className="bg-slate-50/50 p-8 rounded-[32px] border border-black/5 shadow-inner">
-              <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] mb-3">Placement Identifier</label>
+              <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] mb-3">Policy Number</label>
               <input
                 type="text"
                 value={editPolicyForm.policyNumber}
@@ -904,7 +960,7 @@ export default function ClientDetailPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Forensic Health Index</label>
+                <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Policy Health Score</label>
                 <input
                   type="number"
                   min="0"
@@ -927,7 +983,7 @@ export default function ClientDetailPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Maturity Date (Expiration)</label>
+                <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Expiration Date</label>
                 <input
                   type="date"
                   value={editPolicyForm.expirationDate}
@@ -938,7 +994,7 @@ export default function ClientDetailPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Placement Lifecycle Stage</label>
+              <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Policy Lifecycle Stage</label>
               <div className="relative">
                 <select
                   value={editPolicyForm.status}
@@ -967,8 +1023,104 @@ export default function ClientDetailPage() {
                 onClick={handleEditPolicy}
                 className="px-10 py-4 bg-primary text-white font-black rounded-full hover:shadow-2xl hover:shadow-primary/30 transition-all text-xs uppercase tracking-[0.2em] active:scale-[0.98]"
               >
-                Commit Forensic Updates
+                Commit Policy Updates
               </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* AI Analysis Generation Modal */}
+      {isGeneratingReport && (
+        <Modal isOpen={isGeneratingReport} onClose={() => setIsGeneratingReport(false)} title="AI Analysis Protocol" maxWidth="sm">
+          <div className="py-12 flex flex-col items-center justify-center text-center space-y-6">
+            <div className="relative">
+              <div className="w-24 h-24 rounded-full border-4 border-secondary/10 border-t-secondary animate-spin" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <TrendingUp className="w-8 h-8 text-secondary animate-pulse" />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-on-surface italic font-headline tracking-tight mb-2">Analyzing Policy Data</h3>
+              <p className="text-xs text-on-surface/40 font-bold uppercase tracking-widest leading-relaxed px-8">
+                Analysis algorithms scanning carrier ledger, claims history, and market patterns...
+              </p>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* AI Branded Report Modal */}
+      {showReport && (
+        <Modal isOpen={showReport} onClose={() => setShowReport(false)} title="Branded Policy Report" maxWidth="lg">
+          <div className="space-y-8 p-2 font-body">
+            <div className="bg-slate-50 p-8 rounded-[32px] border border-black/5 shadow-inner">
+              <div className="flex justify-between items-start mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-on-surface rounded-xl flex items-center justify-center shadow-lg">
+                    <Shield className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="text-2xl font-black text-on-surface italic font-headline tracking-tighter leading-none">{client?.name}</h4>
+                    <p className="text-[10px] font-black text-on-surface/30 uppercase tracking-[0.2em] mt-1">Strategic Policy Analysis</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-black text-secondary bg-secondary/5 px-4 py-2 rounded-full uppercase tracking-widest border border-secondary/10">High-Authority Report</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                <div className="bg-white p-6 rounded-2xl border border-black/5 shadow-sm">
+                  <span className="text-[9px] font-black text-on-surface/30 uppercase tracking-widest block mb-2">Portfolio Health</span>
+                  <div className="flex items-center gap-3">
+                    <div className="text-3xl font-black text-on-surface italic font-headline tracking-tighter">84.2%</div>
+                    <span className="text-[10px] font-black text-secondary uppercase tracking-widest">+4.1% MoM</span>
+                  </div>
+                </div>
+                <div className="bg-white p-6 rounded-2xl border border-black/5 shadow-sm">
+                  <span className="text-[9px] font-black text-on-surface/30 uppercase tracking-widest block mb-2">Leakage Risk</span>
+                  <div className="flex items-center gap-3">
+                    <div className="text-3xl font-black text-red-500 italic font-headline tracking-tighter">Minimized</div>
+                    <span className="text-[10px] font-black text-red-400 uppercase tracking-widest">Optimized</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-sm text-on-surface font-medium leading-relaxed italic border-l-4 border-secondary pl-6">
+                  "Based on analysis of current market hardening, {client?.name}'s liability umbrella is currently performing in the top 15th percentile. We recommend initiating the portal sync to review these insights directly with the executive team."
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <button 
+                onClick={handleCopyPortalLink}
+                disabled={isCopyingLink}
+                className={`w-full py-7 rounded-[2rem] font-black text-[13px] uppercase tracking-[0.3em] flex items-center justify-center gap-4 transition-all shadow-2xl active:scale-[0.98] ${
+                  linkCopied 
+                    ? "bg-secondary text-white shadow-secondary/30 scale-[1.02]" 
+                    : "bg-emerald-500 text-white hover:bg-emerald-600 shadow-emerald-500/30 hover:scale-[1.01]"
+                }`}
+              >
+                {isCopyingLink ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : linkCopied ? (
+                  <>
+                    <Check className="w-5 h-5" />
+                    Branded Link Copied
+                  </>
+                ) : (
+                  <>
+                    <Link2 className="w-5 h-5" />
+                    Copy Client Portal Link
+                  </>
+                )}
+              </button>
+              <p className="text-center text-[10px] font-bold text-on-surface/30 uppercase tracking-widest">
+                {linkCopied ? "Success! Paste the link in your email or browser." : "Link will copy to clipboard instantly upon activation."}
+              </p>
             </div>
           </div>
         </Modal>

@@ -1,4 +1,18 @@
 import { getAuth } from '@/lib/auth-wrapper';
+
+interface ChatMessage {
+  role: 'system' | 'user' | 'assistant' | 'tool';
+  content: string;
+  tool_calls?: any[];
+  tool_call_id?: string;
+}
+
+interface AIResponse {
+  choices: {
+    message: ChatMessage;
+  }[];
+}
+
 import { revalidatePath } from 'next/cache';
 import { db } from '@/lib/db';
 import { clients, policies, users } from '@/db/schema';
@@ -42,7 +56,7 @@ async function getAgencyId(id: string) {
   return user?.agencyId || null;
 }
 
-async function callDashScope(messages: any[], tools: any[]): Promise<any> {
+async function callDashScope(messages: ChatMessage[], tools: any[]): Promise<AIResponse> {
   const response = await fetch('https://dashscope-us.aliyuncs.com/compatible-mode/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -75,7 +89,7 @@ async function callDashScope(messages: any[], tools: any[]): Promise<any> {
   return data;
 }
 
-async function callGemini(messages: any[], tools: any[]): Promise<any> {
+async function callGemini(messages: ChatMessage[], tools: any[]): Promise<AIResponse> {
   const geminiApiKey = process.env.GEMINI_API_KEY;
   if (!geminiApiKey) {
     throw new Error('Gemini API key not configured');
@@ -108,7 +122,7 @@ async function callGemini(messages: any[], tools: any[]): Promise<any> {
   };
 }
 
-async function callAI(messages: any[], tools: any[]): Promise<any> {
+async function callAI(messages: ChatMessage[], tools: any[]): Promise<AIResponse> {
   // Try DashScope first if available
   if (process.env.DASHSCOPE_API_KEY) {
     try {
@@ -235,7 +249,7 @@ const TOOL_DEFINITIONS = [
   },
 ];
 
-async function executeTool(toolName: string, args: any, agencyId: string, userId: string | null) {
+async function executeTool(toolName: string, args: any, agencyId: string, userId: string | null): Promise<any> {
   switch (toolName) {
     case 'search_clients': {
       if (!db) return { clients: [], count: 0, error: 'Database not connected' };
@@ -440,71 +454,58 @@ async function executeTool(toolName: string, args: any, agencyId: string, userId
   }
 }
 
-export async function POST(req: Request) {
-  // Require authentication
-  let userId: string | null = null;
-  try {
-    const authResult = await getAuth();
-    userId = authResult.userId;
-  } catch (error) {
-    return new Response(JSON.stringify({ 
-      error: 'Authentication required. Please sign in to use the AI chat feature.' 
-    }), { status: 401, headers: { 'Content-Type': 'application/json' } });
-  }
+import { withApiSecurity } from '@/lib/api-security';
 
-  if (!userId) {
-    return new Response(JSON.stringify({ 
-      error: 'Authentication required. Please sign in to use the AI chat feature.' 
-    }), { status: 401, headers: { 'Content-Type': 'application/json' } });
-  }
+interface ChatMessage {
+  role: 'system' | 'user' | 'assistant' | 'tool';
+  content: string;
+  tool_calls?: any[];
+  tool_call_id?: string;
+}
 
-  // Rate limiting check (per user, not IP)
-  const rateLimitAllowed = await checkRateLimit(userId);
-  if (!rateLimitAllowed) {
-    return new Response(JSON.stringify({ 
-      error: 'Rate limit exceeded. Please try again in 1 minute.' 
-    }), { status: 429, headers: { 'Content-Type': 'application/json' } });
-  }
+interface AIResponse {
+  choices: {
+    message: ChatMessage;
+  }[];
+}
+export const POST = withApiSecurity(
+  async (req: Request, context) => {
+    const { userId, agencyId } = context;
 
-  let agencyId: string | null = null;
-  let contextSummary = '';
+    if (!agencyId) {
+      return new Response(JSON.stringify({ 
+        error: 'Agency not found' 
+      }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+    }
 
-  if (db) {
-    agencyId = await getAgencyId(userId);
-    if (agencyId) {
-      const context = await buildAgencyContext(userId);
-      if (context) {
-        contextSummary = `AGENCY: ${context.agencyName} (${context.subscriptionTier} tier)
-CLIENTS: ${context.totalClients} total, ${context.activePolicies} active policies
-PREMIUM: $${context.totalPremium.toLocaleString()} total, $${context.totalCommission.toLocaleString()} commission
-RENEWALS: ${context.upcomingRenewals30} in 30d, ${context.upcomingRenewals60} in 60d, ${context.upcomingRenewals90} in 90d
-AT RISK: ${context.atRiskPolicies} policies need attention
-TOP CLIENTS: ${context.topClients.map((c: any) => `${c.name} ($${c.premium.toLocaleString()}, ${c.policyCount} policies)`).join('; ')}
-CARRIERS: ${context.carriers.map((c: any) => `${c.name} (${c.policyCount} policies, $${c.totalPremium.toLocaleString()})`).join('; ')}`;
+    // Rate limiting check (per user, not IP)
+    const rateLimitAllowed = await checkRateLimit(userId);
+    if (!rateLimitAllowed) {
+      return new Response(JSON.stringify({ 
+        error: 'Rate limit exceeded. Please try again in 1 minute.' 
+      }), { status: 429, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    let contextSummary = '';
+
+    if (db) {
+      const authContext = await buildAgencyContext(userId);
+      if (authContext) {
+        contextSummary = `AGENCY: ${authContext.agencyName} (${authContext.subscriptionTier} tier)
+CLIENTS: ${authContext.totalClients} total, ${authContext.activePolicies} active policies
+PREMIUM: $${authContext.totalPremium.toLocaleString()} total, $${authContext.totalCommission.toLocaleString()} commission
+RENEWALS: ${authContext.upcomingRenewals30} in 30d, ${authContext.upcomingRenewals60} in 60d, ${authContext.upcomingRenewals90} in 90d
+HEALTH: ${authContext.atRiskPolicies} policies at risk`;
       }
     }
-  }
 
-  if (!contextSummary) {
-    return new Response(JSON.stringify({ 
-      error: 'No agency context found. Please complete onboarding first.' 
-    }), { status: 400, headers: { 'Content-Type': 'application/json' } });
-  }
+    // Log the request
+    const { messages } = await req.json();
+    await logChatRequest(userId, messages.length);
 
-  // Check for at least one AI provider
-  if (!process.env.DASHSCOPE_API_KEY && !process.env.GEMINI_API_KEY) {
-    return new Response(JSON.stringify({
-      error: 'AI service not configured. Please contact support.',
-    }), { status: 503, headers: { 'Content-Type': 'application/json' } });
-  }
-
-  // Log the request
-  const { messages } = await req.json();
-  await logChatRequest(userId, messages.length);
-
-  const systemMessage = {
-    role: 'system',
-    content: `You are BookGuard Intelligence Protocol, an AI assistant for insurance agency management.
+    const systemMessage = {
+      role: 'system',
+      content: `You are RetainVault Intelligence Protocol, an AI assistant for insurance agency management.
 
 RESPONSE FORMAT RULES:
 - Never use markdown tables, emojis, or decorative formatting
@@ -549,41 +550,58 @@ CONTEXT - Current Agency State:
 ${contextSummary}
 
 If the user asks something outside your capabilities, explain what you can do and offer to help instead.`
-  };
+    };
 
-  try {
-    const allMessages = [systemMessage, ...messages.filter((m: any) => m.role !== 'system')];
+    try {
+      const allMessages: ChatMessage[] = [systemMessage as ChatMessage, ...messages.filter((m: any) => m.role !== "system")];
 
-    const response = await callAI(allMessages, TOOL_DEFINITIONS);
-    const assistantMessage = response.choices[0].message;
+      const response = await callAI(allMessages, TOOL_DEFINITIONS);
+      const assistantMessage = response.choices[0].message;
 
-    if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-      const toolMessages = [];
-      for (const toolCall of assistantMessage.tool_calls) {
-        const args = JSON.parse(toolCall.function.arguments);
-        const result = await executeTool(toolCall.function.name, args, agencyId || '', userId);
-        toolMessages.push({
-          role: 'tool',
-          tool_call_id: toolCall.id,
-          content: JSON.stringify(result),
-        });
+      if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
+        const toolMessages = [];
+        for (const toolCall of assistantMessage.tool_calls) {
+          const args = JSON.parse(toolCall.function.arguments);
+          const result = await executeTool(toolCall.function.name, args, agencyId || '', userId);
+          toolMessages.push({
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: JSON.stringify(result),
+          });
+        }
+
+        const followUpMessages = [...allMessages, assistantMessage, ...toolMessages];
+        const followUpResponse = await callAI(followUpMessages, []);
+
+        return new Response(JSON.stringify({
+          content: followUpResponse.choices[0].message.content,
+        }), { headers: { 'Content-Type': 'application/json' } });
       }
 
-      const followUpMessages = [...allMessages, assistantMessage, ...toolMessages];
-      const followUpResponse = await callAI(followUpMessages, []);
-
       return new Response(JSON.stringify({
-        content: followUpResponse.choices[0].message.content,
+        content: assistantMessage.content,
       }), { headers: { 'Content-Type': 'application/json' } });
+    } catch (error) {
+      console.error('AI chat error:', error);
+      return new Response(JSON.stringify({
+        error: 'Failed to get AI response. Please try again later.',
+      }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    } finally {
+      if (agencyId) {
+        try {
+          const { incrementFeatureUsage } = await import('@/lib/feature-access');
+          await incrementFeatureUsage(agencyId, 'aiAssistant');
+        } catch (usageErr) {
+          console.error('Failed to increment AI usage', usageErr);
+        }
+      }
     }
-
-    return new Response(JSON.stringify({
-      content: assistantMessage.content,
-    }), { headers: { 'Content-Type': 'application/json' } });
-  } catch (error: any) {
-    console.error('AI chat error:', error);
-    return new Response(JSON.stringify({
-      error: 'Failed to get AI response. Please try again later.',
-    }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+  },
+  {
+    requireAuth: true,
+    requireAgency: true,
+    enableCsrf: true,
+    rateLimit: 'api',
+    requiredFeature: 'aiAssistant',
   }
-}
+);

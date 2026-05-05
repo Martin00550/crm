@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { getAuth } from '@/lib/auth-wrapper';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { logAuditEvent, extractRequestMetadata } from '@/lib/audit';
@@ -34,6 +35,9 @@ export interface ApiRouteOptions {
   // IP whitelist for admin operations
   requireIPWhitelist?: boolean;
   
+  // Subscription tier/feature gate
+  requiredFeature?: string;
+  
   // Custom validation
   validate?: (request: NextRequest) => Promise<{ valid: boolean; error?: string }>;
 }
@@ -42,10 +46,26 @@ export interface ApiRouteOptions {
  * Wrap an API route handler with security middleware
  */
 export function withApiSecurity(
-  handler: (request: NextRequest, context: { userId: string | null; agencyId: string | null }) => Promise<NextResponse>,
+  handler: (
+    request: NextRequest, 
+    context: { userId: string | null; agencyId: string | null; params: any }
+  ) => Promise<NextResponse>,
   options: ApiRouteOptions = {}
 ) {
-  return async (request: NextRequest): Promise<NextResponse> => {
+  return async (request: NextRequest, context: any): Promise<NextResponse> => {
+    // Robust params handling for Next.js 15+ compatibility
+    let params = {};
+    try {
+      // In Next.js 15, context.params is a Promise. We handle both cases for maximum stability.
+      if (context?.params) {
+        const resolvedParams = context.params instanceof Promise ? await context.params : context.params;
+        params = resolvedParams || {};
+      }
+    } catch (e) {
+      logger.error('Error resolving route params', e);
+      params = {};
+    }
+
     const startTime = Date.now();
     let userId: string | null = null;
     let agencyId: string | null = null;
@@ -143,7 +163,7 @@ export function withApiSecurity(
         const user = await db
           ?.select({ role: users.role })
           .from(users)
-          .where(eq(users.id, userId))
+          .where(eq(users.workosUserId, userId))
           .limit(1)
           .then((r: any[]) => r[0]);
         
@@ -154,7 +174,19 @@ export function withApiSecurity(
         }
       }
 
-      // 7. Custom validation
+      // 7. Subscription/Feature check
+      if (options.requiredFeature && agencyId) {
+        const { canUseFeature } = await import('@/lib/feature-access');
+        const featureCheck = await canUseFeature(agencyId, options.requiredFeature);
+        
+        if (!featureCheck.allowed) {
+          const error = Errors.authorization(featureCheck.reason || 'Feature not available in your subscription tier');
+          logError(error, { agencyId, featureKey: options.requiredFeature });
+          return NextResponse.json(createErrorResponse(error), { status: error.statusCode });
+        }
+      }
+
+      // 8. Custom validation
       if (options.validate) {
         const validation = await options.validate(request);
         if (!validation.valid) {
@@ -165,7 +197,7 @@ export function withApiSecurity(
       }
 
       // 8. Execute handler
-      const response = await handler(request, { userId, agencyId });
+      const response = await handler(request, { userId, agencyId, params });
 
       // 9. Audit logging
       if (options.auditAction && userId) {
@@ -186,8 +218,8 @@ export function withApiSecurity(
       response.headers.set('X-Response-Time', `${Date.now() - startTime}ms`);
 
       return response;
-    } catch (error: any) {
-      console.error('API route error:', error);
+    } catch (error) {
+      logger.error('API route error', error);
       
       // Log error
       if (options.auditAction) {
@@ -200,10 +232,10 @@ export function withApiSecurity(
             status: 'failure',
             ipAddress: metadata.ipAddress,
             userAgent: metadata.userAgent,
-            errorMessage: error.message,
+            errorMessage: error instanceof Error ? error.message : String(error),
           });
         } catch (auditError) {
-          console.error('Error logging audit event in catch block:', auditError);
+          logger.error('Error logging audit event in catch block', auditError);
         }
       }
       
@@ -212,7 +244,6 @@ export function withApiSecurity(
       
       return NextResponse.json(createErrorResponse(apiError), { status: apiError.statusCode });
     }
-
   };
 }
 

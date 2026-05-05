@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Globe, Palette, Mail, Phone, Settings, ExternalLink, CheckCircle, AlertCircle, Shield } from 'lucide-react';
+import { Globe, Palette, Mail, Phone, Settings, ExternalLink, CheckCircle, AlertCircle, Shield, Trash2, Upload } from 'lucide-react';
 
 interface PortalConfig {
   agencyId: string;
@@ -33,6 +33,9 @@ export function WhiteLabelPortal({ agencyId }: WhiteLabelPortalProps) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+
   useEffect(() => {
     loadConfig();
   }, [agencyId]);
@@ -53,11 +56,63 @@ export function WhiteLabelPortal({ agencyId }: WhiteLabelPortalProps) {
       }
 
       setConfig(result.config);
+      if (result.config.branding.logo) {
+        setLogoPreview(result.config.branding.logo);
+      }
     } catch (error: any) {
       setError(error.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !config) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file (PNG, JPG, etc.)');
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    setError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('agencyId', agencyId);
+
+      const res = await fetch('/api/upload/logo', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to upload logo');
+      }
+
+      setLogoPreview(data.url);
+      setConfig({
+        ...config,
+        branding: { ...config.branding, logo: data.key }
+      });
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
+
+  const removeLogo = () => {
+    if (!config) return;
+    setLogoPreview(null);
+    setConfig({
+      ...config,
+      branding: { ...config.branding, logo: '' }
+    });
   };
 
   const saveConfig = async () => {
@@ -141,203 +196,246 @@ export function WhiteLabelPortal({ agencyId }: WhiteLabelPortalProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <div className="flex items-center space-x-3 mb-2">
-          <div className="w-10 h-10 bg-secondary/10 rounded-lg flex items-center justify-center">
-            <Globe className="w-5 h-5 text-secondary" />
-          </div>
-          <h1 className="text-2xl font-black text-on-surface italic font-headline tracking-tight">Branded Insured Portal</h1>
-        </div>
-        <p className="text-on-surface/60 font-medium italic">Configure your exclusive agency portal for high-premium insured servicing</p>
-      </div>
-
-      {/* Feature Info */}
-      <div className="bg-surface border border-black/5 rounded-[32px] p-8 shadow-sm relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
-        <div className="flex items-start space-x-6 relative z-10">
-          <div className="w-14 h-14 bg-secondary text-white rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
-            <Globe className="w-7 h-7" />
-          </div>
-          <div>
-            <h3 className="text-lg font-black text-on-surface italic font-headline mb-2">Agency Command Intelligence</h3>
-            <p className="text-on-surface/70 mb-6 font-medium leading-relaxed max-w-2xl">
-              Project authority to your wealthiest clients. Provide a professional, branded portal experience featuring your exclusive agency identity. 
-              Secure your Book of Business with real-time transparency and carrier-grade security.
-            </p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="flex items-center space-x-3">
-                <Palette className="w-4 h-4 text-secondary" />
-                <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Custom Branding</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Globe className="w-4 h-4 text-secondary" />
-                <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Exclusive Subdomain</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <ExternalLink className="w-4 h-4 text-secondary" />
-                <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Insured Access</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Settings className="w-4 h-4 text-secondary" />
-                <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Command Control</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <div className="space-y-8">
       {config && (
         <>
           {/* Configuration Form */}
-          <div className="bg-surface rounded-[32px] border border-black/5 p-8 shadow-sm">
+          <div className="bg-white rounded-[32px] border border-black/5 p-8 shadow-sm">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em]">Portal Protocol Configuration</h2>
               <div className="flex items-center space-x-2">
                 {config.subdomain && (
                   <a
-                    href={`https://${config.subdomain}.bookguard.tech`}
+                    href={`https://${config.subdomain}.retainvault.tech`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center space-x-2 px-4 py-2 bg-secondary/5 text-secondary rounded-full hover:bg-secondary/10 transition-all border border-secondary/10"
+                    className="flex items-center space-x-2 px-6 py-2.5 bg-secondary/10 text-secondary rounded-full hover:bg-secondary hover:text-white transition-all border border-secondary/10 group/link"
                   >
-                    <ExternalLink className="w-4 h-4" />
+                    <ExternalLink className="w-4 h-4 group-hover:rotate-12 transition-transform" />
                     <span className="text-[10px] font-black uppercase tracking-widest">Preview Deployment</span>
                   </a>
                 )}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Subdomain */}
-              <div>
-                <label className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block mb-2">Exclusive Subdomain</label>
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface/20" />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+              {/* Configuration Inputs */}
+              <div className="lg:col-span-7 space-y-8">
+                {/* Subdomain */}
+                <div>
+                  <label className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block mb-2">Exclusive Subdomain</label>
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface/20" />
+                      <input
+                        type="text"
+                        value={config.subdomain}
+                        onChange={(e) => setConfig({ ...config, subdomain: e.target.value })}
+                        placeholder="your-agency"
+                        className="w-full pl-12 pr-4 py-3 bg-background border border-black/10 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
+                      />
+                    </div>
+                    <span className="text-sm font-bold text-on-surface/40 italic">.retainvault.com</span>
+                  </div>
+                </div>
+
+                {/* Support Email */}
+                <div>
+                  <label className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block mb-2">Insured Support Protocol</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface/20" />
                     <input
-                      type="text"
-                      value={config.subdomain}
-                      onChange={(e) => setConfig({ ...config, subdomain: e.target.value })}
-                      placeholder="your-agency"
-                      className="w-full pl-12 pr-4 py-3 bg-slate-50/50 border border-black/10 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
+                      type="email"
+                      value={config.branding.supportEmail}
+                      onChange={(e) => setConfig({
+                        ...config,
+                        branding: { ...config.branding, supportEmail: e.target.value }
+                      })}
+                      placeholder="support@youragency.com"
+                      className="w-full pl-12 pr-4 py-3 bg-background border border-black/10 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
                     />
                   </div>
-                  <span className="text-sm font-bold text-on-surface/40 italic">.bookguard.tech</span>
                 </div>
-                <p className="text-[10px] font-bold text-on-surface/20 mt-2 uppercase tracking-widest italic">
-                  Lower-case alpha-numeric deployment IDs only
-                </p>
-              </div>
 
-              {/* Support Email */}
-              <div>
-                <label className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block mb-2">Insured Support Protocol</label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface/20" />
-                  <input
-                    type="email"
-                    value={config.branding.supportEmail}
-                    onChange={(e) => setConfig({
-                      ...config,
-                      branding: { ...config.branding, supportEmail: e.target.value }
-                    })}
-                    placeholder="support@youragency.com"
-                    className="w-full pl-12 pr-4 py-3 bg-slate-50/50 border border-black/10 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Primary Color */}
-              <div>
-                <label className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block mb-2">Primary Agency Color</label>
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="color"
-                    value={config.branding.primaryColor}
-                    onChange={(e) => setConfig({
-                      ...config,
-                      branding: { ...config.branding, primaryColor: e.target.value }
-                    })}
-                    className="w-12 h-12 border border-black/10 rounded-xl cursor-pointer bg-white p-1"
-                  />
-                  <input
-                    type="text"
-                    value={config.branding.primaryColor}
-                    onChange={(e) => setConfig({
-                      ...config,
-                      branding: { ...config.branding, primaryColor: e.target.value }
-                    })}
-                    className="flex-1 px-4 py-3 bg-slate-50/50 border border-black/10 rounded-xl text-sm font-mono font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Secondary Color */}
-              <div>
-                <label className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block mb-2">Accent Branding Color</label>
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="color"
-                    value={config.branding.secondaryColor}
-                    onChange={(e) => setConfig({
-                      ...config,
-                      branding: { ...config.branding, secondaryColor: e.target.value }
-                    })}
-                    className="w-12 h-12 border border-black/10 rounded-xl cursor-pointer bg-white p-1"
-                  />
-                  <input
-                    type="text"
-                    value={config.branding.secondaryColor}
-                    onChange={(e) => setConfig({
-                      ...config,
-                      branding: { ...config.branding, secondaryColor: e.target.value }
-                    })}
-                    className="flex-1 px-4 py-3 bg-slate-50/50 border border-black/10 rounded-xl text-sm font-mono font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Support Phone */}
-              <div>
-                <label className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block mb-2">Direct Command Line (Optional)</label>
-                <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface/20" />
-                  <input
-                    type="tel"
-                    value={config.branding.supportPhone || ''}
-                    onChange={(e) => setConfig({
-                      ...config,
-                      branding: { ...config.branding, supportPhone: e.target.value }
-                    })}
-                    placeholder="+1 (555) 123-4567"
-                    className="w-full pl-12 pr-4 py-3 bg-slate-50/50 border border-black/10 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Logo Upload */}
-              <div>
-                <label className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block mb-2">Agency Seal (Logo)</label>
-                <div className="flex items-center space-x-6">
-                  <div className="w-20 h-20 bg-slate-50 border border-black/10 rounded-2xl flex items-center justify-center overflow-hidden shadow-inner">
-                    {config.branding.logo ? (
-                      <img
-                        src={config.branding.logo}
-                        alt="Company Logo"
-                        className="w-full h-full object-contain"
+                {/* Colors */}
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block mb-2">Primary Agency Color</label>
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="color"
+                        value={config.branding.primaryColor}
+                        onChange={(e) => setConfig({
+                          ...config,
+                          branding: { ...config.branding, primaryColor: e.target.value }
+                        })}
+                        className="w-12 h-12 border border-black/10 rounded-xl cursor-pointer bg-white p-1 shadow-sm"
                       />
-                    ) : (
-                      <Palette className="w-8 h-8 text-on-surface/10" />
-                    )}
+                      <input
+                        type="text"
+                        value={config.branding.primaryColor}
+                        onChange={(e) => setConfig({
+                          ...config,
+                          branding: { ...config.branding, primaryColor: e.target.value }
+                        })}
+                        className="flex-1 px-4 py-3 bg-background border border-black/10 rounded-xl text-[10px] font-mono font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
+                      />
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    className="px-6 py-2.5 bg-white border border-black/10 text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-black/5 transition-all shadow-sm"
-                  >
-                    Upload Asset
-                  </button>
+
+                  <div>
+                    <label className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block mb-2">Accent Branding Color</label>
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="color"
+                        value={config.branding.secondaryColor}
+                        onChange={(e) => setConfig({
+                          ...config,
+                          branding: { ...config.branding, secondaryColor: e.target.value }
+                        })}
+                        className="w-12 h-12 border border-black/10 rounded-xl cursor-pointer bg-white p-1 shadow-sm"
+                      />
+                      <input
+                        type="text"
+                        value={config.branding.secondaryColor}
+                        onChange={(e) => setConfig({
+                          ...config,
+                          branding: { ...config.branding, secondaryColor: e.target.value }
+                        })}
+                        className="flex-1 px-4 py-3 bg-background border border-black/10 rounded-xl text-[10px] font-mono font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Logo Upload */}
+                <div>
+                  <label className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block mb-2">Agency Seal (Logo)</label>
+                  <div className="flex items-center space-x-6">
+                    <div className="w-20 h-20 bg-background border border-black/10 rounded-2xl flex items-center justify-center overflow-hidden shadow-inner relative group/logo">
+                      {isUploadingLogo ? (
+                        <div className="w-6 h-6 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
+                      ) : logoPreview ? (
+                        <>
+                          <img
+                            src={logoPreview}
+                            alt="Company Logo"
+                            className="w-full h-full object-contain p-2"
+                          />
+                          <button
+                            onClick={removeLogo}
+                            className="absolute inset-0 bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </>
+                      ) : (
+                        <Palette className="w-8 h-8 text-on-surface/10" />
+                      )}
+                    </div>
+                    <div className="space-y-3">
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('portal-logo-upload')?.click()}
+                        disabled={isUploadingLogo}
+                        className="px-6 py-2.5 bg-white border border-black/10 text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-black/5 transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        {isUploadingLogo ? 'Processing...' : 'Upload Asset'}
+                      </button>
+                      <input
+                        id="portal-logo-upload"
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleLogoChange}
+                      />
+                      <p className="text-[9px] text-on-surface/30 font-bold uppercase tracking-widest italic">PNG/SVG with transparency recommended</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Live Preview Mockup */}
+              <div className="lg:col-span-5">
+                <div className="sticky top-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest italic">Live Visual Preview</h3>
+                    <span className="flex items-center gap-1.5 text-[10px] font-black text-secondary uppercase animate-pulse">
+                      <span className="w-1.5 h-1.5 bg-secondary rounded-full"></span>
+                      Realtime Protocol
+                    </span>
+                  </div>
+
+                  <div className="aspect-[4/5] bg-slate-100 rounded-[32px] border border-black/5 shadow-2xl overflow-hidden relative group/mockup">
+                    {/* Mockup Header */}
+                    <div 
+                      className="h-16 flex items-center px-6 border-b border-black/5 transition-colors duration-500"
+                      style={{ backgroundColor: 'white' }}
+                    >
+                      <div className="w-8 h-8 rounded-lg mr-3 flex items-center justify-center overflow-hidden">
+                        {logoPreview ? (
+                          <img src={logoPreview} className="w-full h-full object-contain" alt="preview" />
+                        ) : (
+                          <div className="w-full h-full bg-slate-200 rounded" />
+                        )}
+                      </div>
+                      <div className="flex-1 space-y-1.5">
+                        <div className="h-2 w-20 bg-slate-200 rounded-full" />
+                        <div className="h-1.5 w-12 bg-slate-100 rounded-full" />
+                      </div>
+                      <div className="w-6 h-6 rounded-full bg-slate-50" />
+                    </div>
+
+                    {/* Mockup Content */}
+                    <div className="p-6 space-y-4 bg-white/50 h-full">
+                      <div className="space-y-2 mb-8">
+                        <div className="h-4 w-3/4 bg-slate-200 rounded-full" />
+                        <div className="h-3 w-1/2 bg-slate-100 rounded-full" />
+                      </div>
+
+                      {/* Mockup Login Card */}
+                      <div className="bg-white rounded-2xl p-6 shadow-sm border border-black/5 space-y-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 rounded-xl transition-colors duration-500 flex items-center justify-center text-white" style={{ backgroundColor: config.branding.primaryColor }}>
+                            <Shield className="w-5 h-5" />
+                          </div>
+                          <div className="space-y-1">
+                            <div className="h-2 w-16 bg-slate-200 rounded-full" />
+                            <div className="h-1.5 w-10 bg-slate-100 rounded-full" />
+                          </div>
+                        </div>
+                        <div className="h-8 w-full bg-slate-50 rounded-lg" />
+                        <div className="h-8 w-full bg-slate-50 rounded-lg" />
+                        
+                        {/* Mockup Primary Button */}
+                        <div 
+                          className="h-10 w-full rounded-full transition-all duration-500 flex items-center justify-center text-[10px] font-black uppercase text-white shadow-lg"
+                          style={{ backgroundColor: config.branding.primaryColor }}
+                        >
+                          Access Gateway
+                        </div>
+
+                        {/* Mockup Secondary Button */}
+                        <div 
+                          className="h-10 w-full rounded-full transition-all duration-500 flex items-center justify-center text-[10px] font-black uppercase border"
+                          style={{ borderColor: config.branding.secondaryColor + '20', color: config.branding.secondaryColor, backgroundColor: config.branding.secondaryColor + '05' }}
+                        >
+                          Request Access
+                        </div>
+                      </div>
+                      
+                      <p className="text-[8px] text-center text-slate-300 font-bold uppercase tracking-widest mt-4">
+                        Deployed at {config.subdomain}.retainvault.com
+                      </p>
+                    </div>
+
+                    {/* Glow effect */}
+                    <div 
+                      className="absolute -bottom-24 -left-24 w-64 h-64 rounded-full blur-[100px] opacity-20 transition-colors duration-700"
+                      style={{ backgroundColor: config.branding.primaryColor }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -358,7 +456,7 @@ export function WhiteLabelPortal({ agencyId }: WhiteLabelPortalProps) {
                       className="w-5 h-5 rounded-lg border-black/10 text-secondary focus:ring-secondary/20 transition-all cursor-pointer"
                     />
                   </div>
-                  <span className="text-sm font-bold text-on-surface/70 group-hover:text-on-surface transition-colors">Download Policy Documents</span>
+                  <span className="text-sm font-bold text-on-surface/70 group-hover:text-on-surface transition-colors italic">Download Policy Documents</span>
                 </label>
                 <label className="flex items-center space-x-3 group cursor-pointer">
                   <div className="relative flex items-center">
@@ -372,7 +470,7 @@ export function WhiteLabelPortal({ agencyId }: WhiteLabelPortalProps) {
                       className="w-5 h-5 rounded-lg border-black/10 text-secondary focus:ring-secondary/20 transition-all cursor-pointer"
                     />
                   </div>
-                  <span className="text-sm font-bold text-on-surface/70 group-hover:text-on-surface transition-colors">View Forensic Details</span>
+                  <span className="text-sm font-bold text-on-surface/70 group-hover:text-on-surface transition-colors italic">View Policy Details</span>
                 </label>
                 <label className="flex items-center space-x-3 group cursor-pointer">
                   <div className="relative flex items-center">
@@ -386,7 +484,7 @@ export function WhiteLabelPortal({ agencyId }: WhiteLabelPortalProps) {
                       className="w-5 h-5 rounded-lg border-black/10 text-secondary focus:ring-secondary/20 transition-all cursor-pointer"
                     />
                   </div>
-                  <span className="text-sm font-bold text-on-surface/70 group-hover:text-on-surface transition-colors">Initialize Renewal Request</span>
+                  <span className="text-sm font-bold text-on-surface/70 group-hover:text-on-surface transition-colors italic">Allow Renewal Request</span>
                 </label>
               </div>
             </div>
@@ -410,7 +508,7 @@ export function WhiteLabelPortal({ agencyId }: WhiteLabelPortalProps) {
               <button
                 onClick={saveConfig}
                 disabled={saving}
-                className="px-10 py-4 bg-primary text-white font-black text-xs uppercase tracking-[0.2em] rounded-full hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-12 py-4 bg-secondary text-white font-black text-xs uppercase tracking-[0.2em] rounded-full hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? 'Syncing...' : 'Commit Configuration'}
               </button>
@@ -418,20 +516,20 @@ export function WhiteLabelPortal({ agencyId }: WhiteLabelPortalProps) {
           </div>
 
           {/* Client Invitations */}
-          <div className="bg-surface rounded-[32px] border border-black/5 p-8 shadow-sm">
+          <div className="bg-white rounded-[32px] border border-black/5 p-8 shadow-sm">
             <h2 className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] mb-4">Insured Portfolio Access</h2>
-            <p className="text-sm text-on-surface/60 font-medium italic mb-6">
+            <p className="text-sm text-on-surface/50 font-medium italic mb-6">
               Generate secure, single-use authentication links for your insured portfolio.
             </p>
             
-            <div className="bg-slate-50/50 rounded-2xl p-6 border border-black/5">
+            <div className="bg-background rounded-2xl p-6 border border-black/5">
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-black/5 text-on-surface/20">
                   <Shield className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-on-surface">Standard Deployment Protocol</p>
-                  <p className="text-xs text-on-surface/40 font-medium mt-1 leading-relaxed">
+                  <p className="text-sm font-bold text-on-surface font-headline italic">Standard Deployment Protocol</p>
+                  <p className="text-xs text-on-surface/40 font-medium mt-1 leading-relaxed italic">
                     To authorize portal access, navigate to the specific Insured profile and select "Enable Portal Access". 
                     All credentials utilize 256-bit encryption and expire automatically after 7 days.
                   </p>

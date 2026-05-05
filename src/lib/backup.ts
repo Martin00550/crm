@@ -6,8 +6,10 @@
 import { db } from '@/lib/db';
 import { sql } from 'drizzle-orm';
 import { uploadFile, getFile, generateStoragePath, deleteFile } from '@/lib/storage';
-import { backups } from '@/db/schema';
+import { backups, agencies } from '@/db/schema';
 import { eq, and, lte } from 'drizzle-orm';
+import { logger } from '@/lib/logger';
+import { randomUUID } from 'crypto';
 
 export interface BackupConfig {
   retentionDays: number;
@@ -30,7 +32,7 @@ export interface BackupResult {
  */
 export async function createDatabaseBackup(agencyId: string): Promise<BackupResult> {
   const startTime = Date.now();
-  const backupId = `${agencyId}-${Date.now()}`;
+  const backupId = `${agencyId}-${randomUUID()}`;
   
   try {
     // Get all data for the agency
@@ -85,7 +87,7 @@ export async function createDatabaseBackup(agencyId: string): Promise<BackupResu
     };
 
     // Log backup for audit trail
-    console.log('Backup created:', {
+    logger.info('Backup created', {
       backupId,
       agencyId,
       size,
@@ -107,15 +109,8 @@ export async function createDatabaseBackup(agencyId: string): Promise<BackupResu
 
     return backupResult;
   } catch (error) {
-    console.error('Backup failed:', error);
-    return {
-      success: false,
-      backupId,
-      timestamp: new Date(),
-      size: 0,
-      location: 'error',
-      duration: Date.now() - startTime,
-    };
+    logger.error('Backup failed', error);
+    throw error;
   }
 }
 
@@ -146,11 +141,11 @@ export async function restoreFromBackup(backupId: string, agencyId: string): Pro
       }
     }
 
-    console.log('Restore completed:', { backupId, agencyId });
+    logger.info('Restore completed', { backupId, agencyId });
     return true;
   } catch (error) {
-    console.error('Restore failed:', error);
-    return false;
+    logger.error('Restore failed', error);
+    throw error;
   }
 }
 
@@ -159,7 +154,7 @@ export async function restoreFromBackup(backupId: string, agencyId: string): Pro
  */
 export async function scheduleAutomatedBackups(agencyId: string) {
   // Scheduling is handled by Inngest functions in inngest-schedule.ts
-  console.log('Automated backups scheduled via Inngest for agency:', agencyId);
+  logger.info('Automated backups scheduled via Inngest for agency', { agencyId });
 }
 
 /**
@@ -204,9 +199,9 @@ export async function cleanupOldBackups(agencyId: string, retentionDays: number 
       await deleteFile(storagePath);
       await db.delete(backups).where(eq(backups.id, backup.id));
       
-      console.log('Deleted expired backup:', backup.backupId);
+      logger.info('Deleted expired backup', { backupId: backup.backupId });
     } catch (error) {
-      console.error('Failed to delete backup:', backup.backupId, error);
+      logger.error('Failed to delete backup', { backupId: backup.backupId, error });
     }
   }
 
@@ -245,10 +240,10 @@ export async function exportAgencyData(agencyId: string): Promise<{
 export async function importAgencyData(data: any): Promise<boolean> {
   try {
     // In production, this would restore data from backup
-    console.log('Importing agency data...');
+    logger.info('Importing agency data');
     return true;
   } catch (error) {
-    console.error('Import failed:', error);
-    return false;
+    logger.error('Import failed', error);
+    throw error;
   }
 }

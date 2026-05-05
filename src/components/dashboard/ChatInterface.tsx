@@ -21,7 +21,7 @@ export function ChatInterface({ isOpen, onClose, initialPrompt }: { isOpen: bool
       setMessages([{
         id: 'welcome',
         role: 'assistant',
-        content: 'Intelligence Protocol online. I can search clients, view policies, track renewals, run analytics, update premiums, change client info, and modify policy status. What do you need?',
+        content: 'AI Insights online. I can search insureds, view policies, track renewals, run analytics, and update policy status. What do you need?',
       }]);
       if (initialPrompt) {
         setTimeout(() => {
@@ -80,7 +80,7 @@ export function ChatInterface({ isOpen, onClose, initialPrompt }: { isOpen: bool
       setMessages(prev => [...prev, {
         id: `error-${Date.now()}`,
         role: 'assistant',
-        content: `Error: ${err.message}. Check your DASHSCOPE_API_KEY and try again.`,
+        content: `Error: ${err.message}. Check your GEMINI_API_KEY and try again.`,
       }]);
     } finally {
       setIsLoading(false);
@@ -98,7 +98,7 @@ export function ChatInterface({ isOpen, onClose, initialPrompt }: { isOpen: bool
     setMessages([{
       id: 'welcome',
       role: 'assistant',
-      content: 'Intelligence Protocol online. I can search clients, view policies, track renewals, run analytics, update premiums, change client info, and modify policy status. What do you need?',
+      content: 'AI Insights online. I can search clients, view policies, track renewals, run analytics, update premiums, change client info, and modify policy status. What do you need?',
     }]);
     setInput('');
     setError(null);
@@ -119,9 +119,9 @@ export function ChatInterface({ isOpen, onClose, initialPrompt }: { isOpen: bool
                 <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-surface"></div>
               </div>
               <div>
-                <h3 className="font-black text-on-surface italic font-headline tracking-tight text-sm">Intelligence Protocol</h3>
+                <h3 className="font-black text-on-surface italic font-headline tracking-tight text-sm">AI Insights</h3>
                 <p className="text-[9px] font-black text-secondary uppercase tracking-widest">
-                  {isLoading ? 'Processing...' : error ? 'Error — Reset & Retry' : 'Active • Forensic Assistant'}
+                  {isLoading ? 'Processing...' : error ? 'Error — Reset & Retry' : 'Active • Insurance Assistant'}
                 </p>
               </div>
             </div>

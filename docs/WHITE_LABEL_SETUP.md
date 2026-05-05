@@ -2,7 +2,7 @@
 
 ## Overview
 
-The white-label portal allows Enterprise tier agencies to create a branded landing page for their clients at `{subdomain}.policypulse.app`.
+The white-label portal allows Enterprise tier agencies to create a branded landing page for their clients at `{subdomain}.retainvault.com`.
 
 ## Prerequisites
 
@@ -50,7 +50,7 @@ Click "Save Changes" to apply your branding configuration.
 ### 7. View Portal
 
 Click the portal URL to view your branded landing page:
-`https://{subdomain}.policypulse.app`
+`https://{subdomain}.retainvault.com`
 
 ## Portal Features
 
@@ -60,13 +60,13 @@ The white-label portal includes:
 - **About Section**: Agency description and contact info
 - **Services Section**: List of insurance services offered
 - **Contact Form**: Simple contact form for inquiries
-- **Footer**: Agency info and "Powered by PolicyPulse" attribution
+- **Footer**: Agency info and "Powered by RetainVault" attribution
 
 ## DNS Configuration (Production)
 
 For production deployment:
 
-1. Add wildcard DNS record: `*.policypulse.app` → Vercel
+1. Add wildcard DNS record: `*.retainvault.com` → Vercel
 2. Or add individual subdomains as agencies are created
 3. Update `NEXT_PUBLIC_APP_URL` environment variable
 
@@ -133,5 +133,5 @@ whiteLabelEnabled: boolean;
 ## Support
 
 For technical support, contact:
-- Email: support@policypulse.app
-- Documentation: https://docs.policypulse.app
+- Email: support@retainvault.com
+- Documentation: https://docs.retainvault.com

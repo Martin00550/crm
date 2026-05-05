@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import type { Policy } from "@/context/MockDataContext";
+import { Button } from "@/components/ui/button";
 
 interface PolicyModalProps {
   isOpen: boolean;
@@ -39,7 +40,7 @@ export function PolicyModal({ isOpen, onClose, onSave, policy, clients }: Policy
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={isEditing ? "Update Placement Forensics" : "Authorize New Placement"} maxWidth="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={isEditing ? "Edit Policy" : "Add New Policy"} maxWidth="lg">
       <form onSubmit={handleSubmit} className="space-y-8 font-body p-2">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-2">
@@ -51,7 +52,7 @@ export function PolicyModal({ isOpen, onClose, onSave, policy, clients }: Policy
                 className="w-full px-4 py-3 bg-slate-50/50 border border-black/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary/20 appearance-none transition-all font-bold text-on-surface cursor-pointer italic font-headline"
                 required
               >
-                <option value="">Select target insured</option>
+                <option value="">Select client</option>
                 {clients.map((client) => (
                   <option key={client.id} value={client.id}>{client.name}</option>
                 ))}
@@ -62,7 +63,7 @@ export function PolicyModal({ isOpen, onClose, onSave, policy, clients }: Policy
             </div>
           </div>
           <div className="space-y-2">
-            <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Placement Identifier</label>
+            <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Policy Number</label>
             <input
               type="text"
               value={formData.policyNumber}
@@ -76,7 +77,7 @@ export function PolicyModal({ isOpen, onClose, onSave, policy, clients }: Policy
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-2">
-            <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Assigned Carrier</label>
+            <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Insurance Carrier</label>
             <div className="relative">
               <select
                 value={formData.carrier}
@@ -84,7 +85,7 @@ export function PolicyModal({ isOpen, onClose, onSave, policy, clients }: Policy
                 className="w-full px-4 py-3 bg-slate-50/50 border border-black/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary/20 appearance-none transition-all font-bold text-on-surface cursor-pointer"
                 required
               >
-                <option value="">Select forensic carrier</option>
+                <option value="">Select carrier</option>
                 <option value="Travelers">Travelers</option>
                 <option value="Chubb">Chubb</option>
                 <option value="The Hartford">The Hartford</option>
@@ -101,7 +102,7 @@ export function PolicyModal({ isOpen, onClose, onSave, policy, clients }: Policy
             </div>
           </div>
           <div className="space-y-2">
-            <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Coverage Line Protocol</label>
+            <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Policy Type</label>
             <div className="relative">
               <select
                 value={formData.policyType}
@@ -109,7 +110,7 @@ export function PolicyModal({ isOpen, onClose, onSave, policy, clients }: Policy
                 className="w-full px-4 py-3 bg-slate-50/50 border border-black/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary/20 appearance-none transition-all font-bold text-on-surface cursor-pointer"
                 required
               >
-                <option value="">Select placement type</option>
+                <option value="">Select policy type</option>
                 <option value="Commercial Auto">Commercial Auto</option>
                 <option value="General Liability">General Liability</option>
                 <option value="Property & Fire">Property & Fire</option>
@@ -128,7 +129,7 @@ export function PolicyModal({ isOpen, onClose, onSave, policy, clients }: Policy
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-2">
-            <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Premium Volume ($)</label>
+            <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Annual Premium ($)</label>
             <input
               type="number"
               value={formData.premium}
@@ -139,16 +140,16 @@ export function PolicyModal({ isOpen, onClose, onSave, policy, clients }: Policy
             />
           </div>
           <div className="space-y-2">
-            <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Placement Lifecycle Stage</label>
+            <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Policy Status</label>
             <div className="relative">
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as "active" | "expired" | "cancelled" })}
                 className="w-full px-4 py-3 bg-slate-50/50 border border-black/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary/20 appearance-none transition-all font-bold text-on-surface cursor-pointer"
               >
-                <option value="active">Active Deployment</option>
-                <option value="expired">Terminated/Expired</option>
-                <option value="cancelled">Decommissioned</option>
+                <option value="active">Active</option>
+                <option value="expired">Expired</option>
+                <option value="cancelled">Cancelled</option>
               </select>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface/20">
                 <span className="material-symbols-outlined">expand_more</span>
@@ -159,7 +160,7 @@ export function PolicyModal({ isOpen, onClose, onSave, policy, clients }: Policy
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-2">
-            <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Inception Date</label>
+            <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Effective Date</label>
             <input
               type="date"
               value={formData.effectiveDate}
@@ -169,7 +170,7 @@ export function PolicyModal({ isOpen, onClose, onSave, policy, clients }: Policy
             />
           </div>
           <div className="space-y-2">
-            <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Maturity Date (Expiration)</label>
+            <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] px-1">Expiration Date</label>
             <input
               type="date"
               value={formData.expirationDate}
@@ -180,20 +181,21 @@ export function PolicyModal({ isOpen, onClose, onSave, policy, clients }: Policy
           </div>
         </div>
         
-        <div className="flex items-center justify-end gap-6 pt-6 border-t border-black/5">
-          <button
-            type="button"
+        <div className="flex items-center justify-end gap-4 pt-6 border-t border-black/5">
+          <Button
+            variant="ghost"
             onClick={onClose}
-            className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest hover:text-on-surface transition-all pb-1 border-b border-transparent hover:border-on-surface/20"
+            className="text-[10px] font-black uppercase tracking-widest text-on-surface/40 hover:text-on-surface"
           >
-            Abort
-          </button>
-          <button
+            Cancel
+          </Button>
+          <Button
             type="submit"
-            className="px-10 py-4 bg-primary text-white font-black rounded-full hover:shadow-2xl hover:shadow-primary/30 transition-all text-xs uppercase tracking-[0.2em] active:scale-[0.98]"
+            variant="default"
+            className="px-10"
           >
-            {isEditing ? "Commit Forensic Updates" : "Authorize Placement"}
-          </button>
+            {isEditing ? "Save Changes" : "Add Policy"}
+          </Button>
         </div>
       </form>
     </Modal>

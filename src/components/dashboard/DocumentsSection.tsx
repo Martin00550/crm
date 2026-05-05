@@ -143,8 +143,8 @@ export function DocumentsSection({ policyId, agencyId }: DocumentsSectionProps) 
     <div className="bg-surface p-10 rounded-[32px] border border-black/5 shadow-sm font-body">
       <div className="flex items-start justify-between mb-10">
         <div>
-          <p className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] mb-2">Forensic Intelligence Vault</p>
-          <h3 className="text-2xl font-black text-on-surface italic font-headline tracking-tight">Placement Documentation</h3>
+          <p className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] mb-2">Policy Analysis Vault</p>
+          <h3 className="text-2xl font-black text-on-surface italic font-headline tracking-tight">Policy Documentation</h3>
         </div>
         <div className="h-14 w-14 bg-primary/5 flex items-center justify-center rounded-2xl shadow-sm border border-black/5">
           <span className="material-symbols-outlined text-primary text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>folder</span>
@@ -187,7 +187,7 @@ export function DocumentsSection({ policyId, agencyId }: DocumentsSectionProps) 
               <p className="text-sm font-black text-on-surface uppercase tracking-widest">
                 {isUploading ? "Syncing Intelligence..." : "Authorize Document Upload"}
               </p>
-              <p className="text-[10px] font-bold text-on-surface/40 mt-2 uppercase tracking-widest italic">PDF, Word, Excel, or Forensic Imagery</p>
+              <p className="text-[10px] font-bold text-on-surface/40 mt-2 uppercase tracking-widest italic">PDF, Word, Excel, or Policy Documents</p>
             </div>
           </div>
         </label>

@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { notifications } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { getUserAgencyId } from '@/actions/data';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
       message: 'All notifications archived' 
     });
   } catch (error) {
-    console.error('Error archiving notifications:', error);
+    logger.error('Error archiving notifications', error);
     return NextResponse.json({ error: 'Failed to archive notifications' }, { status: 500 });
   }
 }

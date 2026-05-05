@@ -7,11 +7,26 @@ import { withApiSecurity } from '@/lib/api-security';
 // GET /api/notifications - Get user notifications
 export const GET = withApiSecurity(
   async (request: NextRequest, context) => {
-    const { userId, agencyId } = context;
+    const { userId: workosUserId, agencyId } = context;
 
-    if (!agencyId || !userId) {
+    if (!agencyId || !workosUserId) {
       return NextResponse.json({ error: 'Agency ID and User ID required' }, { status: 400 });
     }
+
+    // Look up DB user ID to avoid UUID mismatch
+    const { users } = await import('@/db/schema');
+    const user = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.workosUserId, workosUserId))
+      .limit(1)
+      .then(r => r[0]);
+
+    if (!user) {
+      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
+    }
+
+    const userId = user.id;
 
     const searchParams = request.nextUrl.searchParams;
     const unreadOnly = searchParams.get('unreadOnly') === 'true';
@@ -43,7 +58,7 @@ export const GET = withApiSecurity(
       .limit(limit);
 
     // Format for frontend
-    const formattedNotifications = userNotifications.map((notification: any) => ({
+    const formattedNotifications = userNotifications.map((notification) => ({
       id: notification.id,
       title: notification.title,
       message: notification.message,
@@ -53,7 +68,7 @@ export const GET = withApiSecurity(
       metadata: notification.metadata,
     }));
 
-    const unreadCount = userNotifications.filter((n: any) => !n.read).length;
+    const unreadCount = userNotifications.filter((n) => !n.read).length;
 
     return NextResponse.json({
       success: true,
@@ -98,7 +113,7 @@ export const POST = withApiSecurity(
         read: false,
       })
       .returning()
-      .then((r: any[]) => r[0]);
+      .then(r => r[0]);
 
     return NextResponse.json({
       success: true,

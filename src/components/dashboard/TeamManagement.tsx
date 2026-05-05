@@ -73,14 +73,14 @@ export function TeamManagement({ agencyId, tier }: TeamManagementProps) {
 
   const getRoleBadge = (role: UserRole) => {
     const styles: Record<UserRole, string> = {
-      owner: 'bg-purple-100 text-purple-700 border-purple-200',
-      admin: 'bg-blue-100 text-blue-700 border-blue-200',
-      csr: 'bg-green-100 text-green-700 border-green-200',
-      producer: 'bg-slate-100 text-slate-700 border-slate-200',
+      owner: 'bg-black text-white border-black',
+      admin: 'bg-slate-100 text-slate-700 border-black/5',
+      csr: 'bg-secondary/10 text-secondary border-secondary/20',
+      producer: 'bg-secondary/10 text-secondary border-secondary/20',
     };
     return (
-      <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${styles[role]}`}>
-        {role.charAt(0).toUpperCase() + role.slice(1)}
+      <span className={`px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest rounded-full border ${styles[role]}`}>
+        {role === 'csr' ? 'CSR' : role.charAt(0).toUpperCase() + role.slice(1)}
       </span>
     );
   };
@@ -190,13 +190,13 @@ export function TeamManagement({ agencyId, tier }: TeamManagementProps) {
   }
 
   return (
-    <div className="bg-surface rounded-[32px] border border-black/5 shadow-sm overflow-hidden font-body">
+    <div className="bg-white rounded-[32px] border border-black/5 shadow-sm overflow-hidden font-body">
       {/* Header */}
-      <div className="px-6 py-5 border-b border-black/5 bg-slate-50/50">
+      <div className="px-6 py-5 border-b border-black/5 bg-background">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-black text-on-surface italic font-headline flex items-center gap-2 tracking-tight">
-              <Users className="w-5 h-5 text-primary" />
+              <Users className="w-5 h-5 text-secondary" />
               Agency Command Team
             </h3>
             <p className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] mt-1">
@@ -210,9 +210,9 @@ export function TeamManagement({ agencyId, tier }: TeamManagementProps) {
             <button
               onClick={() => canAdd.allowed ? setShowInviteModal(true) : null}
               disabled={!canAdd.allowed}
-              className={`px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-full flex items-center gap-2 transition-all ${
+              className={`px-6 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-full flex items-center gap-2 transition-all ${
                 canAdd.allowed
-                  ? 'bg-primary text-white hover:shadow-lg'
+                  ? 'bg-black text-white hover:bg-secondary transition-colors shadow-sm'
                   : 'bg-slate-100 text-on-surface/20 cursor-not-allowed'
               }`}
               title={!canAdd.allowed ? canAdd.reason : undefined}
@@ -226,15 +226,16 @@ export function TeamManagement({ agencyId, tier }: TeamManagementProps) {
 
       {/* Solo Tier Notice */}
       {tier === 'solo' && (
-        <div className="px-6 py-12 text-center bg-white">
-          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Shield className="w-8 h-8 text-on-surface/20" />
+        <div className="px-6 py-16 text-center bg-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
+          <div className="w-20 h-20 bg-background rounded-3xl flex items-center justify-center mx-auto mb-6 border border-black/5">
+            <Shield className="w-10 h-10 text-secondary" />
           </div>
-          <h3 className="text-lg font-black text-on-surface italic font-headline mb-1">Standard Solo Protocol</h3>
-          <p className="text-sm text-on-surface/40 font-medium max-w-md mx-auto mb-6">
-            Your current deployment is designed for high-performance solo producers. Upgrade to Agency Command to mobilize a full team.
+          <h3 className="text-2xl font-black text-on-surface italic font-headline mb-2 tracking-tight">Standard Solo Protocol</h3>
+          <p className="text-sm text-on-surface/50 font-medium max-w-md mx-auto mb-8 italic">
+            Your current deployment is optimized for elite solo operations. Mobilize a collaborative team by upgrading your command level.
           </p>
-          <button className="px-8 py-3 bg-secondary text-white font-black text-xs uppercase tracking-widest rounded-full hover:shadow-lg transition-all">
+          <button className="px-10 py-4 bg-secondary text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-full hover:shadow-2xl transition-all">
             Upgrade to Agency Command
           </button>
         </div>
@@ -266,7 +267,7 @@ export function TeamManagement({ agencyId, tier }: TeamManagementProps) {
                           {invitation.name || invitation.email}
                         </p>
                         <p className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest mt-0.5">
-                          {getRoleBadge(invitation.role).props.children} Protocol
+                          {invitation.role === 'owner' ? 'Owner' : invitation.role === 'admin' ? 'Admin' : 'Agent'} Protocol
                         </p>
                         <p className="text-[10px] font-bold text-amber-600 mt-1 italic">
                           Dispatched {formatDate(invitation.sentAt)} • {getDaysUntilExpiration(invitation.expiresAt)} until expiry
@@ -298,25 +299,26 @@ export function TeamManagement({ agencyId, tier }: TeamManagementProps) {
 
           {/* Active Team Members */}
           {members.map((member) => (
-            <div key={member.id} className="px-6 py-5 flex items-center justify-between hover:bg-slate-50 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-slate-800 flex items-center justify-center text-white font-headline italic font-bold text-lg shadow-md">
+            <div key={member.id} className="px-6 py-6 flex items-center justify-between hover:bg-background/50 transition-colors">
+              <div className="flex items-center gap-5">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-secondary to-slate-800 flex items-center justify-center text-white font-headline italic font-black text-lg shadow-md transition-transform group-hover:scale-105">
                   {member.name?.[0]?.toUpperCase() || member.email[0].toUpperCase()}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="font-bold text-on-surface font-headline italic text-lg tracking-tight">{member.name || 'Unnamed Personnel'}</p>
+                    <p className="font-bold text-on-surface font-headline italic text-lg tracking-tight leading-none">{member.name || 'Unnamed Personnel'}</p>
                     {getRoleBadge(member.role)}
                   </div>
-                  <p className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest mt-0.5">{member.email}</p>
+                  <p className="text-[10px] font-black text-on-surface/30 uppercase tracking-[0.2em] mt-2">{member.email}</p>
                 </div>
               </div>
 
               {member.role !== 'owner' && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   <button 
                     onClick={() => handleEditMember(member)}
-                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                    className="p-2.5 text-on-surface/20 hover:text-secondary hover:bg-secondary/5 rounded-xl transition-all"
+                    title="Edit Role"
                   >
                     <Edit className="w-4 h-4" />
                   </button>
@@ -325,14 +327,15 @@ export function TeamManagement({ agencyId, tier }: TeamManagementProps) {
                       setShowPermissionsModal(true);
                       setSelectedMember(member);
                     }}
-                    className="p-2 text-slate-400 hover:text-secondary hover:bg-secondary/5 rounded-lg transition-colors"
+                    className="p-2.5 text-on-surface/20 hover:text-secondary hover:bg-secondary/5 rounded-xl transition-all"
                     title="Manage Permissions"
                   >
                     <Settings className="w-4 h-4" />
                   </button>
                   <button 
                     onClick={() => handleDeleteMember(member)}
-                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    className="p-2.5 text-on-surface/20 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                    title="Remove Personnel"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

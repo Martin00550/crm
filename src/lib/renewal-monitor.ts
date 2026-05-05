@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
-import { policies, users, notifications } from '@/db/schema';
-import { eq, lt, gt, and } from 'drizzle-orm';
+import { policies, users, agencies, notifications } from '@/db/schema';
+import { eq, and, gte, lte, gt, lt } from 'drizzle-orm';
+import { logger } from '@/lib/logger';
 import { createPolicyRenewalNotification } from '@/lib/notifications';
 
 export async function checkRenewalNotifications() {
@@ -43,7 +44,7 @@ export async function checkRenewalNotifications() {
 
 
     if (!isNotificationEnabled(settings, 'autoRenewalAlerts')) {
-      console.log(`Renewal notifications disabled for agency ${agencyId}`);
+      logger.info('Renewal notifications disabled for agency', { agencyId });
       continue;
     }
 
@@ -101,8 +102,8 @@ export async function checkRenewalNotifications() {
 export async function runRenewalCheck() {
   try {
     await checkRenewalNotifications();
-    console.log('Renewal notifications check completed');
+    logger.info('Renewal notifications check completed');
   } catch (error) {
-    console.error('Error checking renewal notifications:', error);
+    logger.error('Error checking renewal notifications', error);
   }
 }

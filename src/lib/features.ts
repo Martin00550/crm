@@ -26,11 +26,20 @@ export const FEATURES: Record<string, FeatureConfig> = {
   },
 
   // AI Features
-  aiRateForensics: {
-    name: 'AI Rate Forensics Reports',
+  aiRateAnalysis: {
+    name: 'AI Rate Analysis Reports',
     description: 'AI-generated rate increase explanations for clients',
     tiers: {
       solo: { enabled: true, limit: 10 },
+      growth: { enabled: true, limit: Infinity },
+      enterprise: { enabled: true, limit: Infinity },
+    },
+  },
+  aiAssistant: {
+    name: 'AI Command Assistant',
+    description: 'Direct AI chat to manage your book of business',
+    tiers: {
+      solo: { enabled: true, limit: 50 },
       growth: { enabled: true, limit: Infinity },
       enterprise: { enabled: true, limit: Infinity },
     },

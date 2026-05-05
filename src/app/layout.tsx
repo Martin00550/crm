@@ -3,16 +3,23 @@ import Script from "next/script";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ThemeProvider } from "@/components/theme-provider";
 import { DarkModeProvider } from "@/contexts/DarkModeContext";
+import { PerformanceMonitor } from "@/components/PerformanceMonitor";
+import { ToastContainer } from "@/hooks/use-toast";
+import QueryProvider from "@/providers/QueryProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "BookGuard | Secure Your Book of Business",
-  description: "The Executive Command Center for High-Ticket Independent Agencies. Eliminate policy leakage and automate your 90-day renewal window.",
+  title: "RetainVault | Secure Your Book of Business",
+  description: "The Executive Command Center for High-Ticket Independent Agencies. Eliminate policy leakage and automate your 90-day renewal window with AI-driven rate analysis.",
+  openGraph: {
+    title: "RetainVault",
+    description: "The Executive Command Center for High-Ticket Independent Agencies.",
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "BookGuard",
+    title: "RetainVault",
   },
 };
 
@@ -60,11 +67,16 @@ export default function RootLayout({
             }
           `}
         </Script>
+
         <DarkModeProvider>
           <ThemeProvider>
-            <ErrorBoundary>
-              {children}
-            </ErrorBoundary>
+            <QueryProvider>
+              <ErrorBoundary>
+                <PerformanceMonitor />
+                <ToastContainer />
+                {children}
+              </ErrorBoundary>
+            </QueryProvider>
           </ThemeProvider>
         </DarkModeProvider>
       </body>

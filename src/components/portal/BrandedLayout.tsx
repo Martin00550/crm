@@ -98,7 +98,7 @@ export function BrandedLayout({ agencyName, branding, children }: BrandedLayoutP
             </div>
             
             <div className="text-xs text-slate-500">
-              Powered by <a href="https://bookguard.tech" className="font-bold hover:text-slate-700 transition-colors">BookGuard</a>
+              Powered by <a href="https://retainvault.com" className="font-bold hover:text-slate-700 transition-colors">RetainVault</a>
             </div>
           </div>
           

@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { agencies } from '@/db/schema';
+import { agencies, clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 export interface BrandingConfig {
@@ -41,7 +41,7 @@ export async function getAgencyBySubdomain(subdomain: string): Promise<AgencyWit
 
   if (!agency) return null;
 
-  return {
+  const result = {
     id: agency.id,
     name: agency.name,
     subdomain: agency.subdomain,
@@ -52,6 +52,53 @@ export async function getAgencyBySubdomain(subdomain: string): Promise<AgencyWit
       ...(agency.branding as BrandingConfig || {}),
     },
   };
+
+  if (result.branding.logoUrl && !result.branding.logoUrl.startsWith('http')) {
+    try {
+      const { getPresignedUrl } = await import('./storage');
+      result.branding.logoUrl = await getPresignedUrl(result.branding.logoUrl);
+    } catch (err) {
+      console.error('Failed to sign logo for portal:', err);
+    }
+  }
+
+  return result;
+}
+
+export async function getClientAndAgencyBySubdomain(subdomain: string) {
+  if (!db) return null;
+
+  const client = await db
+    .select()
+    .from(clients)
+    .where(eq(clients.subdomain, subdomain))
+    .limit(1)
+    .then((r: any[]) => r[0]);
+
+  if (!client) return null;
+
+  const agency = await db
+    .select()
+    .from(agencies)
+    .where(eq(agencies.id, client.agencyId))
+    .limit(1)
+    .then((r: any[]) => r[0]);
+
+  if (!agency) return null;
+
+  const agencyResult = {
+    id: agency.id,
+    name: agency.name,
+    subdomain: agency.subdomain,
+    subscriptionTier: agency.subscriptionTier,
+    whiteLabelEnabled: agency.whiteLabelEnabled || false,
+    branding: {
+      ...DEFAULT_BRANDING,
+      ...(agency.branding as BrandingConfig || {}),
+    },
+  };
+
+  return { client, agency: agencyResult };
 }
 
 // Get branding config for an agency

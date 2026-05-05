@@ -6,13 +6,15 @@ import { sign, verify } from 'jsonwebtoken';
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
 import { hash, compare } from 'bcryptjs';
+import { logger } from '@/lib/logger';
 
 // Validation schema for portal auth
 const portalAuthSchema = z.object({
   subdomain: z.string().min(1).max(100),
   email: z.string().email().max(254),
   password: z.string().min(8).max(100).optional(),
-  mode: z.enum(['login', 'reset']).optional(),
+  mode: z.enum(['login', 'reset', 'setup']).optional(),
+  token: z.string().optional(),
 });
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -111,14 +113,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Portal not found' }, { status: 404 });
     }
 
-    // Password reset mode
-    if (mode === 'reset') {
+    // Account Setup mode (from invitation)
+    if (mode === 'setup') {
+      const { token } = validationResult.data;
+      if (!token || !password) {
+        return NextResponse.json({ error: 'Token and password required' }, { status: 400 });
+      }
+
+      // Verify token
       const client = await db
         .select()
         .from(clients)
         .where(
           and(
-            eq(clients.email, email),
+            eq(clients.portalToken, token),
             eq(clients.agencyId, agency.id),
             eq(clients.portalAccessEnabled, true)
           )
@@ -126,14 +134,43 @@ export async function POST(request: NextRequest) {
         .limit(1)
         .then((r: any[]) => r[0]);
 
-      if (!client) {
-        // Don't reveal if email exists or not
-        return NextResponse.json({ success: true });
+      if (!client || !client.portalTokenExpires || new Date() > client.portalTokenExpires) {
+        return NextResponse.json({ error: 'Invalid or expired invitation' }, { status: 401 });
       }
 
-      // In production, send password reset email via Resend
-      // For now, just return success
-      return NextResponse.json({ success: true });
+      // Hash and save password
+      const hashedPassword = await hash(password, 12);
+      await db
+        .update(clients)
+        .set({ 
+          portalPasswordHash: hashedPassword,
+          portalToken: null, // Clear token after use
+          portalTokenExpires: null,
+          portalLastLogin: new Date()
+        })
+        .where(eq(clients.id, client.id));
+
+      // Log them in immediately
+      const sessionToken = sign(
+        {
+          clientId: client.id,
+          agencyId: agency.id,
+          email: client.email,
+          subdomain,
+        },
+        JWT_SECRET!,
+        { expiresIn: '7d' }
+      );
+
+      const response = NextResponse.json({ success: true });
+      response.cookies.set('portal_token', sessionToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7,
+        path: '/',
+      });
+      return response;
     }
 
     // Login mode
@@ -161,13 +198,13 @@ export async function POST(request: NextRequest) {
 
     // Verify password using bcrypt
     // If client has no hashed password (legacy), hash it now
-    let hashedPassword = client.portalPassword;
+    let hashedPassword = client.portalPasswordHash;
     if (!hashedPassword) {
       // Legacy: hash the password for future use
       hashedPassword = await hash(password, 12);
       await db
         .update(clients)
-        .set({ portalPassword: hashedPassword })
+        .set({ portalPasswordHash: hashedPassword })
         .where(eq(clients.id, client.id));
       // Allow first-time login with the provided password
     } else {
@@ -216,7 +253,7 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Portal auth error:', error);
+    logger.error('Portal auth error', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -182,8 +182,8 @@ export async function calculatePolicyRisk(agencyId: string): Promise<PolicyRisk[
       riskFactors.push({
         type: 'policy_type_risk',
         severity,
-        description: `${policy.carrier} has higher churn risk profile`,
-        impact: 'Policy type historically shows higher non-renewal rates',
+        description: `${policy.carrier} has higher leakage risk profile`,
+        impact: 'Policy type historically shows higher leakage rates',
         weight,
       });
       totalRiskScore += weightedScore;
@@ -200,7 +200,7 @@ export async function calculatePolicyRisk(agencyId: string): Promise<PolicyRisk[
         type: 'client_concern',
         severity,
         description: 'Client concerns noted in renewal',
-        impact: 'Client dissatisfaction increases churn risk',
+        impact: 'Client dissatisfaction increases leakage risk',
         weight,
       });
       engagementRisk = weightedScore;

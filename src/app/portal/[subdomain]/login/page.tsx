@@ -1,15 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 
-interface PortalLoginPageProps {
-  params: { subdomain: string };
-}
-
-export default function PortalLoginPage({ params }: PortalLoginPageProps) {
+export default function PortalLoginPage() {
   const router = useRouter();
+  const params = useParams();
+  const subdomain = params.subdomain as string;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,7 +24,7 @@ export default function PortalLoginPage({ params }: PortalLoginPageProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          subdomain: params.subdomain,
+          subdomain,
           email,
           password,
           mode: resetMode ? 'reset' : 'login',
@@ -45,7 +43,7 @@ export default function PortalLoginPage({ params }: PortalLoginPageProps) {
         setResetMode(false);
       } else {
         // Redirect to portal dashboard
-        router.push(`/portal/${params.subdomain}/dashboard`);
+        router.push(`/portal/${subdomain}/dashboard`);
       }
     } catch (err: any) {
       setError(err.message);
@@ -141,7 +139,7 @@ export default function PortalLoginPage({ params }: PortalLoginPageProps) {
         {/* Back to Portal */}
         <div className="text-center mt-6">
           <a
-            href={`/portal/${params.subdomain}`}
+            href={`/portal/${subdomain}`}
             className="text-sm text-slate-600 hover:text-slate-900"
           >
             ← Back to Portal Home

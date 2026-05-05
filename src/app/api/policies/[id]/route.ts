@@ -7,13 +7,13 @@ import { withApiSecurity } from '@/lib/api-security';
 // DELETE /api/policies/[id] - Delete policy
 export const DELETE = withApiSecurity(
   async (request: NextRequest, context) => {
-    const { userId, agencyId } = context;
+    const { userId, agencyId, params } = context;
 
     if (!agencyId) {
       return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
     }
 
-    const { id: policyId } = await (request as any).params;
+    const { id: policyId } = params;
 
     // Verify policy belongs to agency
     const existingPolicy = await db
@@ -24,7 +24,7 @@ export const DELETE = withApiSecurity(
         eq(policies.agencyId, agencyId)
       ))
       .limit(1)
-      .then((r: any[]) => r[0]);
+      .then(r => r[0]);
 
     if (!existingPolicy) {
       return NextResponse.json({ error: 'Policy not found' }, { status: 404 });
@@ -50,13 +50,13 @@ export const DELETE = withApiSecurity(
 // PUT /api/policies/[id] - Update policy
 export const PUT = withApiSecurity(
   async (request: NextRequest, context) => {
-    const { userId, agencyId } = context;
+    const { userId, agencyId, params } = context;
 
     if (!agencyId) {
       return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
     }
 
-    const { id: policyId } = await (request as any).params;
+    const { id: policyId } = params;
     const updateData = await request.json();
 
     // Verify policy belongs to agency
@@ -68,7 +68,7 @@ export const PUT = withApiSecurity(
         eq(policies.agencyId, agencyId)
       ))
       .limit(1)
-      .then((r: any[]) => r[0]);
+      .then(r => r[0]);
 
     if (!existingPolicy) {
       return NextResponse.json({ error: 'Policy not found' }, { status: 404 });

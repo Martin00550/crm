@@ -2,6 +2,8 @@
  * Centralized Error Handling and Logging
  */
 
+import { logger } from '@/lib/logger';
+
 export enum ErrorType {
   VALIDATION = 'validation',
   AUTHENTICATION = 'authentication',
@@ -105,7 +107,7 @@ export function logError(error: AppError | Error, context?: any) {
     environment: process.env.NODE_ENV,
   };
 
-  console.error('[ERROR]', JSON.stringify(errorData, null, 2));
+  logger.error('[ERROR]', errorData);
 
   // In production, send to monitoring service (Sentry, DataDog, etc.)
   if (process.env.NODE_ENV === 'production') {

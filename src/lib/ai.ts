@@ -1,7 +1,7 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { db } from '@/lib/db';
-import { policies, clients } from '@/db/schema';
+import { policies, clients, users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { logger } from '@/lib/logger';
 import { canUseFeature, incrementFeatureUsage } from '@/lib/feature-access';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { validateAIPrompt } from '@/lib/validation';
@@ -34,17 +34,51 @@ export interface Client {
   industry: string | null;
 }
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+/**
+ * Call Gemini 1.5 Flash (requested as Gemini 3.1 Flash Lite) via Google AI
+ */
+async function callGemini(prompt: string): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY is not configured');
+  }
 
-export interface RateExplainerInput {
-  policyNumber: string;
-  carrier: string;
-  policyType: string;
-  previousPremium: string;
-  currentPremium: string;
-  clientName: string;
-  industry: string;
-  reason?: string;
+  // Using gemini-3.1-flash-lite as requested
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      system_instruction: {
+        parts: [{ text: 'You are a high-authority Insurance Analysis Expert.' }]
+      },
+      contents: [
+        { 
+          parts: [{ text: prompt }] 
+        }
+      ],
+      generationConfig: {
+        temperature: 0.4,
+        topP: 0.8,
+        topK: 40,
+        maxOutputTokens: 1024,
+      }
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Gemini API error: ${response.status} - ${error}`);
+  }
+
+  const data = await response.json();
+  
+  if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+    throw new Error('Invalid response format from Gemini API');
+  }
+  
+  return data.candidates[0].content.parts[0].text;
 }
 
 export async function generateRateExplainer(
@@ -61,22 +95,21 @@ export async function generateRateExplainer(
   }
   
   // Check feature access
-  const accessCheck = await canUseFeature(policy.agencyId, 'aiRateForensics');
+  const accessCheck = await canUseFeature(policy.agencyId, 'aiRateAnalysis');
   
   if (!accessCheck.allowed) {
     return {
       success: false,
-      error: accessCheck.reason || 'AI Rate Forensics not available',
+      error: accessCheck.reason || 'AI Rate Analysis not available',
       usage: accessCheck.limit ? { current: accessCheck.currentUsage || 0, limit: accessCheck.limit } : undefined,
     };
   }
 
-  // Validate inputs to prevent injection
+  // Validate inputs
   const policyNumberValidation = validateAIPrompt(policy.policyNumber);
   const carrierValidation = validateAIPrompt(policy.carrier);
   const policyTypeValidation = validateAIPrompt(policy.policyType);
   const clientNameValidation = validateAIPrompt(client.name);
-  const industryValidation = validateAIPrompt(client.industry || '');
   
   if (!policyNumberValidation.valid || !carrierValidation.valid || 
       !policyTypeValidation.valid || !clientNameValidation.valid) {
@@ -85,8 +118,6 @@ export async function generateRateExplainer(
       error: 'Invalid input data',
     };
   }
-
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
   const previousPremium = parseFloat(policy.previousTermPremium || '0');
   const currentPremium = parseFloat(policy.currentTermPremium || policy.premium);
@@ -123,22 +154,21 @@ Format the response as a clean, structured document with these sections:
 Keep it under 400 words total. Be specific and actionable.`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const response = result.response.text();
+    const report = await callGemini(prompt);
     
     // Increment usage after successful generation
-    await incrementFeatureUsage(policy.agencyId, 'aiRateForensics');
+    await incrementFeatureUsage(policy.agencyId, 'aiRateAnalysis');
     
     return {
       success: true,
-      report: response,
+      report,
       usage: accessCheck.limit ? { current: (accessCheck.currentUsage || 0) + 1, limit: accessCheck.limit } : undefined,
     };
   } catch (error) {
-    console.error('Gemini API error:', error);
+    logger.error('Gemini API error', error);
     return {
       success: false,
-      error: 'AI service temporarily unavailable. Please try again in a few moments.',
+      error: 'Gemini AI service temporarily unavailable. Please try again in a few moments.',
     };
   }
 }

@@ -3,6 +3,7 @@ import { getAuth } from '@/lib/auth-wrapper';
 import { removeTeamMember, updateTeamMemberRole } from '@/lib/team-access';
 import { getUserAgencyId } from '@/actions/data';
 import { UserRole } from '@/lib/permissions';
+import { logger } from '@/lib/logger';
 
 // GET /api/team/[id] - Get team member details
 export async function GET(
@@ -28,7 +29,7 @@ export async function GET(
       message: 'Member details endpoint - to be implemented'
     });
   } catch (error) {
-    console.error('Error fetching team member:', error);
+    logger.error('Error fetching team member', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -70,7 +71,7 @@ export async function PATCH(
       message: 'Team member role updated successfully'
     });
   } catch (error) {
-    console.error('Error updating team member:', error);
+    logger.error('Error updating team member', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -105,7 +106,7 @@ export async function DELETE(
       message: 'Team member removed successfully'
     });
   } catch (error) {
-    console.error('Error removing team member:', error);
+    logger.error('Error removing team member', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

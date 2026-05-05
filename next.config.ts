@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
+import bundleAnalyzer from "@next/bundle-analyzer";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const isProduction = process.env.NODE_ENV === "production";
+const isAnalyzer = process.env.ANALYZE === "true";
+
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: isAnalyzer,
+});
 
 // Get allowed origins from environment variable
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
@@ -72,12 +79,12 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' https://cdn.jsdelivr.net https://clerk.accounts.dev https://cdn.clerk.io",
-              "style-src 'self' https://fonts.googleapis.com",
+              "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://auth.workos.com https://browser.sentry-cdn.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com data:",
               "img-src 'self' data: blob: https: http:",
-              "connect-src 'self' https://api.paddle.com https://sandbox-api.paddle.com https://clerk.accounts.dev https://api.clerk.io",
-              "frame-src 'self' https://checkout.paddle.com https://sandbox-checkout.paddle.com https://clerk.accounts.dev",
+              "connect-src 'self' https://api.paddle.com https://sandbox-api.paddle.com https://api.workos.com *.sentry.io",
+              "frame-src 'self' https://checkout.paddle.com https://sandbox-checkout.paddle.com https://auth.workos.com",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",
@@ -110,6 +117,31 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   // Power by header removal for security through obscurity
   poweredByHeader: false,
+  // Optimize chunk splitting
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'recharts', '@radix-ui/react-dialog'],
+  },
+  // Split chunks for better caching
+  turbopack: {},
 };
 
-export default nextConfig;
+const sentryOptions = {
+  silent: true,
+  org: "martin-vasko",
+  project: "javascript-nextjs",
+};
+
+const sentryConfig = {
+  widenClientFileUpload: true,
+  transpileClientSDK: true,
+  tunnelRoute: "/monitoring",
+  hideSourceMaps: true,
+  disableLogger: true,
+  automaticVercelMonitors: true,
+};
+
+export default withSentryConfig(
+  withBundleAnalyzer(nextConfig),
+  sentryOptions,
+  sentryConfig
+);

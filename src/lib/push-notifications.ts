@@ -4,6 +4,7 @@ import webpush from 'web-push';
 import { db } from '@/lib/db';
 import { notificationSettings } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { logger } from '@/lib/logger';
 
 // Configure VAPID keys (should be set in environment variables)
 // Generate these with: npx web-push generate-vapid-keys
@@ -12,7 +13,7 @@ const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 
 if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(
-    'mailto:support@bookguard.tech',
+    'mailto:support@retainvault.tech',
     VAPID_PUBLIC_KEY,
     VAPID_PRIVATE_KEY
   );
@@ -83,8 +84,8 @@ export async function sendPushNotification(
     );
 
     return { success: true };
-  } catch (error: any) {
-    console.error('Push notification error:', error);
+  } catch (error) {
+    logger.error('Push notification error', error);
 
     // If subscription is invalid, disable push for this user
     if (error.statusCode === 410) {

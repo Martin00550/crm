@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
-import { clients, policies, renewals, agencies, users, notifications } from '@/db/schema';
+import { policies, clients, users, notifications, renewals, agencies } from '@/db/schema';
 import { eq, and, gte, lte, desc, asc, ilike, or, count, sql } from 'drizzle-orm';
+import { logger } from '@/lib/logger';
 
 export interface AgencyContext {
   agencyName: string;
@@ -102,7 +103,7 @@ export async function buildAgencyContext(userId: string): Promise<AgencyContext 
       carriers,
     };
   } catch (error) {
-    console.error('Failed to build agency context:', error);
+    logger.error('Failed to build agency context', error);
     return null;
   }
 }

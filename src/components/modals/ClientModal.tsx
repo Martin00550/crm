@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import type { Client } from "@/context/MockDataContext";
+import { Button } from "@/components/ui/button";
 
 interface ClientModalProps {
   isOpen: boolean;
@@ -28,7 +29,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={isEditing ? "Update Insured Forensics" : "Authorize New Insured"} maxWidth="md">
+    <Modal isOpen={isOpen} onClose={onClose} title={isEditing ? "Update Insured Analysis" : "Authorize New Insured"} maxWidth="md">
       <form onSubmit={handleSubmit} className="space-y-8 font-body p-2">
         <div className="bg-slate-50/50 p-8 rounded-[32px] border border-black/5 shadow-inner">
           <label className="block text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] mb-3">Legal Entity Identity</label>
@@ -102,20 +103,21 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
           </div>
         </div>
         
-        <div className="flex items-center justify-end gap-6 pt-6 border-t border-black/5">
-          <button
-            type="button"
+        <div className="flex items-center justify-end gap-4 pt-6 border-t border-black/5">
+          <Button
+            variant="ghost"
             onClick={onClose}
-            className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest hover:text-on-surface transition-all pb-1 border-b border-transparent hover:border-on-surface/20"
+            className="text-[10px] font-black uppercase tracking-widest text-on-surface/40 hover:text-on-surface"
           >
             Abort
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
-            className="px-10 py-4 bg-primary text-white font-black rounded-full hover:shadow-2xl hover:shadow-primary/30 transition-all text-xs uppercase tracking-[0.2em] active:scale-[0.98]"
+            variant="default"
+            className="px-10"
           >
             {isEditing ? "Commit Updates" : "Authorize Insured"}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>

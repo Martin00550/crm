@@ -4,6 +4,7 @@
  */
 
 import Redis from 'ioredis';
+import { logger } from '@/lib/logger';
 
 let redisClient: Redis | null = null;
 
@@ -18,7 +19,7 @@ export function getRedisClient(): Redis | null {
   const redisUrl = process.env.REDIS_URL;
   
   if (!redisUrl) {
-    console.warn('Redis URL not configured, caching disabled');
+    logger.warn('Redis URL not configured, caching disabled');
     return null;
   }
 
@@ -33,16 +34,16 @@ export function getRedisClient(): Redis | null {
     });
 
     redisClient.on('error', (error) => {
-      console.error('Redis connection error:', error);
+      logger.error('Redis connection error', error);
     });
 
     redisClient.on('connect', () => {
-      console.log('Redis connected successfully');
+      logger.info('Redis connected successfully');
     });
 
     return redisClient;
   } catch (error) {
-    console.error('Failed to initialize Redis:', error);
+    logger.error('Failed to initialize Redis', error);
     return null;
   }
 }
@@ -86,7 +87,7 @@ export async function getCached<T>(key: string): Promise<T | null> {
     
     return JSON.parse(value) as T;
   } catch (error) {
-    console.error('Redis get error:', error);
+    logger.error('Redis get error', error);
     return null;
   }
 }
@@ -102,7 +103,7 @@ export async function setCached<T>(key: string, value: T, ttl: number): Promise<
     await client.set(key, JSON.stringify(value), 'EX', ttl);
     return true;
   } catch (error) {
-    console.error('Redis set error:', error);
+    logger.error('Redis set error', error);
     return false;
   }
 }
@@ -118,7 +119,7 @@ export async function deleteCached(key: string): Promise<boolean> {
     await client.del(key);
     return true;
   } catch (error) {
-    console.error('Redis delete error:', error);
+    logger.error('Redis delete error', error);
     return false;
   }
 }
@@ -137,7 +138,7 @@ export async function deleteCachedPattern(pattern: string): Promise<boolean> {
     }
     return true;
   } catch (error) {
-    console.error('Redis delete pattern error:', error);
+    logger.error('Redis delete pattern error', error);
     return false;
   }
 }

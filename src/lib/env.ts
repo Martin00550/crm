@@ -3,10 +3,15 @@
  * Ensures required secrets are present and not exposed to client
  */
 
+import { logger } from '@/lib/logger';
+
 // Server-only environment variables (NEVER expose to client)
 const SERVER_ONLY_VARS = [
   'DATABASE_URL',
-  'BETTER_AUTH_SECRET',
+  'WORKOS_API_KEY',
+  'WORKOS_CLIENT_ID',
+  'WORKOS_REDIRECT_URI',
+  'WORKOS_COOKIE_PASSWORD',
   'PADDLE_API_KEY',
   'PADDLE_WEBHOOK_SECRET',
   'RESEND_API_KEY',
@@ -34,19 +39,21 @@ const PUBLIC_VARS = [
 // Required environment variables
 const REQUIRED_VARS = [
   'DATABASE_URL',
-  'BETTER_AUTH_SECRET',
+  'WORKOS_API_KEY',
+  'WORKOS_CLIENT_ID',
+  'WORKOS_REDIRECT_URI',
+  'WORKOS_COOKIE_PASSWORD',
 ] as const;
 
 export interface EnvConfig {
   // Database
   databaseUrl: string;
   
-  // Better Auth
-  betterAuthSecret: string;
-  googleClientId?: string;
-  googleClientSecret?: string;
-  githubClientId?: string;
-  githubClientSecret?: string;
+  // WorkOS
+  workosApiKey: string;
+  workosClientId: string;
+  workosRedirectUri: string;
+  workosCookiePassword: string;
   
   // Paddle
   paddleApiKey?: string;
@@ -88,11 +95,10 @@ export interface EnvConfig {
 export function getEnv(): EnvConfig {
   const env: EnvConfig = {
     databaseUrl: process.env.DATABASE_URL || '',
-    betterAuthSecret: process.env.BETTER_AUTH_SECRET || '',
-    googleClientId: process.env.GOOGLE_CLIENT_ID,
-    googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    githubClientId: process.env.GITHUB_CLIENT_ID,
-    githubClientSecret: process.env.GITHUB_CLIENT_SECRET,
+    workosApiKey: process.env.WORKOS_API_KEY || '',
+    workosClientId: process.env.WORKOS_CLIENT_ID || '',
+    workosRedirectUri: process.env.WORKOS_REDIRECT_URI || '',
+    workosCookiePassword: process.env.WORKOS_COOKIE_PASSWORD || '',
     paddleApiKey: process.env.PADDLE_API_KEY,
     paddleClientToken: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN,
     paddleWebhookSecret: process.env.PADDLE_WEBHOOK_SECRET,
@@ -142,7 +148,7 @@ export function validateEnv(): { valid: boolean; missing: string[]; warnings: st
   
   // Check for placeholder values
   const placeholderPatterns = ['xxx', 'your_', 'replace_', 'sk_test_', 'pk_test_'];
-  const criticalVars = ['BETTER_AUTH_SECRET', 'PADDLE_API_KEY', 'RESEND_API_KEY', 'DASHSCOPE_API_KEY'];
+  const criticalVars = ['WORKOS_API_KEY', 'PADDLE_API_KEY', 'RESEND_API_KEY', 'GEMINI_API_KEY'];
   
   for (const varName of criticalVars) {
     const value = process.env[varName];
@@ -187,17 +193,15 @@ export function logEnvStatus(): void {
   const { valid, missing, warnings } = validateEnv();
   
   if (!valid) {
-    console.error('ENV VALIDATION FAILED:');
-    missing.forEach(v => console.error(`  - Missing: ${v}`));
+    logger.error('ENV VALIDATION FAILED', { missing });
   }
   
   if (warnings.length > 0) {
-    console.warn('ENV WARNINGS:');
-    warnings.forEach(w => console.warn(`  - ${w}`));
+    logger.warn('ENV WARNINGS', { warnings });
   }
   
   if (valid && warnings.length === 0) {
-    console.log('ENV: All required variables present');
+    logger.info('ENV: All required variables present');
   }
 }
 

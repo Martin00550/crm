@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { createAgency } from '@/actions/data';
-import { useSession } from '@/lib/auth-client';
+import { useWorkOSClient } from '@/lib/auth-client';
 
 // Helper to get cookie value
 function getCookie(name: string): string | null {
@@ -16,7 +16,7 @@ function getCookie(name: string): string | null {
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { data: session, isPending } = useSession();
+  const { user, isLoading: isPending } = useWorkOSClient();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedTier, setSelectedTier] = useState<string>('solo');
@@ -34,10 +34,11 @@ export default function OnboardingPage() {
 
   // Redirect to sign-in if not authenticated
   useEffect(() => {
-    if (!isPending && !session?.user) {
-      router.push('/sign-in');
+    if (!isPending && !user) {
+      console.log('Onboarding: No user found, but not redirecting to prevent loop');
+      // router.push('/api/auth/login');
     }
-  }, [isPending, session, router]);
+  }, [isPending, user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +46,7 @@ export default function OnboardingPage() {
     setError('');
 
     try {
-      if (!session?.user) {
+      if (!user) {
         throw new Error('You must be signed in to create an agency');
       }
 
@@ -69,10 +70,10 @@ export default function OnboardingPage() {
         // No agency yet, create one
         const result = await createAgency({
           name: formData.name,
-          userId: session.user.id,
-          email: session.user.email || undefined,
-          firstName: session.user.name?.split(' ')[0] || undefined,
-          lastName: session.user.name?.split(' ').slice(1).join(' ') || undefined,
+          userId: user.id,
+          email: user.email || undefined,
+          firstName: user.firstName || undefined,
+          lastName: user.lastName || undefined,
           tier: selectedTier,
         });
 
@@ -99,9 +100,29 @@ export default function OnboardingPage() {
     );
   }
 
-  // Don't render form if not authenticated
-  if (!session?.user) {
-    return null;
+  // Render an actionable state if not authenticated, rather than just returning null
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#F5F2EA] flex items-center justify-center p-6 font-body text-on-surface">
+        <div className="w-full max-w-md text-center">
+          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+            <span className="material-symbols-outlined text-white text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-on-surface mb-4">
+            Session Expired
+          </h1>
+          <p className="text-on-surface/70 mb-8">
+            Please log in to continue setting up your Command Center.
+          </p>
+          <button
+            onClick={() => router.push('/api/auth/login')}
+            className="px-6 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all"
+          >
+            Log In
+          </button>
+        </div>
+      </div>
+    );
   }
 
 
@@ -112,14 +133,14 @@ export default function OnboardingPage() {
           <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
             <span className="material-symbols-outlined text-white text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-on-surface mb-2">
-            BookGuard Command
+          <h1 className="text-2xl font-bold tracking-tight text-on-surface mb-2 font-headline">
+            RetainVault Command Center
           </h1>
-          <p className="text-on-surface/40 font-semibold uppercase tracking-widest text-[10px]">Initialize Agency Deployment Protocol</p>
+          <p className="text-on-surface/40 font-semibold uppercase tracking-widest text-[10px]">Agency Profile Setup</p>
         </div>
 
         <div className="bg-surface rounded-2xl shadow-xl border border-black/5 p-10 relative overflow-hidden">
-          <h2 className="text-lg font-bold text-on-surface mb-8 tracking-tight">Provision Agency Credentials</h2>
+          <h2 className="text-lg font-bold text-on-surface mb-8 tracking-tight font-headline">Agency Details</h2>
 
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 text-[10px] font-bold uppercase tracking-widest flex items-center gap-3">
@@ -131,7 +152,7 @@ export default function OnboardingPage() {
           <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
             <div>
               <label htmlFor="name" className="block text-[10px] font-bold text-on-surface/40 uppercase tracking-widest mb-3">
-                Official Agency Legal Entity
+                Agency Name
               </label>
               <input
                 type="text"
@@ -145,7 +166,7 @@ export default function OnboardingPage() {
             </div>
 
             <div className="p-5 bg-slate-50 rounded-xl border border-black/5">
-              <p className="text-sm text-on-surface/70 leading-relaxed">
+              <p className="text-sm text-on-surface/70 leading-relaxed font-medium">
                 <span className="font-bold text-on-surface">Note:</span> Your agency portal subdomain can be configured later in settings after upgrading to the Enterprise tier.
               </p>
             </div>
@@ -158,12 +179,12 @@ export default function OnboardingPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Synchronizing Credentials...
+                  Setting up Command Center...
                 </>
               ) : (
                 <>
-                  <span className="material-symbols-outlined text-sm">rocket_launch</span>
-                  Authorize Agency Deployment
+                  <span className="material-symbols-outlined text-sm">business_center</span>
+                  Create Command Center
                 </>
               )}
             </button>
@@ -172,7 +193,7 @@ export default function OnboardingPage() {
 
         <div className="text-center mt-10">
           <p className="text-[10px] font-bold text-on-surface/40 uppercase tracking-widest">
-            Already provisioned?{' '}
+            Already set up?{' '}
             <a href="/dashboard" className="text-secondary hover:underline transition-all">
               Access Command Center
             </a>

@@ -93,7 +93,7 @@ export interface ClientLifecycleMetrics {
   newClients: number;
   activeClients: number;
   atRiskClients: number;
-  churnRate: number;
+  leakageRate: number;
   averageClientValue: number;
   clientAcquisitionCost: number;
 }
@@ -171,7 +171,7 @@ export async function getAdvancedAnalytics(agencyId: string): Promise<AdvancedAn
       newClients: 0,
       activeClients: 0,
       atRiskClients: 0,
-      churnRate: 0,
+      leakageRate: 0,
       averageClientValue: 0,
       clientAcquisitionCost: 0,
     })),
@@ -504,7 +504,7 @@ async function getClientLifecycleMetrics(agencyId: string, today: Date, lastMont
     newClients: newClients[0]?.count || 0,
     activeClients: activeClients[0]?.count || 0,
     atRiskClients: atRiskClients[0]?.count || 0,
-    churnRate: 5, // Simplified
+    leakageRate: 5, // Simplified
     averageClientValue: 2500, // Simplified
     clientAcquisitionCost: 500, // Simplified
   };

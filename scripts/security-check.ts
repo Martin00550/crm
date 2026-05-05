@@ -1,7 +1,7 @@
 #!/usr/bin/env ts-node
 
 /**
- * Security Check Script for PolicyPulse CRM
+ * Security Check Script for RetainVault CRM
  * Run with: npx ts-node scripts/security-check.ts
  * 
  * Checks for common security issues in the codebase
@@ -328,7 +328,7 @@ function getAllFiles(dir: string, extensions: string[]): string[] {
 async function main() {
   console.log('\n');
   console.log('========================================');
-  console.log('  PolicyPulse Security Check');
+  console.log('  RetainVault Security Check');
   console.log('========================================\n');
   
   checkEnvVariables();

@@ -57,7 +57,7 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters }: {
             <h3 className="text-xl font-bold text-on-surface tracking-tight">Policy Ledger Filter</h3>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface/40 hover:text-on-surface hover:bg-black/5 transition-all"
+              className="w-11 h-11 flex items-center justify-center rounded-lg text-on-surface/40 hover:text-on-surface hover:bg-black/5 transition-all"
             >
               <span className="material-symbols-outlined text-sm">close</span>
             </button>
@@ -103,7 +103,7 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters }: {
 
           {/* Carrier */}
           <div>
-            <label className="text-[10px] font-bold text-on-surface/40 uppercase tracking-widest block mb-2">Carrier Forensic Filter</label>
+            <label className="text-[10px] font-bold text-on-surface/40 uppercase tracking-widest block mb-2">Carrier Filter</label>
             <select
               value={filters.carrier}
               onChange={(e) => handleFilterChange('carrier', e.target.value)}
@@ -192,13 +192,13 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters }: {
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 px-6 py-2.5 border border-black/10 text-on-surface/60 font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-black/5 transition-all"
+              className="flex-1 px-6 py-3.5 border border-black/10 text-on-surface/60 font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-black/5 transition-all"
             >
               Cancel
             </button>
             <button
               onClick={handleApply}
-              className="flex-1 px-6 py-2.5 bg-primary text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-primary/90 transition-all shadow-sm"
+              className="flex-1 px-6 py-3.5 bg-primary text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-primary/90 transition-all shadow-sm"
             >
               Apply Filter
             </button>

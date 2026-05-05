@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Calendar } from "lucide-react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 export function DateRangeFilter() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedRange, setSelectedRange] = useState("all");
+  
+  const selectedRange = searchParams.get("range") || "all";
 
   const ranges = [
     { value: "all", label: "All Time" },
@@ -15,6 +20,17 @@ export function DateRangeFilter() {
     { value: "quarter", label: "This Quarter" },
     { value: "year", label: "This Year" },
   ];
+
+  const handleSelect = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value === "all") {
+      params.delete("range");
+    } else {
+      params.set("range", value);
+    }
+    router.push(`${pathname}?${params.toString()}`);
+    setIsOpen(false);
+  };
 
   return (
     <div className="relative">
@@ -29,24 +45,24 @@ export function DateRangeFilter() {
       </button>
 
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2 bg-surface border border-black/5 rounded-xl shadow-xl z-50 min-w-[180px] overflow-hidden">
-          {ranges.map((range) => (
-            <button
-              key={range.value}
-              onClick={() => {
-                setSelectedRange(range.value);
-                setIsOpen(false);
-              }}
-              className={`w-full text-left px-4 py-3 text-xs font-medium transition-colors ${
-                selectedRange === range.value
-                  ? "bg-primary text-white"
-                  : "text-on-surface/60 hover:bg-slate-50 hover:text-on-surface"
-              }`}
-            >
-              {range.label}
-            </button>
-          ))}
-        </div>
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+          <div className="absolute top-full right-0 mt-2 bg-surface border border-black/5 rounded-xl shadow-xl z-50 min-w-[180px] overflow-hidden">
+            {ranges.map((range) => (
+              <button
+                key={range.value}
+                onClick={() => handleSelect(range.value)}
+                className={`w-full text-left px-4 py-3 text-xs font-bold transition-colors uppercase tracking-widest ${
+                  selectedRange === range.value
+                    ? "bg-primary text-white"
+                    : "text-on-surface/60 hover:bg-slate-50 hover:text-on-surface"
+                }`}
+              >
+                {range.label}
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

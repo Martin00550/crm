@@ -1,17 +1,16 @@
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
-import { auth } from '@/lib/better-auth';
+import { withAuth } from "@workos-inc/authkit-nextjs";
 import { getUserAgencyId, getAgency } from '@/actions/data';
 import { isFeatureEnabled } from '@/lib/features';
 
 export const dynamic = 'force-dynamic';
 
 export default async function BrandingSettingsPage() {
-  const headersList = await headers();
-  const session = await auth.api.getSession({ headers: headersList });
+  const session = await withAuth();
   
   if (!session?.user?.id) {
-    redirect('/sign-in');
+    redirect("/api/auth/login");
   }
 
   const agencyId = await getUserAgencyId(session?.user?.id);

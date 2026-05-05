@@ -2,13 +2,15 @@
 
 import { db } from '@/lib/db';
 import { policies, renewals, clients } from '@/db/schema';
-import { eq, and, gte, lte, desc, sql } from 'drizzle-orm';
+import { eq, and, gte, lte, desc, sql, inArray } from 'drizzle-orm';
 import { getAuth } from '@/lib/auth-wrapper';
 import { getUserAgencyId } from '@/actions/data';
+import { logger } from '@/lib/logger';
 
 export interface RenewalPipelineItem {
   id: string;
   policyId: string;
+  clientId: string;
   policyNumber: string;
   carrier: string;
   policyType: string;
@@ -46,6 +48,7 @@ export async function getRenewalPipeline(agencyId: string): Promise<RenewalPipel
     .select({
       id: renewals.id,
       policyId: policies.id,
+      clientId: policies.clientId,
       policyNumber: policies.policyNumber,
       carrier: policies.carrier,
       policyType: policies.policyType,
@@ -66,28 +69,18 @@ export async function getRenewalPipeline(agencyId: string): Promise<RenewalPipel
     .where(eq(renewals.agencyId, agencyId))
     .orderBy(policies.expirationDate);
 
-  return results.map((r: {
-    id: string;
-    policyId: string;
-    policyNumber: string;
-    carrier: string;
-    policyType: string;
-    premium: string;
-    expirationDate: Date;
-    clientName: string;
-    clientEmail: string | null;
-    clientPhone: string | null;
-    status: string;
-    notification90Sent: boolean;
-    notification60Sent: boolean;
-    notification30Sent: boolean;
-    aiReportGenerated: boolean;
-  }) => ({
-    ...r,
-    daysUntilRenewal: Math.ceil(
-      (new Date(r.expirationDate).getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-    ),
-  }));
+  // Return all results to reflect the actual number of policies in the database
+  return results.map((r) => {
+    const expirationDate = new Date(r.expirationDate);
+    const isValidDate = !isNaN(expirationDate.getTime());
+    
+    return {
+      ...r,
+      daysUntilRenewal: isValidDate
+        ? Math.ceil((expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+        : 0, // Fallback for invalid dates
+    };
+  });
 }
 
 // Get renewal statistics
@@ -116,14 +109,21 @@ export async function getRenewalStats(agencyId: string): Promise<RenewalStats> {
   const day90 = new Date(today);
   day90.setDate(day90.getDate() + 90);
 
-  const items = await db
+  const rawItems = await db
     .select({
+      id: renewals.id,
+      policyId: renewals.policyId,
       status: renewals.status,
       expirationDate: policies.expirationDate,
+      premium: policies.premium,
+      clientName: clients.name,
     })
     .from(renewals)
     .innerJoin(policies, eq(renewals.policyId, policies.id))
+    .innerJoin(clients, eq(policies.clientId, clients.id))
     .where(eq(renewals.agencyId, agencyId));
+
+  const items = rawItems;
 
   const stats: RenewalStats = {
     total: items.length,
@@ -220,9 +220,9 @@ export async function sendManualRenewalNotification(renewalId: string): Promise<
     });
 
     return { success: true };
-  } catch (error: any) {
-    console.error('Failed to send manual notification:', error);
-    return { success: false, error: error.message };
+  } catch (error) {
+    logger.error('Failed to send manual notification', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 
@@ -253,9 +253,9 @@ export async function updateRenewalStatus(
       .where(eq(renewals.id, renewalId));
 
     return { success: true };
-  } catch (error: any) {
-    console.error('Failed to update renewal status:', error);
-    return { success: false, error: error.message };
+  } catch (error) {
+    logger.error('Failed to update renewal status', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 
@@ -276,30 +276,72 @@ export async function createMissingRenewalRecords(): Promise<{ created: number; 
       return { created: 0, error: 'Database not connected' };
     }
 
-    // Find policies without renewal records
-    const policiesWithoutRenewals = await db
-      .select({
-        id: policies.id,
-        agencyId: policies.agencyId,
-        expirationDate: policies.expirationDate,
+    // --- SELF-HEALING: Purge any existing duplicates first ---
+    const allExistingRenewals = await db
+      .select({ 
+        id: renewals.id, 
+        policyId: renewals.policyId,
+        policyType: policies.policyType,
+        carrier: policies.carrier,
+        premium: policies.premium,
+        clientId: policies.clientId
       })
-      .from(policies)
-      .where(eq(policies.agencyId, agencyId))
-      .where(sql`${policies.id} NOT IN (SELECT policy_id FROM renewals)`);
-
-    // Create renewal records
-    for (const policy of policiesWithoutRenewals) {
-      await db.insert(renewals).values({
-        policyId: policy.id,
-        agencyId: policy.agencyId,
-        renewalDate: policy.expirationDate,
-        status: 'pending',
-      });
+      .from(renewals)
+      .innerJoin(policies, eq(renewals.policyId, policies.id))
+      .where(eq(renewals.agencyId, agencyId));
+    
+    const seenPolicies = new Map<string, string>(); // key: composite string, value: first renewal ID
+    const seenPolicyIds = new Set<string>();
+    const idsToDelete: string[] = [];
+    
+    for (const r of allExistingRenewals) {
+      // 1. Exact Policy ID match (definite duplicate)
+      if (seenPolicyIds.has(r.policyId)) {
+        idsToDelete.push(r.id);
+        continue;
+      }
+      
+      // 2. Fuzzy match (same client, type, carrier, premium)
+      const compositeKey = `${r.clientId}-${r.policyType}-${r.carrier}-${r.premium}`;
+      if (seenPolicies.has(compositeKey)) {
+        idsToDelete.push(r.id);
+        continue;
+      }
+      
+      seenPolicyIds.add(r.policyId);
+      seenPolicies.set(compositeKey, r.id);
+    }
+    
+    if (idsToDelete.length > 0) {
+      for (let i = 0; i < idsToDelete.length; i += 50) {
+        const chunk = idsToDelete.slice(i, i + 50);
+        await db.delete(renewals).where(inArray(renewals.id, chunk));
+      }
     }
 
-    return { created: policiesWithoutRenewals.length };
-  } catch (error: any) {
-    console.error('Failed to create renewal records:', error);
-    return { created: 0, error: error.message };
+    // --- ENROLLMENT: Add policies that aren't in the pipeline yet ---
+    const allAgencyPolicies = await db
+      .select({ id: policies.id, agencyId: policies.agencyId, expirationDate: policies.expirationDate })
+      .from(policies)
+      .where(eq(policies.agencyId, agencyId));
+
+    const existingPolicyIds = new Set(allExistingRenewals.map(r => r.policyId));
+    const missingPolicies = allAgencyPolicies.filter(p => !existingPolicyIds.has(p.id));
+
+    if (missingPolicies.length > 0) {
+      for (const policy of missingPolicies) {
+        await db.insert(renewals).values({
+          policyId: policy.id,
+          agencyId: policy.agencyId,
+          renewalDate: policy.expirationDate,
+          status: 'pending',
+        });
+      }
+    }
+
+    return { created: missingPolicies.length };
+  } catch (error) {
+    logger.error('Failed to create renewal records', error);
+    return { created: 0, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }

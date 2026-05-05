@@ -3,6 +3,7 @@ import { getAuth } from '@/lib/auth-wrapper';
 import { getFeatureUsage } from '@/lib/feature-access';
 import { getFeatureLimit } from '@/lib/features';
 import { getUserAgencyId, getAgency } from '@/actions/data';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,17 +30,17 @@ export async function GET(request: NextRequest) {
     const tier = agency?.subscriptionTier || 'solo';
 
     // Get current usage
-    const currentUsage = await getFeatureUsage(agencyId, 'aiRateForensics');
+    const currentUsage = await getFeatureUsage(agencyId, 'aiRateAnalysis');
     
     // Get limit for tier
-    const limit = getFeatureLimit('aiRateForensics', tier as any);
+    const limit = getFeatureLimit('aiRateAnalysis', tier as any);
 
     return NextResponse.json({ 
       current: currentUsage, 
       limit: limit === Infinity ? null : limit 
     });
   } catch (error) {
-    console.error('Error fetching AI usage:', error);
+    logger.error('Error fetching AI usage', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

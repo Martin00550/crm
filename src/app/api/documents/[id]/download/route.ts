@@ -4,54 +4,60 @@ import { db } from '@/lib/db';
 import { documents } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { getUserAgencyId } from '@/actions/data';
+import { logger } from '@/lib/logger';
+
+import { withApiSecurity } from '@/lib/api-security';
 
 // POST /api/documents/[id]/download - Track document download
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params;
-    const { userId } = await getAuth();
-    
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+export const POST = withApiSecurity(
+  async (
+    request: NextRequest,
+    context
+  ) => {
+    try {
+      const { params, agencyId, userId } = context;
+      const { id } = params;
+      
+      if (!agencyId) {
+        return NextResponse.json({ error: 'Agency not found' }, { status: 404 });
+      }
 
-    const agencyId = await getUserAgencyId(userId);
-    if (!agencyId) {
-      return NextResponse.json({ error: 'Agency not found' }, { status: 404 });
-    }
+      // Get document and increment download count
+      const document = await db
+        .select()
+        .from(documents)
+        .where(and(
+          eq(documents.id, id),
+          eq(documents.agencyId, agencyId)
+        ))
+        .limit(1)
+        .then((r: any[]) => r[0]);
 
-    // Get document and increment download count
-    const document = await db
-      .select()
-      .from(documents)
-      .where(and(
-        eq(documents.id, id),
-        eq(documents.agencyId, agencyId)
-      ))
-      .limit(1)
-      .then((r: any[]) => r[0]);
+      if (!document) {
+        return NextResponse.json({ error: 'Document not found' }, { status: 404 });
+      }
 
-    if (!document) {
-      return NextResponse.json({ error: 'Document not found' }, { status: 404 });
-    }
+      // Increment download count
+      await db
+        .update(documents)
+        .set({ 
+          downloadCount: document.downloadCount + 1,
+        })
+        .where(eq(documents.id, id));
 
-    // Increment download count
-    await db
-      .update(documents)
-      .set({ 
+      return NextResponse.json({
+        success: true,
         downloadCount: document.downloadCount + 1,
-      })
-      .where(eq(documents.id, id));
-
-    return NextResponse.json({
-      success: true,
-      downloadCount: document.downloadCount + 1,
-    });
-  } catch (error) {
-    console.error('Error tracking download:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+      });
+    } catch (error) {
+      logger.error('Error tracking download', error);
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
+  },
+  {
+    requireAuth: true,
+    requireAgency: true,
+    enableCsrf: true,
+    rateLimit: 'api',
   }
-}
+);

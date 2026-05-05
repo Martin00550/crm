@@ -119,7 +119,7 @@ export function SettingsPanel({ isOpen, onClose }: { isOpen: boolean; onClose: (
         {/* Header */}
         <div className="p-6 border-b border-black/5 bg-slate-50">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-on-surface tracking-tight">Command Center Settings</h3>
+            <h3 className="text-xl font-bold text-on-surface tracking-tight">Dashboard Settings</h3>
             <button
               onClick={onClose}
               className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface/40 hover:text-on-surface hover:bg-black/5 transition-all"
@@ -139,12 +139,12 @@ export function SettingsPanel({ isOpen, onClose }: { isOpen: boolean; onClose: (
             <>
               {/* Notifications Section */}
               <div>
-            <h4 className="text-[10px] font-bold text-on-surface/40 uppercase tracking-widest mb-4">Notification Protocols</h4>
+            <h4 className="text-[10px] font-bold text-on-surface/40 uppercase tracking-widest mb-4">Notifications</h4>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <label className="text-sm font-bold text-on-surface">Email Notifications</label>
-                  <p className="text-xs text-on-surface/40 font-medium">Receive protocols via email</p>
+                  <p className="text-xs text-on-surface/40 font-medium">Receive alerts via email</p>
                 </div>
                 <button
                   onClick={() => handleSettingChange('emailNotifications', !settings.emailNotifications)}
@@ -181,7 +181,7 @@ export function SettingsPanel({ isOpen, onClose }: { isOpen: boolean; onClose: (
 
               <div className="flex items-center justify-between">
                 <div>
-                  <label className="text-sm font-bold text-on-surface">Weekly Intelligence Reports</label>
+                  <label className="text-sm font-bold text-on-surface">Weekly Reports</label>
                   <p className="text-xs text-on-surface/40 font-medium">Comprehensive business summaries</p>
                 </div>
                 <button
@@ -200,8 +200,8 @@ export function SettingsPanel({ isOpen, onClose }: { isOpen: boolean; onClose: (
 
               <div className="flex items-center justify-between">
                 <div>
-                  <label className="text-sm font-bold text-on-surface">Auto-Renewal Intelligence</label>
-                  <p className="text-xs text-on-surface/40 font-medium">Alerts before policy leakage</p>
+                  <label className="text-sm font-bold text-on-surface">Renewal Alerts</label>
+                  <p className="text-xs text-on-surface/40 font-medium">Alerts before policies expire</p>
                 </div>
                 <button
                   onClick={() => handleSettingChange('autoRenewalAlerts', !settings.autoRenewalAlerts)}
@@ -226,7 +226,7 @@ export function SettingsPanel({ isOpen, onClose }: { isOpen: boolean; onClose: (
             <div className="space-y-2">
               <button className="w-full text-left px-4 py-3 bg-slate-50 border border-black/5 rounded-xl hover:bg-black/5 transition-all group">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-on-surface">Update Security Credentials</span>
+                  <span className="text-sm font-bold text-on-surface">Change Password</span>
                   <span className="material-symbols-outlined text-on-surface/20 group-hover:translate-x-1 transition-transform">arrow_forward</span>
                 </div>
               </button>
@@ -243,7 +243,7 @@ export function SettingsPanel({ isOpen, onClose }: { isOpen: boolean; onClose: (
                 className="w-full text-left px-4 py-2 border border-red-100/50 hover:bg-red-50 transition-all rounded-xl"
               >
                 <div className="flex items-center justify-between p-1">
-                  <span className="text-sm font-bold text-red-600">Decommission Account</span>
+                  <span className="text-sm font-bold text-red-600">Delete Account</span>
                   <span className="material-symbols-outlined text-red-400">delete</span>
                 </div>
               </button>
@@ -283,7 +283,7 @@ export function SettingsPanel({ isOpen, onClose }: { isOpen: boolean; onClose: (
                   Saved
                 </>
               ) : (
-                'Commit Changes'
+                'Save Changes'
               )}
             </button>
           </div>
@@ -302,11 +302,11 @@ export function SettingsPanel({ isOpen, onClose }: { isOpen: boolean; onClose: (
               
               <div>
                 <h3 className="text-xl font-bold text-on-surface mb-2">
-                  Final Decommission Alert
+                  Delete Account
                 </h3>
                 <p className="text-sm text-on-surface/60 font-medium leading-relaxed">
                   This will permanently erase your account and all associated agency data. 
-                  This protocol is <span className="font-bold text-red-600">irreversible</span>.
+                  This action is <span className="font-bold text-red-600">irreversible</span>.
                 </p>
               </div>
 
@@ -325,10 +325,10 @@ export function SettingsPanel({ isOpen, onClose }: { isOpen: boolean; onClose: (
                   {isDeleting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Decommissioning...
+                      Deleting...
                     </>
                   ) : (
-                    'Confirm Total Purge'
+                    'Confirm Delete'
                   )}
                 </button>
                 <button
@@ -336,7 +336,7 @@ export function SettingsPanel({ isOpen, onClose }: { isOpen: boolean; onClose: (
                   disabled={isDeleting}
                   className="w-full py-3 bg-slate-50 border border-black/10 text-on-surface/60 font-bold rounded-lg uppercase tracking-widest text-xs hover:bg-slate-100 transition-all"
                 >
-                  Abort - Keep Account
+                  Cancel
                 </button>
               </div>
             </div>
