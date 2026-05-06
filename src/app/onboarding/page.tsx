@@ -26,9 +26,9 @@ export default async function OnboardingPage() {
         <OnboardingForm 
           user={{
             id: session.user.id,
-            email: session.user.email,
-            firstName: session.user.firstName,
-            lastName: session.user.lastName,
+            email: session.user.email ?? undefined,
+            firstName: session.user.firstName ?? undefined,
+            lastName: session.user.lastName ?? undefined,
           }} 
         />
 
