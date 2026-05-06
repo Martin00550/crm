@@ -110,7 +110,17 @@ async function callGemini(messages: ChatMessage[], tools: any[]): Promise<AIResp
   });
 
   const response = await result.response;
+  
+  // Check if response was blocked by safety filters
+  const candidate = response.candidates?.[0];
+  if (candidate?.finishReason === 'SAFETY') {
+    throw new Error('Response blocked by AI safety filters. Please try a different query.');
+  }
+
   const text = response.text();
+  if (!text) {
+    throw new Error('AI returned an empty response. Please try again.');
+  }
 
   return {
     choices: [{
@@ -249,9 +259,21 @@ const TOOL_DEFINITIONS = [
   },
 ];
 
+import { mockClients, mockPolicies } from '@/lib/mock-data-server';
+
 async function executeTool(toolName: string, args: any, agencyId: string, userId: string | null): Promise<any> {
+  const isDemo = agencyId === 'demo-agency';
+
   switch (toolName) {
     case 'search_clients': {
+      if (isDemo) {
+        const results = mockClients.filter(c => 
+          c.name.toLowerCase().includes(args.query.toLowerCase()) ||
+          c.email.toLowerCase().includes(args.query.toLowerCase()) ||
+          c.industry.toLowerCase().includes(args.query.toLowerCase())
+        );
+        return { clients: results, count: results.length };
+      }
       if (!db) return { clients: [], count: 0, error: 'Database not connected' };
       const results = await db.query.clients.findMany({
         where: and(
@@ -286,6 +308,12 @@ async function executeTool(toolName: string, args: any, agencyId: string, userId
       return { clients: enriched, count: enriched.length };
     }
     case 'get_policy': {
+      if (isDemo) {
+        const results = mockPolicies.filter(p => 
+          p.policyNumber.toLowerCase().includes(args.policyNumber.toLowerCase())
+        );
+        return { policies: results.map(p => ({ ...p, daysUntilExpiration: Math.ceil((new Date(p.expirationDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) })) };
+      }
       if (!db) return { policies: [], error: 'Database not connected' };
       const results = await db.query.policies.findMany({
         where: and(
@@ -310,6 +338,20 @@ async function executeTool(toolName: string, args: any, agencyId: string, userId
       return { policies: enriched };
     }
     case 'get_renewal_pipeline': {
+      if (isDemo) {
+        const today = new Date();
+        const future = new Date(today.getTime() + args.days * 24 * 60 * 60 * 1000);
+        const results = mockPolicies.filter(p => 
+          new Date(p.expirationDate) >= today && 
+          new Date(p.expirationDate) <= future &&
+          p.status === 'active'
+        ).map(p => ({
+          ...p,
+          premium: p.premium,
+          daysUntil: Math.ceil((new Date(p.expirationDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+        }));
+        return { renewals: results, total: results.length, totalPremium: results.reduce((s, r) => s + r.premium, 0) };
+      }
       if (!db) return { renewals: [], total: 0, totalPremium: 0, error: 'Database not connected' };
       const today = new Date();
       const future = new Date(today.getTime() + args.days * 24 * 60 * 60 * 1000);
@@ -348,6 +390,26 @@ async function executeTool(toolName: string, args: any, agencyId: string, userId
       return { renewals: enriched, total: enriched.length, totalPremium: enriched.reduce((s: number, r: any) => s + r.premium, 0) };
     }
     case 'get_analytics': {
+      if (isDemo) {
+        if (args.metric === 'overview') {
+          const totalPremium = mockPolicies.reduce((s, p) => s + p.premium, 0);
+          return {
+            totalClients: mockClients.length,
+            activePolicies: mockPolicies.length,
+            totalPremium,
+            avgPremiumPerClient: totalPremium / mockClients.length,
+            commission: totalPremium * 0.15,
+          };
+        }
+        if (args.metric === 'at_risk') {
+          const results = mockPolicies.filter(p => p.healthStatus === 'at-risk').map(p => ({
+            ...p,
+            daysUntilExpiration: Math.ceil((new Date(p.expirationDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+          }));
+          return { atRiskPolicies: results, count: results.length };
+        }
+        return { error: 'Metric not fully mocked in demo' };
+      }
       if (!db) return { error: 'Database not connected' };
       const allPolicies = await db.query.policies.findMany({
         where: eq(policies.agencyId, agencyId),
@@ -478,12 +540,15 @@ export const POST = withApiSecurity(
       }, { status: 401 });
     }
 
-    // Rate limiting check (per user, not IP)
-    const rateLimitAllowed = await checkRateLimit(userId);
-    if (!rateLimitAllowed) {
-      return NextResponse.json({ 
-        error: 'Rate limit exceeded. Please try again in 1 minute.' 
-      }, { status: 429 });
+    // Rate limiting check (per user, not IP) - Skip for demo users
+    const isDemo = agencyId === 'demo-agency';
+    if (!isDemo) {
+      const rateLimitAllowed = await checkRateLimit(userId);
+      if (!rateLimitAllowed) {
+        return NextResponse.json({ 
+          error: 'Rate limit exceeded. Please try again in 1 minute.' 
+        }, { status: 429 });
+      }
     }
 
     let contextSummary = '';
@@ -499,38 +564,41 @@ HEALTH: ${authContext.atRiskPolicies} policies at risk`;
       }
     }
 
-    // Log the request
+    // Log the request - Skip for demo
     const { messages } = await req.json();
-    await logChatRequest(userId, messages.length);
+    if (!isDemo) {
+      await logChatRequest(userId, messages.length);
+    }
 
     const systemMessage = {
       role: 'system',
-      content: `You are RetainVault Intelligence Protocol, an AI assistant for insurance agency management.
+      content: `You are RetainVault Intelligence Protocol, the automated Chief Operating Officer for this high-ticket Independent Insurance Agency. Your sole objective is to protect the Agency's Book of Business from policy leakage and ensure a 100% retention rate.
+
+VOCABULARY PROTOCOL (MANDATORY):
+- Never say "Users" or "Leads" -> Say "Prospects" or "Insureds"
+- Never say "MRR/ARR" -> Say "Book of Business" or "Total Premium Volume"
+- Never say "Churn" -> Say "Policy Leakage" or "Lapsed Policies"
+- Never say "Upsell" -> Say "Cross-sell" or "Rounding out the account"
+- Never say "Sales Pipeline" -> Say "Renewal Pipeline" or "Submission Tracker"
+- Never say "Support" -> Say "Servicing" or "Endorsements"
+
+TONE & STYLE:
+- Authoritative but Servile: You are the quiet, highly-paid COO handling the messy data so the Agent can look like a hero.
+- No "Tech Startup" jargon (e.g., no "synergy", "onboarding", "success").
+- No playful language: No emojis, no "Woohoo", no "Yay". Use serious, institutional words: "Secure", "Analyze", "Retain", "Command".
+- Lead with the insight: "87 days until expiration for Tech Corp. Health score is Red due to a 14% rate hike."
+- Short, dense, and professional.
+
+"HARD MARKET" INTELLIGENCE:
+- You understand the "Hard Market" (skyrocketing rates).
+- Your analysis should help the agent explain rate hikes to insureds without being the "bad guy".
+- Focus on "Rate Forensics" to justify premiums.
 
 RESPONSE FORMAT RULES:
-- Never use markdown tables, emojis, or decorative formatting
-- Write in short, clear paragraphs with simple bullet points
-- Use plain numbers with dollar signs (e.g., $23,500 not **$23,500**)
-- Keep responses under 150 words unless the user asks for detail
-- No "Recommended Actions" sections, no "Which metric would you like" prompts
-- No ALL CAPS section headers
-- Just give the answer directly and naturally
-
-TONE:
-- Professional but conversational, like a knowledgeable colleague
-- Lead with the key number or insight
-- One or two sentences of context, then move on
-
-EXAMPLE OF GOOD RESPONSE:
-You have 2 active clients with 2 policies totaling $23,500 in premium. That works out to about $11,750 per client. Your estimated commission is $3,525.
-
-Both clients are active so retention looks solid, but with only 2 clients you're exposed to concentration risk. Want me to check upcoming renewals?
-
-EXAMPLE OF BAD RESPONSE:
-## Portfolio Overview
-| METRIC | VALUE |
-| Active Clients | 2 |
-etc.
+- Never use markdown tables or decorative formatting.
+- Use plain numbers with dollar signs (e.g., $23,500).
+- Keep responses under 120 words.
+- Act as a command center, not a chat bot. Give results directly.
 
 YOUR CAPABILITIES:
 - Search and retrieve client records
@@ -541,15 +609,10 @@ YOUR CAPABILITIES:
 - Draft client communications
 - Answer any question about the CRM
 
-IMPORTANT - When updating data:
-- Always confirm what you changed and show the old vs new value
-- If the user says "change X to Y", do it directly without asking for confirmation
-- If multiple matches exist, ask the user to clarify which one
-
 CONTEXT - Current Agency State:
 ${contextSummary}
 
-If the user asks something outside your capabilities, explain what you can do and offer to help instead.`
+If the user asks something outside your capabilities, state that it is outside the current Command Protocol and offer a relevant alternative.`
     };
 
     try {
@@ -581,10 +644,10 @@ If the user asks something outside your capabilities, explain what you can do an
       return NextResponse.json({
         content: assistantMessage.content,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('AI chat error:', error);
       return NextResponse.json({
-        error: 'Failed to get AI response. Please try again later.',
+        error: error.message || 'Failed to get AI response. Please try again later.',
       }, { status: 500 });
     } finally {
       if (agencyId) {

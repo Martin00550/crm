@@ -79,7 +79,7 @@ export default function DemoRenewalsPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-4xl font-black text-on-surface tracking-tight">Renewal Pipeline</h1>
-          <p className="text-on-surface/50 font-medium mt-1">Simulated environment for retention lifecycle management.</p>
+          <p className="text-on-surface/50 font-medium mt-1">Monitor and manage your upcoming policy renewals.</p>
         </div>
         <div className="flex items-center gap-3">
           <ExportCSVButton data={pipeline} filename="renewals-demo.csv" />

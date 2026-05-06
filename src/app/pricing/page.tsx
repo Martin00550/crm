@@ -23,10 +23,7 @@ export default function PricingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isAuthenticated, isLoading, user } = useWorkOSClient();
 
-  const handleStartTrial = (tier: string) => {
-    document.cookie = `selected_tier=${tier}; path=/; max-age=3600`;
-    window.location.href = '/api/auth/signup';
-  };
+
 
   useEffect(() => {
     const handleScroll = () => {
@@ -119,25 +116,25 @@ export default function PricingPage() {
 
       <div className="pt-44 pb-32">
         {/* Hero */}
-        <header className="max-w-7xl mx-auto px-8 mb-24 text-center">
+        <header className="max-w-7xl mx-auto px-6 sm:px-8 mb-16 md:mb-24 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/10 border border-secondary/20 mb-8">
             <span className="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
             <span className="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface/70">
-              14-Day Free Trial • No Credit Card Required
+              14-Day Free Trial
             </span>
           </div>
-          <h1 className="text-5xl lg:text-7xl font-bold tracking-tight text-on-surface mb-8 font-headline">
-            Stop Losing Policies. <br/> <span className="text-secondary italic">Start Growing Your Book.</span>
+          <h1 className="text-4xl lg:text-7xl font-bold tracking-tight text-on-surface mb-8 font-headline leading-tight">
+            Stop Losing Policies. <br className="hidden sm:block" /> <span className="text-secondary italic">Start Growing Your Book.</span>
           </h1>
-          <p className="text-xl text-on-surface/60 max-w-2xl mx-auto leading-relaxed font-medium font-body">
-            Built for independent agents who want to <span className="text-secondary font-bold">stop policy leakage</span> and look professional to their clients.
+          <p className="text-lg md:text-xl text-on-surface/60 max-w-2xl mx-auto leading-relaxed font-medium font-body">
+            Built for independent agents who want to <span className="text-secondary font-bold">identify policy leakage</span> and look professional to their clients.
           </p>
         </header>
 
         {/* Pricing Grid */}
-        <section className="max-w-7xl mx-auto px-8 grid grid-cols-1 md:grid-cols-3 gap-10 items-stretch">
+        <section className="max-w-7xl mx-auto px-6 sm:px-8 grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10 items-stretch">
           {/* Solo Agent */}
-          <div className="bg-white p-12 rounded-[40px] border border-black/5 shadow-sm hover:shadow-xl transition-all flex flex-col h-full group">
+          <div className="bg-white p-8 md:p-12 rounded-[32px] md:rounded-[40px] border border-black/5 shadow-sm hover:shadow-xl transition-all flex flex-col h-full group">
             <div className="mb-10">
               <h3 className="text-on-surface font-bold text-2xl mb-3 font-headline italic">Solo Agent</h3>
               <p className="text-on-surface/50 text-sm font-medium mb-8">The independent producer who works alone and just wants to stop losing policies.</p>
@@ -145,7 +142,7 @@ export default function PricingPage() {
                 <span className="text-5xl font-black text-on-surface tracking-tighter">$99</span>
                 <span className="text-on-surface/40 font-bold text-sm uppercase tracking-widest">/month</span>
               </div>
-              <p className="text-secondary font-bold text-sm mt-2">Stop policy leakage before it costs you $20k+</p>
+              <p className="text-secondary font-bold text-sm mt-2">Designed to stop policy leakage before it costs you $20k+</p>
             </div>
             <div className="space-y-5 mb-12 flex-grow">
               {[
@@ -162,18 +159,20 @@ export default function PricingPage() {
               ))}
             </div>
             <Button 
-              onClick={() => handleStartTrial('solo')}
+              asChild
               variant="outline"
               size="lg"
-              className="w-full border-primary text-on-surface hover:bg-primary hover:text-white"
+              className="w-full"
             >
-              Start 14-Day Free Trial
+              <Link href="/api/auth/signup?tier=solo">
+                Start 14-Day Free Trial
+              </Link>
             </Button>
             <p className="text-center text-on-surface/40 text-xs font-medium mt-3">Cancel anytime</p>
           </div>
 
           {/* Independent Agency */}
-          <div className="relative bg-white p-12 rounded-[40px] border-2 border-secondary shadow-2xl flex flex-col h-full transform scale-105 z-10 group">
+          <div className="relative bg-white p-8 md:p-12 rounded-[32px] md:rounded-[40px] border-2 border-secondary shadow-2xl flex flex-col h-full md:transform md:scale-105 z-10 group">
             <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-secondary text-white px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.3em] shadow-lg z-20">
               Recommended
             </div>
@@ -201,18 +200,20 @@ export default function PricingPage() {
               ))}
             </div>
             <Button 
-              onClick={() => handleStartTrial('growth')}
+              asChild
               variant="default"
               size="lg"
               className="w-full relative z-10"
             >
-              Start 14-Day Free Trial
+              <Link href="/api/auth/signup?tier=growth">
+                Start 14-Day Free Trial
+              </Link>
             </Button>
             <p className="text-center text-on-surface/40 text-xs font-medium mt-3 relative z-10">Cancel anytime</p>
           </div>
 
           {/* Enterprise */}
-          <div className="bg-white p-12 rounded-[40px] border border-black/5 shadow-sm hover:shadow-xl transition-all flex flex-col h-full group">
+          <div className="bg-white p-8 md:p-12 rounded-[32px] md:rounded-[40px] border border-black/5 shadow-sm hover:shadow-xl transition-all flex flex-col h-full group">
             <div className="mb-10">
               <h3 className="text-on-surface font-bold text-2xl mb-3 font-headline italic">Enterprise</h3>
               <p className="text-on-surface/50 text-sm font-medium mb-8">Established agencies ready to fully replace their old AMS (Agency Management System).</p>
@@ -237,25 +238,30 @@ export default function PricingPage() {
               ))}
             </div>
             <Button 
-              onClick={() => handleStartTrial('enterprise')}
+              asChild
               variant="outline"
               size="lg"
-              className="w-full border-primary text-primary hover:bg-primary hover:text-white"
+              className="w-full"
             >
-              Start 14-Day Free Trial
+              <Link href="/api/auth/signup?tier=enterprise">
+                Start 14-Day Free Trial
+              </Link>
             </Button>
+            <Link href="/enterprise-pricing.pdf" className="text-center text-on-surface/40 hover:text-secondary text-[10px] font-black uppercase tracking-widest mt-4 transition-colors">
+              Download Pricing Sheet (PDF)
+            </Link>
             <p className="text-center text-on-surface/40 text-xs font-medium mt-3">Cancel anytime</p>
           </div>
         </section>
 
         {/* Detailed Comparison */}
-        <section className="max-w-6xl mx-auto px-8 mt-44">
+        <section className="max-w-6xl mx-auto px-6 md:px-8 mt-24 md:mt-44">
           <div className="text-center mb-20">
-            <h2 className="text-4xl font-bold tracking-tight text-on-surface font-headline italic mb-4">Compare All Features</h2>
-            <p className="text-on-surface/50 font-medium font-body">See exactly what you get in each plan to stop losing policies and grow your book.</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-on-surface font-headline italic mb-4">Compare All Features</h2>
+            <p className="text-on-surface/50 font-medium font-body">See exactly what you get in each plan.</p>
           </div>
-          <div className="overflow-hidden rounded-[40px] bg-white shadow-sm border border-black/5">
-            <table className="w-full text-left border-collapse font-body">
+          <div className="overflow-x-auto rounded-[24px] md:rounded-[40px] bg-white shadow-sm border border-black/5 scrollbar-hide">
+            <table className="w-full text-left border-collapse font-body min-w-[700px]">
               <thead>
                 <tr className="bg-slate-50 border-b border-black/5">
                   <th className="p-8 text-[11px] font-black text-on-surface uppercase tracking-[0.2em]">Capability</th>
@@ -279,27 +285,33 @@ export default function PricingPage() {
                     </td>
                   </tr>
                 ))}
+                <tr className="hover:bg-slate-50 transition-colors">
+                  <td className="p-8 text-sm font-bold text-on-surface">Mobile Experience</td>
+                  <td className="p-8 text-center text-on-surface/60 font-medium">Optimized</td>
+                  <td className="p-8 text-center text-on-surface/60 font-medium bg-secondary/5">Optimized</td>
+                  <td className="p-8 text-center text-on-surface/60 font-medium">Optimized</td>
+                </tr>
               </tbody>
             </table>
           </div>
         </section>
 
         {/* Security Trust */}
-        <section className="max-w-7xl mx-auto px-8 mt-44">
-          <div className="bg-black p-16 rounded-[60px] relative overflow-hidden flex flex-col md:flex-row items-center gap-16">
+        <section className="max-w-7xl mx-auto px-6 md:px-8 mt-24 md:mt-44">
+          <div className="bg-black p-8 md:p-16 rounded-[40px] md:rounded-[60px] relative overflow-hidden flex flex-col md:flex-row items-center gap-12 md:gap-16">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(34,197,94,0.15),transparent)]"></div>
-            <div className="relative z-10 flex-1">
+            <div className="relative z-10 flex-1 text-center md:text-left">
               <span className="material-symbols-outlined text-secondary text-5xl mb-8" style={{ fontVariationSettings: "'FILL' 1" }}>security</span>
-              <h4 className="text-4xl font-bold text-white mb-6 font-headline italic">14-Day Free Trial. No Credit Card Required.</h4>
-              <p className="text-white/60 text-lg leading-relaxed font-medium max-w-xl font-body">
+              <h4 className="text-3xl md:text-4xl font-bold text-white mb-6 font-headline italic">14-Day Free Trial</h4>
+              <p className="text-white/60 text-base md:text-lg leading-relaxed font-medium max-w-xl font-body">
                 Upload your CSV immediately and see the Red/Yellow/Green health scores. On Day 13, we'll email you to enter your card to keep your data. Start stopping policy leakage today.
               </p>
             </div>
-            <div className="relative z-10 bg-white/10 backdrop-blur-md p-10 rounded-[40px] border border-white/10 text-center">
+            <div className="relative z-10 bg-white/10 backdrop-blur-md p-8 md:p-10 rounded-[32px] md:rounded-[40px] border border-white/10 text-center w-full md:w-auto">
               <div className="text-6xl font-black text-secondary mb-4">$99</div>
               <div className="text-[10px] font-black text-white/50 uppercase tracking-[0.4em] mb-8">Cost to save one $15K policy</div>
               <div className="flex -space-x-3 justify-center mb-4">
-                {[1,2,3,4].map(i => <div key={i} className="w-12 h-12 rounded-full bg-slate-200 border-4 border-black"></div>)}
+                {[1,2,3,4].map(i => <div key={i} className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-200 border-4 border-black"></div>)}
               </div>
               <p className="text-sm font-bold text-white/80 font-body">The cost of one lunch with a prospect</p>
             </div>
@@ -315,10 +327,10 @@ export default function PricingPage() {
             <span className="text-on-surface/30 text-xs ml-4 font-body italic"> 2026 RetainVault Insurance Technologies. Built for the Independent Agent.</span>
           </div>
           <div className="flex gap-12 font-body">
-            <Link href="/privacy" className="text-on-surface/40 hover:text-black transition-colors text-sm font-medium">Privacy</Link>
-            <Link href="/terms" className="text-on-surface/40 hover:text-black transition-colors text-sm font-medium">Terms</Link>
-            <Link href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-on-surface/40 hover:text-black transition-colors text-sm font-medium">Twitter</Link>
-            <Link href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-on-surface/40 hover:text-black transition-colors text-sm font-medium">LinkedIn</Link>
+            <Link href="/privacy" className="text-on-surface/40 hover:text-black transition-colors text-sm font-medium">Privacy Policy</Link>
+            <Link href="/terms" className="text-on-surface/40 hover:text-black transition-colors text-sm font-medium">Terms of Service</Link>
+            <Link href="/refund" className="text-on-surface/40 hover:text-black transition-colors text-sm font-medium">Refund Policy</Link>
+            <a href="mailto:hello@retainvault.com" className="text-on-surface/40 hover:text-black transition-colors text-sm font-medium">Contact</a>
           </div>
           <Button asChild variant="default" size="sm">
             <Link href="/demo">

@@ -72,7 +72,19 @@ export function TeamManagement({ agencyId, tier, isDemo = false }: TeamManagemen
     try {
       if (isDemo) {
         setInvitations([
-          { id: '3', email: 'michael@agency.com', name: 'Michael Chen', role: 'csr' as any, sentAt: new Date(), expiresAt: new Date(Date.now() + 86400000 * 7), agencyId: 'demo' }
+          { 
+            id: '3', 
+            email: 'michael@agency.com', 
+            name: 'Michael Chen', 
+            role: 'csr' as any, 
+            sentAt: new Date(), 
+            expiresAt: new Date(Date.now() + 86400000 * 7), 
+            agencyId: 'demo',
+            status: 'pending',
+            token: 'demo-token',
+            createdAt: new Date(),
+            acceptedAt: null
+          }
         ]);
         setLoading(false);
         return;

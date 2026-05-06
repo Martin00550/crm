@@ -1,4 +1,4 @@
-# PolicyPulse - Setup Guide
+# RetainVault - Setup Guide
 
 ## Database Migrations
 

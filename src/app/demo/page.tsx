@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useMockData } from "@/context/MockDataContext";
 import { Plus, RefreshCw, Bell, ArrowRight } from "lucide-react";
 import { ChatBubbleButton } from "@/components/dashboard/DashboardButtons";
+import { DateRangeFilter } from "@/components/dashboard/DateRangeFilter";
+import { KeyboardShortcuts, useKeyboardShortcuts } from "@/components/dashboard/KeyboardShortcuts";
 
 // Lazy load shared components to match Dashboard structure
 const PolicyLedgerTable = lazy(() => import("@/components/dashboard/PolicyLedgerTable").then(m => ({ default: m.PolicyLedgerTable })));
@@ -13,6 +15,7 @@ const AIInsightsCard = lazy(() => import("@/components/dashboard/AIInsightsCard"
 export default function DemoPage() {
   const [mounted, setMounted] = useState(false);
   const data = useMockData();
+  const { showShortcuts, setShowShortcuts } = useKeyboardShortcuts();
   
   // Safe extraction
   const clients = data?.clients || [];
@@ -82,11 +85,12 @@ export default function DemoPage() {
 
   return (
     <div className="space-y-12 font-body pb-20 animate-in fade-in duration-700">
+      <KeyboardShortcuts isOpen={showShortcuts} onClose={() => setShowShortcuts(false)} />
       {/* Header - Identical to Live Dashboard */}
       <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6">
         <div>
           <h1 className="text-4xl font-black text-on-surface tracking-tight">Command Center</h1>
-          <p className="text-on-surface/50 font-medium mt-1">Simulated environment for portfolio intelligence demonstration.</p>
+          <p className="text-on-surface/50 font-medium mt-1">Monitor your portfolio and renewal health metrics.</p>
         </div>
         
         <div className="flex items-center gap-3">
@@ -116,6 +120,8 @@ export default function DemoPage() {
             </div>
           </div>
           
+          <DateRangeFilter />
+
           <button className="flex items-center justify-center w-11 h-11 bg-white border border-black/5 rounded-2xl hover:bg-slate-50 transition-all shadow-sm">
             <Bell className="w-5 h-5 text-on-surface/20" />
           </button>
@@ -146,7 +152,7 @@ export default function DemoPage() {
       {/* Intelligence Section - Identical to Live Dashboard */}
       <section className="w-full">
         <Suspense fallback={<div className="h-32 bg-white rounded-3xl animate-pulse border border-black/5" />}>
-          <AIInsightsCard stats={stats} />
+          <AIInsightsCard stats={stats} isDemo={true} />
         </Suspense>
       </section>
 
@@ -159,11 +165,6 @@ export default function DemoPage() {
           <PolicyLedgerTable ledger={ledger as any} isDemo={true} />
         </Suspense>
       </section>
-
-      {/* Chat Bubble */}
-      <div className="fixed bottom-8 right-8 z-50">
-        <ChatBubbleButton />
-      </div>
 
       {/* Demo Badge */}
       <div className="fixed bottom-8 left-8 z-50">

@@ -3,14 +3,14 @@
 import { TrendingUp, AlertTriangle, CheckCircle, Target, Zap } from 'lucide-react';
 import Link from 'next/link';
 
-export function AIInsightsCard({ stats }: { stats: { renewalsAtRisk: { count: number; volume: string } } }) {
+export function AIInsightsCard({ stats, isDemo = false }: { stats: { renewalsAtRisk: { count: number; volume: string } }, isDemo?: boolean }) {
   const hasRisks = stats.renewalsAtRisk.count > 0;
 
   const quickActions = hasRisks ? [
     {
       icon: AlertTriangle,
       label: 'Review At-Risk',
-      href: '/dashboard/renewals',
+      href: isDemo ? '/demo/renewals' : '/dashboard/renewals',
       color: 'text-red-500',
       bg: 'bg-red-50',
     },

@@ -31,9 +31,7 @@ export function Sidebar({ isDemo = false, agencyLogo, agencyName }: SidebarProps
   const pathname = usePathname();
 
   const handleSupportClick = () => {
-    window.dispatchEvent(new CustomEvent('open-chat', { 
-      detail: { prompt: "How can I help you protect your Book of Business?" } 
-    }));
+    window.dispatchEvent(new CustomEvent('open-support'));
   };
 
   return (
@@ -56,7 +54,8 @@ export function Sidebar({ isDemo = false, agencyLogo, agencyName }: SidebarProps
         <p className="px-4 text-[10px] font-bold text-on-surface/30 uppercase tracking-[0.2em] mb-6">Navigation</p>
         {navItems.map((item) => {
           const href = isDemo ? item.demoHref : item.href;
-          const isActive = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
+          const isHome = isDemo ? item.demoHref === "/demo" : item.href === "/dashboard";
+          const isActive = pathname === href || (!isHome && pathname.startsWith(href));
           
           return (
             <Link

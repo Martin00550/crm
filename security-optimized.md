@@ -1,11 +1,11 @@
-description: Audits codebases for common security vulnerabilities in PolicyPulse CRM (Next.js 16 + Neon/Drizzle + Clerk + Stripe + AI SDK + Inngest). Checks for exposed API keys, broken access control (Drizzle/RLS), missing auth validation, insecure AI usage flows, webhook verification gaps, and storage vulnerabilities. Use this skill whenever the user asks about security, wants a code review, or is writing code that handles authentication, payments, database access, AI API keys, secrets, or user data. Also trigger when the user says things like "is this safe?", "check my code", "audit this", "review for vulnerabilities", or "can someone hack this?".
+description: Audits codebases for common security vulnerabilities in RetainVault CRM (Next.js 16 + Neon/Drizzle + Clerk + Stripe + AI SDK + Inngest). Checks for exposed API keys, broken access control (Drizzle/RLS), missing auth validation, insecure AI usage flows, webhook verification gaps, and storage vulnerabilities. Use this skill whenever the user asks about security, wants a code review, or is writing code that handles authentication, payments, database access, AI API keys, secrets, or user data. Also trigger when the user says things like "is this safe?", "check my code", "audit this", "review for vulnerabilities", or "can someone hack this?".
 license: MIT
 metadata:
-  author: PolicyPulse Security Audit
+  author: RetainVault Security Audit
   version: "1.0"
 ---
 
-Audit code for security vulnerabilities in the PolicyPulse CRM stack: **Next.js 16 (App Router) + Neon PostgreSQL + Drizzle ORM + Clerk Auth + Stripe + AI SDK (OpenAI Compatible + Google + DashScope) + Inngest + Resend + Backblaze B2 + Svix**.
+Audit code for security vulnerabilities in the RetainVault CRM stack: **Next.js 16 (App Router) + Neon PostgreSQL + Drizzle ORM + Clerk Auth + Stripe + AI SDK (OpenAI Compatible + Google + DashScope) + Inngest + Resend + Backblaze B2 + Svix**.
 
 AI assistants consistently get these patterns wrong, leading to real breaches, stolen API keys, unauthorized data access, and drained billing accounts. This workflow exists to catch those mistakes before they ship.
 
@@ -17,7 +17,7 @@ AI assistants consistently get these patterns wrong, leading to real breaches, s
 
 ## Tech Stack Specific Risks
 
-Based on PolicyPulse's architecture, these are the highest-priority vulnerability vectors:
+Based on RetainVault's architecture, these are the highest-priority vulnerability vectors:
 
 1. **Clerk Auth bypass** - Missing `auth()` checks in Server Actions/API routes
 2. **Drizzle ORM injection** - Unsanitized inputs in raw SQL or `sql` template usage
@@ -540,7 +540,7 @@ These rules also apply proactively. Before writing code that touches:
 Consult this workflow to avoid introducing vulnerabilities in the first place. **Prevention is better than detection.**
 
 
-## Quick Reference: PolicyPulse Security Checklist
+## Quick Reference: RetainVault Security Checklist
 
 | Area | Must Have | Common Mistake |
 |------|-----------|----------------|

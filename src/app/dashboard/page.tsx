@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { withAuth } from "@workos-inc/authkit-nextjs";
-import { getDashboardStats, getPolicyLedger, getUserAgencyId } from "@/actions/data";
+import { getDashboardStats, getPolicyLedger, getUserAgencyId, getAgency } from "@/actions/data";
 import { checkAgencySubscription } from "@/lib/subscription-check";
 import { OnboardingPanel } from "@/components/dashboard/OnboardingPanel";
 import { DashboardClient } from "./DashboardClient";

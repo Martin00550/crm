@@ -11,10 +11,7 @@ export default function HomePage() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const handleStartTrial = (tier: string = 'solo') => {
-    document.cookie = `selected_tier=${tier}; path=/; max-age=3600`;
-    window.location.href = '/api/auth/signup';
-  };
+
   const { isAuthenticated, isLoading, user } = useWorkOSClient();
 
   useEffect(() => {
@@ -26,7 +23,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main className="bg-background min-h-screen selection:bg-secondary/20">
+    <main className="bg-background min-h-screen selection:bg-secondary/20 overflow-x-hidden">
       {/* Premium Grain Overlay */}
       <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[100] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
 
@@ -35,7 +32,7 @@ export default function HomePage() {
         "fixed top-0 w-full z-50 transition-all duration-300",
         scrolled ? "bg-background/80 backdrop-blur-md border-b border-black/5 py-2" : "bg-transparent py-4"
       )}>
-        <div className="flex justify-between items-center px-8 w-full max-w-7xl mx-auto">
+        <div className="flex justify-between items-center px-6 sm:px-8 w-full max-w-7xl mx-auto">
           <div className="flex items-center gap-2">
             <span className="text-2xl font-black tracking-tight text-primary font-headline italic">RetainVault</span>
           </div>
@@ -115,29 +112,26 @@ export default function HomePage() {
           </svg>
         </div>
         
-        <div className="max-w-7xl mx-auto px-8 relative z-10 text-center">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 relative z-10 text-center">
           <div className="max-w-4xl mx-auto pt-16">
-            <h1 className="text-6xl lg:text-7xl font-bold tracking-tight text-on-surface leading-[1.1] mb-8 font-headline">
+            <h1 className="text-[2.5rem] sm:text-6xl lg:text-7xl font-bold tracking-tight text-on-surface leading-[1.1] mb-8 font-headline text-balance">
               Stop <span className="text-secondary italic">Policy Leakage.</span> <br />
               Protect Your Book.
             </h1>
             <p className="text-xl text-on-surface/70 max-w-2xl mx-auto mb-10 leading-relaxed font-medium font-body">
-              Legacy systems are built for accounting. RetainVault is built for <span className="text-secondary font-bold underline underline-offset-4">retention.</span> Stop the silent leakage with 90-day renewal alerts and AI rate analysis.
+              Legacy systems are built for accounting. RetainVault is built for <span className="text-secondary font-bold underline underline-offset-4">retention.</span> Identify the silent leakage with 90-day renewal alerts and AI-driven rate forensics.
             </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4 mb-20 font-body">
-              <Button asChild variant="default" size="lg" className="group shadow-2xl">
+            <div className="flex flex-col sm:flex-row justify-center gap-4 mb-12 sm:mb-20 font-body">
+              <Button asChild variant="default" size="lg" className="group shadow-2xl w-full sm:w-auto">
                 <Link href="/demo">
-                  Review My Book
+                  Try Demo Dashboard
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
-              <Button 
-                onClick={() => handleStartTrial()}
-                variant="outline"
-                size="lg"
-                className="border-black hover:bg-slate-50"
-              >
-                Start 14-Day Trial
+              <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
+                <Link href="/pricing">
+                  Start 14-Day Trial
+                </Link>
               </Button>
             </div>
 
@@ -212,10 +206,10 @@ export default function HomePage() {
       </section>
 
       {/* Feature Sections */}
-      <section className="py-24 bg-background">
-        <div className="max-w-7xl mx-auto px-8 space-y-32">
+      <section className="py-12 md:py-24 bg-background">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 space-y-20 md:space-y-32">
           {/* Section 1: AI Rate Forensics */}
-          <div className="grid lg:grid-cols-2 gap-20 items-center bg-white/50 rounded-[40px] p-12 border border-black/5">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center bg-white/50 rounded-[32px] md:rounded-[40px] p-6 md:p-12 border border-black/5">
             <div>
               <div className="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center mb-6">
                 <span className="material-symbols-outlined text-secondary">auto_awesome</span>
@@ -270,7 +264,7 @@ export default function HomePage() {
           </div>
 
           {/* Section 3: Executive Command Center */}
-          <div className="grid lg:grid-cols-2 gap-20 items-center bg-white/50 rounded-[40px] p-12 border border-black/5">
+          <div className="grid lg:grid-cols-2 gap-20 items-center bg-white/50 rounded-[40px] p-6 md:p-12 border border-black/5">
             <div>
               <div className="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center mb-6">
                 <span className="material-symbols-outlined text-secondary">dashboard_customize</span>
@@ -311,11 +305,11 @@ export default function HomePage() {
                 <span className="material-symbols-outlined text-secondary">sync</span>
               </div>
               <h2 className="text-5xl font-bold mb-6 font-headline">
-                Real-time <br />
-                <span className="text-secondary italic">Portfolio Sync</span>
+                Intelligent <br />
+                <span className="text-secondary italic">Portfolio Import</span>
               </h2>
               <p className="text-lg text-on-surface/70 mb-8 font-body leading-relaxed">
-                Connect your carrier data to see total premium volume and retention rates visualized in real-time.
+                Import your carrier data via CSV to see total premium volume and retention rates visualized in a high-fidelity command center.
               </p>
             </div>
           </div>
@@ -325,7 +319,7 @@ export default function HomePage() {
       {/* Founder's Note / Transparency Section */}
       <section className="py-24 bg-surface relative overflow-hidden">
         <div className="max-w-4xl mx-auto px-8 relative z-10">
-          <div className="bg-white/50 backdrop-blur-sm p-16 rounded-[40px] border border-black/5 shadow-sm">
+          <div className="bg-white/50 backdrop-blur-sm p-8 md:p-16 rounded-[40px] border border-black/5 shadow-sm">
             <div className="flex items-center gap-4 mb-10">
               <div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center">
                 <span className="material-symbols-outlined text-secondary text-3xl">verified_user</span>
@@ -365,9 +359,9 @@ export default function HomePage() {
         </div>
       </section>
       <section className="py-24 bg-background border-t border-black/5">
-        <div className="max-w-7xl mx-auto px-8">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8">
           <div className="text-center mb-20">
-            <h2 className="text-5xl font-bold mb-6 font-headline">How It Works</h2>
+            <h2 className="text-4xl sm:text-5xl font-bold mb-6 font-headline text-balance">How It Works</h2>
             <p className="text-lg text-on-surface/60 font-body">Get started in three simple steps.</p>
           </div>
 
@@ -403,15 +397,15 @@ export default function HomePage() {
 
       {/* Pricing Section */}
       <section className="py-24 bg-background border-t border-black/5">
-        <div className="max-w-7xl mx-auto px-8">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8">
           <div className="text-center mb-20">
-            <h2 className="text-5xl font-bold mb-6 font-headline">Investment Plans</h2>
+            <h2 className="text-4xl sm:text-5xl font-bold mb-6 font-headline text-balance">Investment Plans</h2>
             <p className="text-lg text-on-surface/60 font-body">Predictable growth for independent authorities.</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 mb-12 items-stretch">
             {/* Solo Agent */}
-            <div className="bg-white p-12 rounded-[40px] border border-black/5 shadow-sm hover:shadow-xl transition-all flex flex-col h-full">
+            <div className="bg-white p-8 md:p-12 rounded-[40px] border border-black/5 shadow-sm hover:shadow-xl transition-all flex flex-col h-full">
               <div className="mb-10">
                 <h3 className="text-on-surface font-bold text-2xl mb-3 font-headline italic">Solo Agent</h3>
                 <p className="text-on-surface/50 text-sm font-medium mb-8">The independent producer who works alone and just wants to stop losing policies.</p>
@@ -436,17 +430,19 @@ export default function HomePage() {
                 ))}
               </div>
               <Button 
-                onClick={() => handleStartTrial('solo')} 
+                asChild
                 variant="outline" 
                 size="lg"
-                className="w-full border-primary text-on-surface hover:bg-primary hover:text-white"
+                className="w-full"
               >
-                Start 14-Day Free Trial
+                <Link href="/api/auth/signup?tier=solo">
+                  Start 14-Day Free Trial
+                </Link>
               </Button>
             </div>
 
             {/* Growth Agency */}
-            <div className="relative bg-white p-12 rounded-[40px] border-2 border-secondary shadow-2xl flex flex-col h-full transform scale-105 z-10">
+            <div className="relative bg-white p-8 md:p-12 rounded-[40px] border-2 border-secondary shadow-2xl flex flex-col h-full sm:transform sm:scale-105 z-10">
               <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-secondary text-white px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.3em] shadow-lg z-20">
                 Recommended
               </div>
@@ -474,17 +470,19 @@ export default function HomePage() {
                 ))}
               </div>
               <Button 
-                onClick={() => handleStartTrial('growth')} 
+                asChild
                 variant="default" 
                 size="lg"
                 className="w-full relative z-10"
               >
-                Start 14-Day Free Trial
+                <Link href="/api/auth/signup?tier=growth">
+                  Start 14-Day Free Trial
+                </Link>
               </Button>
             </div>
 
             {/* Authority Agency */}
-            <div className="bg-white p-12 rounded-[40px] border border-black/5 shadow-sm hover:shadow-xl transition-all flex flex-col h-full">
+            <div className="bg-white p-8 md:p-12 rounded-[40px] border border-black/5 shadow-sm hover:shadow-xl transition-all flex flex-col h-full">
               <div className="mb-10">
                 <h3 className="text-on-surface font-bold text-2xl mb-3 font-headline italic">Enterprise</h3>
                 <p className="text-on-surface/50 text-sm font-medium mb-8">Established agencies ready to fully modernize their renewal operations.</p>
@@ -509,12 +507,14 @@ export default function HomePage() {
                 ))}
               </div>
               <Button 
-                onClick={() => handleStartTrial('enterprise')} 
+                asChild
                 variant="outline" 
                 size="lg"
-                className="w-full border-primary text-primary hover:bg-primary hover:text-white"
+                className="w-full"
               >
-                Start 14-Day Free Trial
+                <Link href="/api/auth/signup?tier=enterprise">
+                  Start 14-Day Free Trial
+                </Link>
               </Button>
             </div>
           </div>
@@ -529,9 +529,9 @@ export default function HomePage() {
 
       {/* FAQ Section */}
       <section className="py-24 bg-background">
-        <div className="max-w-4xl mx-auto px-8">
+        <div className="max-w-4xl mx-auto px-6 sm:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-5xl font-bold mb-6 font-headline">Frequently Asked Questions</h2>
+            <h2 className="text-4xl sm:text-5xl font-bold mb-6 font-headline text-balance">Frequently Asked Questions</h2>
             <p className="text-lg text-on-surface/60 font-body">Everything you need to know about RetainVault.</p>
           </div>
 
@@ -562,7 +562,7 @@ export default function HomePage() {
                 a: "Every plan includes email support. Independent Agency and Authority plans include priority support with dedicated account managers and onboarding assistance."
               }
             ].map((faq, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-black/5 p-8">
+              <div key={i} className="bg-white rounded-2xl border border-black/5 p-6 md:p-8">
                 <h3 className="text-xl font-bold mb-3 font-headline">{faq.q}</h3>
                 <p className="text-on-surface/70 font-body leading-relaxed">{faq.a}</p>
               </div>
@@ -573,9 +573,9 @@ export default function HomePage() {
 
       {/* Competitor Comparison Section */}
       <section className="py-24 bg-background border-t border-black/5">
-        <div className="max-w-7xl mx-auto px-8">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8">
           <div className="text-center mb-20">
-            <h2 className="text-5xl font-bold mb-6 font-headline">RetainVault vs Traditional AMS</h2>
+            <h2 className="text-4xl sm:text-5xl font-bold mb-6 font-headline text-balance">RetainVault vs Traditional AMS</h2>
             <p className="text-lg text-on-surface/60 font-body">Built for retention, not just accounting.</p>
           </div>
 
@@ -591,14 +591,14 @@ export default function HomePage() {
               </thead>
               <tbody>
                 {[
-                  { feature: "90-day renewal automation", bookGuard: "✓", ams: "✗", spreadsheets: "✗" },
-                  { feature: "AI rate analysis", bookGuard: "✓", ams: "✗", spreadsheets: "✗" },
-                  { feature: "Real-time carrier sync", bookGuard: "✓", ams: "Manual", spreadsheets: "✗" },
-                  { feature: "Health score tracking", bookGuard: "✓", ams: "✗", spreadsheets: "✗" },
-                  { feature: "Mobile app", bookGuard: "✓", ams: "Limited", spreadsheets: "✗" },
-                  { feature: "Client portal", bookGuard: "✓", ams: "Add-on", spreadsheets: "✗" },
-                  { feature: "Setup time", bookGuard: "Fast", ams: "Weeks", spreadsheets: "N/A" },
-                  { feature: "Monthly cost", bookGuard: "$99+", ams: "$500+", spreadsheets: "Free" }
+                   { feature: "90-day renewal automation", bookGuard: "✓", ams: "✗", spreadsheets: "✗" },
+                   { feature: "AI rate analysis", bookGuard: "✓", ams: "✗", spreadsheets: "✗" },
+                   { feature: "Intelligent CSV import", bookGuard: "✓", ams: "Manual", spreadsheets: "✓" },
+                   { feature: "Health score tracking", bookGuard: "✓", ams: "✗", spreadsheets: "✗" },
+                   { feature: "Mobile optimized", bookGuard: "✓", ams: "Limited", spreadsheets: "✗" },
+                   { feature: "Client portal", bookGuard: "✓", ams: "Add-on", spreadsheets: "✗" },
+                   { feature: "Setup time", bookGuard: "Fast", ams: "Weeks", spreadsheets: "N/A" },
+                   { feature: "Monthly cost", bookGuard: "$99+", ams: "$500+", spreadsheets: "Free" }
                 ].map((row, i) => (
                   <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}>
                     <td className="p-6 font-medium font-body">{row.feature}</td>
@@ -614,12 +614,12 @@ export default function HomePage() {
       </section>
 
       {/* Footer CTA */}
-      <section className="py-24 bg-black text-white m-8 rounded-[40px] relative overflow-hidden">
-        <div className="max-w-4xl mx-auto px-8 text-center relative z-10">
+      <section className="py-16 md:py-24 bg-black text-white m-4 sm:m-8 rounded-[32px] md:rounded-[40px] relative overflow-hidden">
+        <div className="max-w-4xl mx-auto px-6 sm:px-8 text-center relative z-10">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 mb-8">
             <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white/70">Enterprise Ready</span>
           </div>
-          <h2 className="text-6xl font-bold mb-8 font-headline leading-tight">
+          <h2 className="text-4xl sm:text-6xl font-bold mb-8 font-headline leading-[1.2] lg:leading-tight">
             Never open <br /> <span className="text-secondary italic">another tab</span>
           </h2>
           <p className="text-xl text-white/60 mb-12 font-body max-w-2xl mx-auto leading-relaxed">
@@ -628,7 +628,7 @@ export default function HomePage() {
           <div className="flex flex-col items-center gap-6 justify-center">
             <Button asChild variant="white" size="lg" className="shadow-xl shadow-white/5">
               <Link href="/demo">
-                Review My Book
+                Try Demo Dashboard
                 <BarChart3 className="ml-2 w-5 h-5" />
               </Link>
             </Button>
@@ -646,7 +646,7 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer className="bg-background py-16">
-        <div className="max-w-7xl mx-auto px-8 border-t border-black/5 pt-12">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 border-t border-black/5 pt-12">
           <div className="grid md:grid-cols-4 gap-12 mb-12">
             <div>
               <span className="text-xl font-black tracking-tight text-primary font-headline italic">RetainVault</span>
@@ -658,17 +658,12 @@ export default function HomePage() {
               <div className="space-y-3 font-body">
                 <Link href="/pricing" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Pricing</Link>
                 <Link href="/demo" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Demo</Link>
-                <Link href="/features/integrations" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Integrations</Link>
-                <Link href="/api-docs" className="block text-on-surface/50 hover:text-black text-sm transition-colors">API</Link>
               </div>
             </div>
             <div>
               <h4 className="font-bold mb-4 font-headline">Company</h4>
               <div className="space-y-3 font-body">
-                <Link href="/about" className="block text-on-surface/50 hover:text-black text-sm transition-colors">About</Link>
-                <Link href="/blog" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Blog</Link>
-                <Link href="/careers" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Careers</Link>
-                <Link href="/contact" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Contact</Link>
+                <a href="mailto:hello@retainvault.com" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Contact</a>
               </div>
             </div>
             <div>
@@ -676,8 +671,7 @@ export default function HomePage() {
               <div className="space-y-3 font-body">
                 <Link href="/privacy" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Privacy Policy</Link>
                 <Link href="/terms" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Terms of Service</Link>
-                <Link href="/security" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Security</Link>
-                <Link href="/gdpr" className="block text-on-surface/50 hover:text-black text-sm transition-colors">GDPR</Link>
+                <Link href="/refund" className="block text-on-surface/50 hover:text-black text-sm transition-colors">Refund Policy</Link>
               </div>
             </div>
           </div>

@@ -8,7 +8,7 @@ interface Message {
   content: string;
 }
 
-export function ChatInterface({ isOpen, onClose, initialPrompt }: { isOpen: boolean; onClose: () => void; initialPrompt?: string | null }) {
+export function ChatInterface({ isOpen, onClose, initialPrompt, isDemo = false }: { isOpen: boolean; onClose: () => void; initialPrompt?: string | null; isDemo?: boolean }) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [input, setInput] = useState('');
@@ -52,15 +52,23 @@ export function ChatInterface({ isOpen, onClose, initialPrompt }: { isOpen: bool
       const conversationHistory = messages.map(m => ({ role: m.role, content: m.content }));
       conversationHistory.push({ role: 'user', content: text });
 
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (isDemo) {
+        headers['X-Is-Demo'] = 'true';
+      }
+
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ messages: conversationHistory }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || `Server error: ${response.status}`);
+        const errorMessage = typeof errorData.error === 'object' 
+          ? errorData.error.message 
+          : (errorData.error || `Server error: ${response.status}`);
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -206,7 +214,24 @@ export function ChatInterface({ isOpen, onClose, initialPrompt }: { isOpen: bool
         </div>
 
         {/* Input */}
-        <div className="p-4 border-t border-black/5">
+        <div className="p-4 pb-8 border-t border-black/5 bg-slate-50/30 space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {[
+              { label: 'Leakage Risk', prompt: 'Analyze current leakage risk' },
+              { label: '30D Renewals', prompt: 'Show upcoming 30D renewals' },
+              { label: 'Portfolio Brief', prompt: 'Give me a brief overview of my Book of Business' }
+            ].map((chip) => (
+              <button
+                key={chip.label}
+                onClick={() => sendMessage(chip.prompt)}
+                disabled={isLoading}
+                className="px-3 py-1.5 bg-white border border-black/5 rounded-full text-[10px] font-black text-on-surface/60 uppercase tracking-widest hover:border-secondary/30 hover:text-secondary transition-all disabled:opacity-50 shadow-sm"
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+
           <form onSubmit={handleSubmit} className="flex gap-2.5">
             <input
               ref={inputRef}

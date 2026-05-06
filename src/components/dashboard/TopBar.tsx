@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { User } from "lucide-react";
+import { User, Menu } from "lucide-react";
 import { NotificationDropdown } from "./NotificationDropdown";
 
 interface TopBarProps {
@@ -10,19 +10,29 @@ interface TopBarProps {
   userEmail?: string;
   agencyId?: string;
   tier?: string;
+  currency?: string;
+  onMenuClick?: () => void;
 }
 
-export function TopBar({ userName, agencyId }: TopBarProps) {
+export function TopBar({ isDemo, userName, agencyId, currency, onMenuClick }: TopBarProps) {
   return (
-    <header className="h-16 bg-background/80 backdrop-blur-md border-b border-black/5 flex items-center justify-between px-10 font-body sticky top-0 z-40">
-      <div className="flex-1" />
+    <header className="h-16 bg-background/80 backdrop-blur-md border-b border-black/5 flex items-center justify-between px-6 md:px-10 font-body sticky top-0 z-40">
+      <div className="flex items-center gap-4">
+        <button 
+          onClick={onMenuClick}
+          className="md:hidden w-10 h-10 rounded-full hover:bg-black/5 flex items-center justify-center transition-colors"
+        >
+          <Menu className="w-5 h-5 text-on-surface" />
+        </button>
+        <div className="flex-1" />
+      </div>
 
       {/* Right Actions */}
       <div className="flex items-center gap-6">
         <NotificationDropdown agencyId={agencyId} />
 
         <div className="flex items-center gap-4 pl-6 border-l border-black/5">
-          <Link href="/dashboard/settings/profile" className="flex items-center gap-3 group">
+          <Link href={isDemo ? "/demo/settings/profile" : "/dashboard/settings/profile"} className="flex items-center gap-3 group">
             <div className="text-right hidden sm:block">
               <p className="text-[11px] font-bold text-on-surface uppercase tracking-wider">{userName || "Agency Admin"}</p>
             </div>

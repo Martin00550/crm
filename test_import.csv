@@ -1,0 +1,4 @@
+client_name,policy_number,carrier,policy_type,premium,expiration_date
+"Acme Corp","POL-123","State Farm","General Liability","1500.00","2025-12-31"
+"Globex","POL-456","Progressive","Commercial Auto","2500.00","2025-06-30"
+"Initech","POL-789","Liberty Mutual","Workers Comp","1200.00","2025-09-15"

@@ -43,7 +43,7 @@
   }
 
   body {
-    @apply bg-background text-on-surface antialiased min-h-screen;
+    @apply bg-background text-on-surface antialiased min-h-screen overflow-x-hidden;
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 

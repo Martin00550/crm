@@ -394,7 +394,7 @@ export function AddClientButton() {
         throw new Error(result.error || 'Failed to add client');
       }
 
-      setSaveMessage('Client added successfully!');
+      setSaveMessage('Insured entity logged successfully!');
 
       // Close modal and refresh page after success
       setTimeout(() => {
@@ -423,7 +423,7 @@ export function AddClientButton() {
         size="sm"
         leftIcon={<PlusIcon className="w-3.5 h-3.5" />}
       >
-        Add Client
+        Add Insured
       </Button>
       {showModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
@@ -666,7 +666,7 @@ export function AddRenewalButton() {
   );
 }
 
-export function ChatBubbleButton({ initialPrompt }: { initialPrompt?: string } = {}) {
+export function ChatBubbleButton({ initialPrompt, isDemo = false }: { initialPrompt?: string; isDemo?: boolean } = {}) {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [prompt, setPrompt] = useState<string | null>(initialPrompt || null);
 
@@ -688,14 +688,21 @@ export function ChatBubbleButton({ initialPrompt }: { initialPrompt?: string } =
       <Button 
         onClick={handleChatClick}
         variant="secondary"
-        size="icon"
-        className="w-14 h-14 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all"
-        leftIcon={<span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>help</span>}
+        className="w-16 h-16 rounded-[22px] shadow-[0_20px_40px_-10px_rgba(34,197,94,0.4)] hover:shadow-[0_25px_50px_-12px_rgba(34,197,94,0.6)] hover:scale-110 active:scale-95 transition-all duration-500 bg-gradient-to-br from-secondary via-secondary to-emerald-600 border-none group"
       >
+        <div className="relative">
+          <Sparkles className="w-7 h-7 text-white group-hover:rotate-12 transition-transform duration-500" />
+          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(74,222,128,0.8)] border-2 border-emerald-600"></div>
+        </div>
       </Button>
       {isChatOpen && (
         <Suspense fallback={null}>
-          <ChatInterface isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} initialPrompt={prompt} />
+          <ChatInterface 
+            isOpen={isChatOpen} 
+            onClose={() => setIsChatOpen(false)} 
+            initialPrompt={prompt} 
+            isDemo={isDemo}
+          />
         </Suspense>
       )}
     </>

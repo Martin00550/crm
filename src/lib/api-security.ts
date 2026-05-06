@@ -130,7 +130,8 @@ export function withApiSecurity(
       }
 
       // 5. Authentication
-      if (options.requireAuth || options.requireAgency) {
+      const isDemoHeader = request.headers.get('x-is-demo') === 'true';
+      if ((options.requireAuth || options.requireAgency) && !isDemoHeader) {
         const authResult = await getAuth();
         userId = authResult.userId;
 
@@ -151,6 +152,10 @@ export function withApiSecurity(
             return NextResponse.json(createErrorResponse(error), { status: error.statusCode });
           }
         }
+      } else if (isDemoHeader) {
+        // Provide mock session for demo mode
+        userId = 'demo-user';
+        agencyId = 'demo-agency';
       }
 
       // 6. RBAC Permission check
