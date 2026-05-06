@@ -5,13 +5,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(amount: string | number | null): string {
-  if (!amount) return '$0';
-  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-  if (isNaN(num)) return '$0';
+export function formatCurrency(amount: string | number | null, currency: string = 'USD'): string {
+  if (!amount) return currency === 'USD' ? '$0' : currency === 'EUR' ? '€0' : '£0';
+  const num = typeof amount === 'string' ? parseFloat(amount.replace(/[^0-9.-]+/g, "")) : amount;
+  if (isNaN(num)) return currency === 'USD' ? '$0' : currency === 'EUR' ? '€0' : '£0';
+  
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD',
+    currency: currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(num);
 }
 

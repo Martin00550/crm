@@ -8,6 +8,8 @@ import { ChatBubbleButton } from "@/components/dashboard/DashboardButtons";
 import { getUserAgencyId, getAgency } from "@/actions/data";
 import { TrialExpiredModal } from "@/components/dashboard/TrialExpiredModal";
 
+import { DashboardShell } from "@/components/dashboard/DashboardShell";
+
 export default async function DashboardLayout({
   children,
 }: {
@@ -31,70 +33,24 @@ export default async function DashboardLayout({
   const subscriptionStatus = agency?.subscriptionStatus || 'trialing';
   const trialEnd = agency?.trialEnd ? new Date(agency.trialEnd) : null;
 
-  // Check if trial has expired (use UTC for consistent comparison)
+  // Check if trial has expired
   const now = new Date();
   const isTrialExpired = subscriptionStatus === 'trialing' && trialEnd && trialEnd.getTime() < now.getTime();
 
-  // If trial expired, show the expired modal overlay
   if (isTrialExpired) {
     return (
-      <div className="flex min-h-screen bg-slate-50 font-body text-on-surface">
-        <div className="w-64 flex-none hidden md:block">
-          <Sidebar 
-            agencyLogo={agency?.branding?.logoUrl}
-            agencyName={agency?.name}
-          />
-        </div>
-        <MobileNav 
-          agencyLogo={agency?.branding?.logoUrl}
-          agencyName={agency?.name}
+      <DashboardShell user={user} agency={agency} agencyId={agencyId} tier={tier} currency={agency?.currency}>
+        <TrialExpiredModal 
+          tier={tier}
+          trialEndDate={trialEnd}
         />
-        <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-          <TopBar 
-            userName={user.email?.split("@")[0]}
-            userEmail={user.email}
-            agencyId={agencyId || undefined}
-            tier={tier}
-          />
-          <main className="flex-1 p-10 overflow-auto scrollbar-hide">
-            <div className="max-w-[1600px] mx-auto">
-              <TrialExpiredModal 
-                tier={tier}
-                trialEndDate={trialEnd}
-              />
-            </div>
-          </main>
-        </div>
-      </div>
+      </DashboardShell>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-body text-on-surface">
-      <div className="w-64 flex-none hidden md:block">
-        <Sidebar 
-          agencyLogo={agency?.branding?.logoUrl}
-          agencyName={agency?.name}
-        />
-      </div>
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        <TopBar 
-          userName={user.email?.split("@")[0]}
-          userEmail={user.email}
-          agencyId={agencyId || undefined}
-          tier={tier}
-        />
-        <main className="flex-1 p-10 overflow-auto scrollbar-hide">
-          <div className="max-w-[1600px] mx-auto">
-            {children}
-          </div>
-        </main>
-      </div>
-      
-      {/* Global Intelligence Interface */}
-      <div className="fixed bottom-8 right-8 z-50">
-        <ChatBubbleButton />
-      </div>
-    </div>
+    <DashboardShell user={user} agency={agency} agencyId={agencyId} tier={tier} currency={agency?.currency}>
+      {children}
+    </DashboardShell>
   );
 }

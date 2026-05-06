@@ -40,6 +40,13 @@ export default async function SettingsPage() {
       available: true,
     },
     {
+      name: 'Currency & Region',
+      description: 'Set your primary currency for all premiums and totals',
+      href: '/dashboard/settings/currency',
+      icon: 'payments',
+      available: true,
+    },
+    {
       name: 'White-Label Portal',
       description: 'Customize your branded client portal with logo and colors',
       href: '/dashboard/settings/branding',

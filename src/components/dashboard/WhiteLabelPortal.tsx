@@ -24,9 +24,10 @@ interface PortalConfig {
 
 interface WhiteLabelPortalProps {
   agencyId: string;
+  isDemo?: boolean;
 }
 
-export function WhiteLabelPortal({ agencyId }: WhiteLabelPortalProps) {
+export function WhiteLabelPortal({ agencyId, isDemo = false }: WhiteLabelPortalProps) {
   const [config, setConfig] = useState<PortalConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -43,6 +44,29 @@ export function WhiteLabelPortal({ agencyId }: WhiteLabelPortalProps) {
   const loadConfig = async () => {
     setLoading(true);
     try {
+      if (isDemo) {
+        // Mock portal config for demo
+        const mockConfig: PortalConfig = {
+          agencyId: 'demo-agency',
+          subdomain: 'demo-agency',
+          branding: {
+            primaryColor: '#000000',
+            secondaryColor: '#34d399',
+            companyName: 'Demo Agency Group',
+            supportEmail: 'support@demo-agency.com',
+          },
+          settings: {
+            allowDocumentDownloads: true,
+            allowPolicyDetails: true,
+            allowRenewalRequests: true,
+            requireTwoFactor: false,
+          }
+        };
+        setConfig(mockConfig);
+        setLoading(false);
+        return;
+      }
+
       const res = await fetch('/api/portal/config');
       const result = await res.json();
       
@@ -123,6 +147,12 @@ export function WhiteLabelPortal({ agencyId }: WhiteLabelPortalProps) {
     setSuccess('');
 
     try {
+      if (isDemo) {
+        setSuccess('Portal configuration saved successfully! (Demo Mode)');
+        setSaving(false);
+        return;
+      }
+
       const res = await fetch('/api/portal/config', {
         method: 'PUT',
         headers: {

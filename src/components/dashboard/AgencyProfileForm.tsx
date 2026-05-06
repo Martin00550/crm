@@ -8,6 +8,7 @@ interface Agency {
   name: string;
   subdomain: string | null;
   subscriptionTier: string | null;
+  currency: string | null;
   branding: {
     logoUrl?: string;
     phone?: string;
@@ -20,9 +21,10 @@ interface Agency {
 
 interface AgencyProfileFormProps {
   agency: Agency | null;
+  isDemo?: boolean;
 }
 
-export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
+export function AgencyProfileForm({ agency, isDemo = false }: AgencyProfileFormProps) {
   const isEnterprise = agency?.subscriptionTier === 'enterprise';
   
   const [formData, setFormData] = useState({
@@ -34,6 +36,7 @@ export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
     address: agency?.branding?.address || '',
     businessHours: agency?.branding?.businessHours || '',
     description: agency?.branding?.description || '',
+    currency: agency?.currency || 'USD',
   });
 
   const [logoPreview, setLogoPreview] = useState<string | null>(agency?.branding?.logoUrl || null);
@@ -107,6 +110,11 @@ export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
     }
   };
 
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isUploadingLogo) return;
@@ -114,6 +122,12 @@ export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
     setMessage(null);
 
     try {
+      if (isDemo) {
+        setMessage({ type: 'success', text: 'Demo profile updated successfully! (Changes are temporary)' });
+        setIsSubmitting(false);
+        return;
+      }
+
       const res = await fetch('/api/agency/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -355,7 +369,6 @@ export function AgencyProfileForm({ agency }: AgencyProfileFormProps) {
             </div>
           </div>
         )}
-
         {/* Description */}
         <div>
           <label className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block mb-2">

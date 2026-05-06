@@ -18,7 +18,7 @@ export const PUT = withApiSecurity(
       }
 
       const body = await request.json();
-      const { name, subdomain, logoUrl, phone, email, address, businessHours, description } = body;
+      const { name, subdomain, logoUrl, phone, email, address, businessHours, description, currency } = body;
 
       if (!db) {
         return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -86,6 +86,7 @@ export const PUT = withApiSecurity(
         .set({
           name,
           subdomain: currentAgency.subscriptionTier === 'enterprise' ? subdomain : null,
+          currency: currency || currentAgency.currency,
           branding: {
             ...currentAgency.branding,
             logoUrl: logoUrl || null,

@@ -20,6 +20,7 @@ export const agencies = pgTable('agencies', {
   subscriptionTier: text('subscription_tier').default('solo'),
   subscriptionStatus: text('subscription_status').default('trialing'),
   trialEnd: timestamp('trial_end'),
+  currency: text('currency').default('USD').notNull(),
   branding: jsonb('branding').$type<{
     logoUrl?: string;
     primaryColor?: string;

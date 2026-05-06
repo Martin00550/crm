@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 export default function DemoSettingsPage() {
   const [demoAgency] = useState({
@@ -16,6 +17,13 @@ export default function DemoSettingsPage() {
       description: "Update your agency name, contact info, and subdomain",
       href: "/demo/settings/profile",
       icon: "business",
+      available: true,
+    },
+    {
+      name: "Currency & Region",
+      description: "Set your primary currency for all premiums and totals",
+      href: "/demo/settings/currency",
+      icon: "payments",
       available: true,
     },
     {
@@ -64,9 +72,9 @@ export default function DemoSettingsPage() {
       
       <div className="grid md:grid-cols-2 gap-8">
         {settingsItems.map((item) => (
-          <div
+          <Link
             key={item.name}
-            onClick={(e) => { e.preventDefault(); alert('Coming soon in demo mode'); }}
+            href={item.href}
             className="group block p-8 bg-surface rounded-[32px] border border-black/5 shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all relative overflow-hidden cursor-pointer"
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-secondary/5 transition-colors"></div>
@@ -89,7 +97,7 @@ export default function DemoSettingsPage() {
                 <span className="material-symbols-outlined">chevron_right</span>
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

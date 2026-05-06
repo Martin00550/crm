@@ -32,9 +32,10 @@ export default async function DashboardPage({
     redirect("/checkout?reason=" + encodeURIComponent(subscriptionCheck.reason || 'subscription_required'));
   }
   
-  const [stats, ledger] = await Promise.all([
+  const [stats, ledger, agency] = await Promise.all([
     getDashboardStats(agencyId, searchParams.range),
     getPolicyLedger(agencyId, 50, searchParams.range),
+    getAgency(agencyId),
   ]);
 
   // Check if user has any policies - show onboarding if empty
@@ -48,7 +49,7 @@ export default async function DashboardPage({
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-black text-on-surface mb-2 font-headline italic tracking-tight">Agency Command Center</h1>
-            <p className="text-on-surface/60 font-medium italic">Activate portfolio intelligence infrastructure</p>
+            <p className="text-on-surface/60 font-medium italic">Set up your agency dashboard</p>
           </div>
         </div>
 
@@ -59,6 +60,6 @@ export default async function DashboardPage({
   }
 
   return (
-    <DashboardClient stats={stats} ledger={ledger} agencyId={agencyId} />
+    <DashboardClient stats={stats} ledger={ledger} agencyId={agencyId} currency={agency?.currency} />
   );
 }

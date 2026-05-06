@@ -16,9 +16,10 @@ interface TeamMember {
 interface TeamManagementProps {
   agencyId: string;
   tier: string;
+  isDemo?: boolean;
 }
 
-export function TeamManagement({ agencyId, tier }: TeamManagementProps) {
+export function TeamManagement({ agencyId, tier, isDemo = false }: TeamManagementProps) {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,6 +51,14 @@ export function TeamManagement({ agencyId, tier }: TeamManagementProps) {
 
   async function loadTeamMembers() {
     try {
+      if (isDemo) {
+        setMembers([
+          { id: '1', name: 'John Smith', email: 'john@agency.com', role: 'owner' as any, createdAt: new Date() },
+          { id: '2', name: 'Sarah Jones', email: 'sarah@agency.com', role: 'producer' as any, createdAt: new Date() },
+        ]);
+        setCanAdd({ allowed: true, currentCount: 2, limit: 3 });
+        return;
+      }
       const res = await fetch(`/api/team?agencyId=${agencyId}`);
       const data = await res.json();
       setMembers(data.members || []);
@@ -61,6 +70,13 @@ export function TeamManagement({ agencyId, tier }: TeamManagementProps) {
 
   async function loadInvitations() {
     try {
+      if (isDemo) {
+        setInvitations([
+          { id: '3', email: 'michael@agency.com', name: 'Michael Chen', role: 'csr' as any, sentAt: new Date(), expiresAt: new Date(Date.now() + 86400000 * 7), agencyId: 'demo' }
+        ]);
+        setLoading(false);
+        return;
+      }
       const res = await fetch(`/api/invitations?status=pending`);
       const data = await res.json();
       setInvitations(data.invitations || []);
@@ -99,6 +115,11 @@ export function TeamManagement({ agencyId, tier }: TeamManagementProps) {
     if (!selectedMember) return;
 
     try {
+      if (isDemo) {
+        showToast('Demo member removed (Ephemeral)');
+        setShowDeleteModal(false);
+        return;
+      }
       const res = await fetch(`/api/team/${selectedMember.id}`, {
         method: 'DELETE',
       });

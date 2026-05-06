@@ -11,6 +11,7 @@ import { DateRangeFilter } from "@/components/dashboard/DateRangeFilter";
 import { useState, useEffect, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { getNotificationSettings } from "@/actions/agency";
+import { formatCurrency } from "@/lib/utils";
 
 // Lazy load heavy components
 const PolicyLedgerTable = lazy(() => import("@/components/dashboard/PolicyLedgerTable").then(m => ({ default: m.PolicyLedgerTable })));
@@ -26,7 +27,7 @@ interface DashboardStats {
   totalPolicies: number;
 }
 
-export function DashboardClient({ stats, ledger, agencyId }: { stats: DashboardStats, ledger: any[], agencyId: string }) {
+export function DashboardClient({ stats, ledger, agencyId, currency = 'USD' }: { stats: DashboardStats, ledger: any[], agencyId: string, currency?: string }) {
   const router = useRouter();
   const { showShortcuts, setShowShortcuts } = useKeyboardShortcuts();
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
@@ -52,7 +53,7 @@ export function DashboardClient({ stats, ledger, agencyId }: { stats: DashboardS
       <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6">
         <div>
           <h1 className="text-4xl font-black text-on-surface tracking-tight">Command Center</h1>
-          <p className="text-on-surface/50 font-medium mt-1">Monitor your portfolio and renewal health metrics.</p>
+          <p className="text-on-surface/50 font-medium mt-1">Track your policies, renewals, and client health.</p>
         </div>
         
         <div className="flex items-center gap-3">
@@ -65,7 +66,7 @@ export function DashboardClient({ stats, ledger, agencyId }: { stats: DashboardS
             <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-black/5 rounded-2xl shadow-xl z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all py-2">
               <button onClick={() => router.refresh()} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-slate-50 transition-colors text-left">
                 <RefreshCw className="w-4 h-4 text-on-surface/40" />
-                <span className="text-[10px] font-bold text-on-surface/60 uppercase tracking-widest">Sync Book</span>
+                <span className="text-[10px] font-bold text-on-surface/60 uppercase tracking-widest">Refresh Data</span>
               </button>
               <div className="px-4 py-1">
                 <ImportCSVButton agencyId={agencyId} />
@@ -88,8 +89,8 @@ export function DashboardClient({ stats, ledger, agencyId }: { stats: DashboardS
       {/* Stats Grid */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         <div className="bg-white p-8 rounded-3xl shadow-sm border border-black/5 group hover:border-secondary/20 transition-all">
-          <span className="text-[10px] font-bold text-on-surface/30 uppercase tracking-[0.2em] block mb-2">Total Premium</span>
-          <h3 className="text-4xl font-bold tracking-tight text-on-surface">${parseFloat(stats.totalBookOfBusiness).toLocaleString()}</h3>
+          <span className="text-[10px] font-bold text-on-surface/30 uppercase tracking-[0.2em] block mb-2">Book of Business</span>
+          <h3 className="text-4xl font-bold tracking-tight text-on-surface">{formatCurrency(stats.totalBookOfBusiness, currency)}</h3>
         </div>
 
         <div className="bg-white p-8 rounded-3xl shadow-sm border border-black/5 group hover:border-red-100 transition-all">
@@ -101,7 +102,7 @@ export function DashboardClient({ stats, ledger, agencyId }: { stats: DashboardS
         </div>
 
         <div className="bg-white p-8 rounded-3xl shadow-sm border border-black/5 group hover:border-secondary/20 transition-all">
-          <span className="text-[10px] font-bold text-on-surface/30 uppercase tracking-[0.2em] block mb-2">Bound Policies</span>
+          <span className="text-[10px] font-bold text-on-surface/30 uppercase tracking-[0.2em] block mb-2">Active Policies</span>
           <h3 className="text-4xl font-bold tracking-tight text-on-surface">{stats.totalPolicies}</h3>
         </div>
       </section>
@@ -119,7 +120,7 @@ export function DashboardClient({ stats, ledger, agencyId }: { stats: DashboardS
           <h2 className="text-xl font-bold text-on-surface">Portfolio Ledger</h2>
         </div>
         <Suspense fallback={<div className="p-12 text-center text-on-surface/20 font-bold uppercase tracking-widest text-xs">Loading Ledger...</div>}>
-          <PolicyLedgerTable ledger={ledger} />
+          <PolicyLedgerTable ledger={ledger} currency={currency} />
         </Suspense>
       </section>
 
