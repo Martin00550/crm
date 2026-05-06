@@ -96,45 +96,46 @@ export async function createAgency(data: {
 
     const selectedTier = tier && ['solo', 'growth', 'enterprise'].includes(tier) ? tier : 'solo';
 
-    const agency = await db.transaction(async (tx) => {
-      const [newAgency] = await tx
-        .insert(agencies)
+    const [newAgency] = await db
+      .insert(agencies)
+      .values({
+        name,
+        subdomain: defaultSubdomain.toLowerCase(),
+        subscriptionTier: selectedTier,
+        subscriptionStatus: 'trialing',
+        trialEnd: null,
+      })
+      .returning();
+
+    if (!newAgency) {
+      throw new Error('Failed to create agency record');
+    }
+
+    const [existingUser] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.workosUserId, userId))
+      .limit(1);
+
+    if (existingUser) {
+      await db
+        .update(users)
+        .set({ agencyId: newAgency.id })
+        .where(eq(users.id, existingUser.id));
+    } else {
+      await db
+        .insert(users)
         .values({
-          name,
-          subdomain: defaultSubdomain.toLowerCase(),
-          subscriptionTier: selectedTier,
-          subscriptionStatus: 'trialing',
-          trialEnd: null,
-        })
-        .returning();
-
-      const [existingUser] = await tx
-        .select({ id: users.id })
-        .from(users)
-        .where(eq(users.workosUserId, userId))
-        .limit(1);
-
-      if (existingUser) {
-        await tx
-          .update(users)
-          .set({ agencyId: newAgency.id })
-          .where(eq(users.id, existingUser.id));
-      } else {
-        await tx
-          .insert(users)
-          .values({
-            workosUserId: userId,
-            email: email || '',
-            name: `${firstName || ''} ${lastName || ''}`.trim() || null,
-            agencyId: newAgency.id,
-            role: 'owner',
-          });
-      }
-      return newAgency;
-    });
+          workosUserId: userId,
+          email: email || '',
+          name: `${firstName || ''} ${lastName || ''}`.trim() || null,
+          agencyId: newAgency.id,
+          role: 'owner',
+        });
+    }
 
     revalidatePath('/dashboard');
-    return { success: true, agency };
+    return { success: true, agency: newAgency };
   } catch (error) {
     logger.error('Error in createAgency action:', error);
     return { 
