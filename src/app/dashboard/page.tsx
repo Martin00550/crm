@@ -29,7 +29,7 @@ export default async function DashboardPage({
   const subscriptionCheck = await checkAgencySubscription(agencyId);
   if (!subscriptionCheck.canAccessDashboard) {
     // Redirect to checkout if no active subscription
-    redirect("/checkout?reason=" + encodeURIComponent(subscriptionCheck.reason || 'subscription_required'));
+    redirect(`/checkout?tier=${subscriptionCheck.subscriptionTier || 'solo'}&reason=` + encodeURIComponent(subscriptionCheck.reason || 'subscription_required'));
   }
   
   const [stats, ledger, agency] = await Promise.all([
