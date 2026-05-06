@@ -94,31 +94,34 @@ export default function OnboardingPage() {
   // Show loading while checking session
   if (isPending) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-[#F5F2EA] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em]">Authenticating Session...</p>
+        </div>
       </div>
     );
   }
 
-  // Render an actionable state if not authenticated, rather than just returning null
+  // Render an actionable state if not authenticated
   if (!user) {
     return (
       <div className="min-h-screen bg-[#F5F2EA] flex items-center justify-center p-6 font-body text-on-surface">
         <div className="w-full max-w-md text-center">
-          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
-            <span className="material-symbols-outlined text-white text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
+          <div className="w-16 h-16 bg-white border border-black/5 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+            <span className="material-symbols-outlined text-on-surface/20 text-3xl">lock</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-on-surface mb-4">
-            Session Expired
+          <h1 className="text-2xl font-black tracking-tight text-on-surface mb-2 font-headline italic">
+            Authentication Required
           </h1>
-          <p className="text-on-surface/70 mb-8">
-            Please log in to continue setting up your Command Center.
+          <p className="text-sm font-medium text-on-surface/50 mb-8 italic">
+            Your secure session could not be verified. Please log in to continue setting up your Command Center.
           </p>
           <button
-            onClick={() => router.push('/api/auth/login')}
-            className="px-6 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all"
+            onClick={() => window.location.href = '/api/auth/login'}
+            className="px-10 py-4 bg-primary text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-full hover:shadow-2xl transition-all"
           >
-            Log In
+            Authenticate Profile
           </button>
         </div>
       </div>

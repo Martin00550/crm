@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse, NextFetchEvent } from 'next/server';
-import { authkitProxy } from '@workos-inc/authkit-nextjs';
+import { authkitMiddleware } from '@workos-inc/authkit-nextjs';
 
-export default async function proxy(request: NextRequest, event: NextFetchEvent) {
+export default async function middleware(request: NextRequest, event: NextFetchEvent) {
   const url = request.nextUrl;
   const hostname = request.headers.get('host') || '';
 
@@ -9,10 +9,14 @@ export default async function proxy(request: NextRequest, event: NextFetchEvent)
   const isDevelopment = process.env.NODE_ENV === 'development';
   const rootDomain = isDevelopment ? 'localhost:3000' : 'retainvault.com';
   
-  // 2. Explicitly bypass public routes
-  if (url.pathname.startsWith('/demo') || url.pathname.startsWith('/api/auth')) {
-    return NextResponse.next();
-  }
+  // 2. Explicitly bypass public routes for the auth check
+  const publicRoutes = ['/', '/pricing', '/demo', '/demo/:path*', '/api/auth/:path*'];
+  const isPublicRoute = publicRoutes.some(route => {
+    if (route.includes(':path*')) {
+      return url.pathname.startsWith(route.replace(':path*', ''));
+    }
+    return url.pathname === route;
+  });
 
   // 3. Handle Subdomain Routing (Wildcard)
   const isSubdomain = hostname !== rootDomain && hostname !== `www.${rootDomain}`;
@@ -30,10 +34,11 @@ export default async function proxy(request: NextRequest, event: NextFetchEvent)
     }
   }
 
-  // 4. Handle WorkOS Auth Bridge for Dashboard & App routes using the new Proxy convention
-  return authkitProxy({
-    debug: isDevelopment,
+  // 4. Handle WorkOS Auth Bridge
+  return authkitMiddleware({
+    publicRoutes: ['/', '/pricing', '/demo', '/demo/:path*'],
     redirectUri: process.env.WORKOS_REDIRECT_URI,
+    debug: isDevelopment,
   })(request, event);
 }
 
