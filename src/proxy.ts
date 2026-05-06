@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse, NextFetchEvent } from 'next/server';
-import { authkitMiddleware } from '@workos-inc/authkit-nextjs';
+import { authkitProxy } from '@workos-inc/authkit-nextjs';
 
 export default async function middleware(request: NextRequest, event: NextFetchEvent) {
   const url = request.nextUrl;
@@ -35,10 +35,13 @@ export default async function middleware(request: NextRequest, event: NextFetchE
   }
 
   // 4. Handle WorkOS Auth Bridge
-  return authkitMiddleware({
-    publicRoutes: ['/', '/pricing', '/demo', '/demo/:path*'],
-    redirectUri: process.env.WORKOS_REDIRECT_URI,
+  if (isPublicRoute) {
+    return NextResponse.next();
+  }
+
+  return authkitProxy({
     debug: isDevelopment,
+    redirectUri: process.env.WORKOS_REDIRECT_URI,
   })(request, event);
 }
 
