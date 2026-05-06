@@ -75,7 +75,7 @@ export function OnboardingForm({ user }: OnboardingFormProps) {
 
       // If we got a session error from the API, we should probably stop here
       if (!existingAgency.success && existingAgency.error === 'API_SESSION_ERROR') {
-        setError('Session verification failed. Please try refreshing or logging in again.');
+        setError('Session verification failed (Code: API_REF). Please try refreshing or logging in again.');
         setIsLoading(false);
         return;
       }
@@ -102,7 +102,7 @@ export function OnboardingForm({ user }: OnboardingFormProps) {
       
       // Filter out generic Next.js server error messages
       if (message.includes('Server Components render') || message.includes('digest')) {
-        setError('Session verification failed. Please try refreshing or logging in again.');
+        setError('Session verification failed (Code: ACT_REF). Please try refreshing or logging in again.');
       } else {
         setError(message);
       }

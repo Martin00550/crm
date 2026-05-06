@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse, NextFetchEvent } from 'next/server';
 import { authkitProxy } from '@workos-inc/authkit-nextjs';
 
-export default async function proxy(request: NextRequest, event: NextFetchEvent) {
+export async function proxy(request: NextRequest, event: NextFetchEvent) {
   const url = request.nextUrl;
   const hostname = request.headers.get('host') || '';
 
@@ -35,15 +35,23 @@ export default async function proxy(request: NextRequest, event: NextFetchEvent)
   }
 
   // 4. Handle WorkOS Auth Bridge
-  if (isPublicRoute) {
+  if (isPublicRoute || process.env.MOCK_AUTH === 'true') {
     return NextResponse.next();
   }
 
+  // Use a more dynamic approach for production to handle preview domains
+  const actualRedirectUri = isDevelopment 
+    ? `http://${hostname}/api/auth/callback` 
+    : (process.env.WORKOS_REDIRECT_URI || `https://${hostname}/api/auth/callback`);
+
   return authkitProxy({
     debug: isDevelopment,
-    redirectUri: process.env.WORKOS_REDIRECT_URI,
+    redirectUri: actualRedirectUri,
   })(request, event);
 }
+
+// Support both named and default exports for Next.js 16 compatibility
+export default proxy;
 
 export const config = {
   matcher: [
