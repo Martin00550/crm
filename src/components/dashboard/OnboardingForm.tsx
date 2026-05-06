@@ -82,7 +82,13 @@ export function OnboardingForm({ user }: OnboardingFormProps) {
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      const message = err instanceof Error ? err.message : 'An error occurred';
+      // Filter out generic Next.js server error messages
+      if (message.includes('Server Components render') || message.includes('digest')) {
+        setError('Session verification failed. Please try refreshing or logging in again.');
+      } else {
+        setError(message);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -93,9 +99,9 @@ export function OnboardingForm({ user }: OnboardingFormProps) {
       <h2 className="text-lg font-black text-on-surface mb-8 tracking-tight font-headline italic">Agency Details</h2>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 text-[10px] font-black uppercase tracking-widest flex items-center gap-3">
-          <span className="material-symbols-outlined text-sm">error</span>
-          {error}
+        <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 text-[10px] font-black uppercase tracking-widest flex items-start gap-3 text-left">
+          <span className="material-symbols-outlined text-sm mt-0.5">error</span>
+          <span className="flex-1">{error}</span>
         </div>
       )}
 

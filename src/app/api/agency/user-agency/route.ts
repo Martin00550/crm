@@ -9,21 +9,17 @@ export async function GET(request: NextRequest) {
     const { userId } = await getAuth();
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const agencyId = await getUserAgencyId(userId);
     
-    if (!agencyId) {
-      return NextResponse.json({ error: 'Agency not found' }, { status: 404 });
-    }
-
     return NextResponse.json({
       success: true,
-      agencyId,
+      agencyId: agencyId || null,
     });
   } catch (error) {
     logger.error('Error getting user agency', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Session verification failed' }, { status: 200 }); // Return 200 to prevent Next.js from serving error page
   }
 }
