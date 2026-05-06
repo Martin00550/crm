@@ -48,6 +48,11 @@ export function OnboardingForm({ user }: OnboardingFormProps) {
     try {
       // Check if user already has an agency
       const res = await fetch('/api/agency/user-agency');
+      
+      if (!res.ok) {
+        throw new Error(`Session check failed: ${res.statusText}`);
+      }
+      
       const existingAgency = await res.json();
       
       if (existingAgency.success && existingAgency.agencyId) {
@@ -60,29 +65,41 @@ export function OnboardingForm({ user }: OnboardingFormProps) {
         
         if (updateResult.ok) {
           router.push('/dashboard');
+          return;
         } else {
-          setError('Failed to update agency name');
-        }
-      } else {
-        // No agency yet, create one
-        const result = await createAgency({
-          name: formData.name,
-          userId: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          tier: selectedTier,
-        });
-
-        if (result.success) {
-          document.cookie = 'selected_tier=; path=/; max-age=0';
-          router.push('/dashboard');
-        } else {
-          setError('Failed to create agency. Please try again.');
+          setError('Failed to update agency name. Please refresh and try again.');
+          setIsLoading(false);
+          return;
         }
       }
+
+      // If we got a session error from the API, we should probably stop here
+      if (!existingAgency.success && existingAgency.error === 'API_SESSION_ERROR') {
+        setError('Session verification failed. Please try refreshing or logging in again.');
+        setIsLoading(false);
+        return;
+      }
+      
+      // No agency yet or session is valid but no agency found, create one
+      const result = await createAgency({
+        name: formData.name,
+        userId: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        tier: selectedTier,
+      });
+
+      if (result.success) {
+        document.cookie = 'selected_tier=; path=/; max-age=0';
+        router.push('/dashboard');
+      } else {
+        setError(result.error || 'Failed to create agency. Please try again.');
+      }
     } catch (err) {
+      console.error('[OnboardingForm Submit Error]:', err);
       const message = err instanceof Error ? err.message : 'An error occurred';
+      
       // Filter out generic Next.js server error messages
       if (message.includes('Server Components render') || message.includes('digest')) {
         setError('Session verification failed. Please try refreshing or logging in again.');

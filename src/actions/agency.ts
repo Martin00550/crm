@@ -5,6 +5,7 @@ import { users, agencies, policies } from '@/db/schema';
 import { eq, and, sql, type InferSelectModel } from 'drizzle-orm';
 import { requireAuth, requireAgencyAuth } from '@/lib/auth-wrapper';
 import { Errors } from '@/lib/error-handler';
+import { logger } from '@/lib/logger';
 import { getOrSetCached, CacheKeys, CacheConfig } from '@/lib/redis';
 import { revalidatePath } from 'next/cache';
 import { notificationSettings } from '@/db/schema';
@@ -73,66 +74,74 @@ export async function createAgency(data: {
   lastName?: string;
   tier?: string;
 }) {
-  const authResult = await requireAuth();
-  
-  if (data.userId !== authResult.userId) {
-    throw Errors.authorization('Forbidden: Cannot create agency for another user');
-  }
-  
-  if (!db) {
-    throw Errors.server('Database connection failed');
-  }
-
-  const { name, subdomain, userId, email, firstName, lastName, tier } = data;
-
-  const defaultSubdomain = subdomain || name
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .substring(0, 30) + '-' + Math.random().toString(36).substring(2, 8);
-
-  const selectedTier = tier && ['solo', 'growth', 'enterprise'].includes(tier) ? tier : 'solo';
-
-  const agency = await db.transaction(async (tx) => {
-    const [newAgency] = await tx
-      .insert(agencies)
-      .values({
-        name,
-        subdomain: defaultSubdomain.toLowerCase(),
-        subscriptionTier: selectedTier,
-        subscriptionStatus: 'trialing',
-        trialEnd: null,
-      })
-      .returning();
-
-    const [existingUser] = await tx
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.workosUserId, userId))
-      .limit(1);
-
-    if (existingUser) {
-      await tx
-        .update(users)
-        .set({ agencyId: newAgency.id })
-        .where(eq(users.id, existingUser.id));
-    } else {
-      await tx
-        .insert(users)
-        .values({
-          workosUserId: userId,
-          email: email || '',
-          name: `${firstName || ''} ${lastName || ''}`.trim() || null,
-          agencyId: newAgency.id,
-          role: 'owner',
-        });
+  try {
+    const authResult = await requireAuth();
+    
+    if (data.userId !== authResult.userId) {
+      return { success: false, error: 'Forbidden: Cannot create agency for another user' };
     }
-    return newAgency;
-  });
+    
+    if (!db) {
+      return { success: false, error: 'Database connection failed' };
+    }
 
-  revalidatePath('/dashboard');
-  return { success: true, agency };
+    const { name, subdomain, userId, email, firstName, lastName, tier } = data;
+
+    const defaultSubdomain = subdomain || name
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .substring(0, 30) + '-' + Math.random().toString(36).substring(2, 8);
+
+    const selectedTier = tier && ['solo', 'growth', 'enterprise'].includes(tier) ? tier : 'solo';
+
+    const agency = await db.transaction(async (tx) => {
+      const [newAgency] = await tx
+        .insert(agencies)
+        .values({
+          name,
+          subdomain: defaultSubdomain.toLowerCase(),
+          subscriptionTier: selectedTier,
+          subscriptionStatus: 'trialing',
+          trialEnd: null,
+        })
+        .returning();
+
+      const [existingUser] = await tx
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.workosUserId, userId))
+        .limit(1);
+
+      if (existingUser) {
+        await tx
+          .update(users)
+          .set({ agencyId: newAgency.id })
+          .where(eq(users.id, existingUser.id));
+      } else {
+        await tx
+          .insert(users)
+          .values({
+            workosUserId: userId,
+            email: email || '',
+            name: `${firstName || ''} ${lastName || ''}`.trim() || null,
+            agencyId: newAgency.id,
+            role: 'owner',
+          });
+      }
+      return newAgency;
+    });
+
+    revalidatePath('/dashboard');
+    return { success: true, agency };
+  } catch (error) {
+    logger.error('Error in createAgency action:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to create agency' 
+    };
+  }
 }
 
 export async function getNotificationSettings(agencyId: string) {

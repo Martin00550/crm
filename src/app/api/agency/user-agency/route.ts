@@ -19,7 +19,11 @@ export async function GET(request: NextRequest) {
       agencyId: agencyId || null,
     });
   } catch (error) {
-    logger.error('Error getting user agency', error);
-    return NextResponse.json({ success: false, error: 'Session verification failed' }, { status: 200 }); // Return 200 to prevent Next.js from serving error page
+    logger.error('Error in /api/agency/user-agency:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: 'API_SESSION_ERROR',
+      message: 'Session verification failed at the API level' 
+    }, { status: 200 }); 
   }
 }
