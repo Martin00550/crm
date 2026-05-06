@@ -6,7 +6,7 @@ export default async function OnboardingPage() {
   const session = await withAuth();
 
   // If no session on the server, redirect to login immediately
-  if (!session.user) {
+  if (!session?.user) {
     redirect('/api/auth/login');
   }
 
@@ -23,7 +23,14 @@ export default async function OnboardingPage() {
           <p className="text-on-surface/40 font-black uppercase tracking-widest text-[10px]">Agency Profile Setup</p>
         </div>
 
-        <OnboardingForm user={session.user as any} />
+        <OnboardingForm 
+          user={{
+            id: session.user.id,
+            email: session.user.email,
+            firstName: session.user.firstName,
+            lastName: session.user.lastName,
+          }} 
+        />
 
         <div className="text-center mt-10">
           <p className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest">
