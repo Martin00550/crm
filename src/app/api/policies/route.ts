@@ -81,5 +81,6 @@ export const POST = withApiSecurity(
     enableCsrf: true,
     rateLimit: 'api',
     auditAction: 'policy.create',
+    requiredFeature: 'policies',
   }
 );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, CheckCircle, Verified } from "lucide-react";
 import { useWorkOSClient } from "@/lib/auth-client";
@@ -22,6 +23,12 @@ export default function PricingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isAuthenticated, isLoading, user } = useWorkOSClient();
+  const router = useRouter();
+
+  const handleTierClick = (tier: string) => {
+    // Set cookie that expires in 1 hour
+    document.cookie = `selected_tier=${tier}; path=/; max-age=3600; SameSite=Lax`;
+  };
 
 
 
@@ -163,6 +170,7 @@ export default function PricingPage() {
               variant="outline"
               size="lg"
               className="w-full"
+              onClick={() => handleTierClick('solo')}
             >
               <Link href="/api/auth/signup?tier=solo">
                 Start 14-Day Free Trial
@@ -204,6 +212,7 @@ export default function PricingPage() {
               variant="default"
               size="lg"
               className="w-full relative z-10"
+              onClick={() => handleTierClick('growth')}
             >
               <Link href="/api/auth/signup?tier=growth">
                 Start 14-Day Free Trial
@@ -242,6 +251,7 @@ export default function PricingPage() {
               variant="outline"
               size="lg"
               className="w-full"
+              onClick={() => handleTierClick('enterprise')}
             >
               <Link href="/api/auth/signup?tier=enterprise">
                 Start 14-Day Free Trial

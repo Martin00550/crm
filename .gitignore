@@ -84,3 +84,6 @@ public/uploads/
 
 # Agent files
 .agents/
+
+# Sentry Config File
+.env.sentry-build-plugin

@@ -191,3 +191,87 @@ export async function getPolicyWithClient(policyId: string) {
 
   return { policy, client };
 }
+
+/**
+ * Generate a comprehensive AI analysis report for a client's entire portfolio
+ */
+export async function generateClientReport(
+  clientId: string,
+  agencyId: string
+): Promise<{ success: boolean; report?: string; error?: string; usage?: { current: number; limit: number } }> {
+  if (!db) return { success: false, error: 'Database not connected' };
+
+  // 1. Check feature access
+  const accessCheck = await canUseFeature(agencyId, 'aiRateAnalysis');
+  if (!accessCheck.allowed) {
+    return {
+      success: false,
+      error: accessCheck.reason || 'AI Analysis not available',
+      usage: accessCheck.limit ? { current: accessCheck.currentUsage || 0, limit: accessCheck.limit } : undefined,
+    };
+  }
+
+  // 2. Gather Data
+  const client = await db.select().from(clients).where(eq(clients.id, clientId)).then(r => r[0]);
+  if (!client || client.agencyId !== agencyId) {
+    return { success: false, error: 'Client not found or unauthorized' };
+  }
+
+  const clientPolicies = await db.select().from(policies).where(eq(policies.clientId, clientId)).execute();
+  
+  if (clientPolicies.length === 0) {
+    return { success: false, error: 'No policies found for this client to analyze.' };
+  }
+
+  // 3. Construct Prompt
+  const totalPremium = clientPolicies.reduce((sum, p) => sum + parseFloat(p.premium || '0'), 0);
+  const avgHealth = clientPolicies.reduce((sum, p) => sum + (p.healthScore || 100), 0) / clientPolicies.length;
+  
+  const policyData = clientPolicies.map(p => ({
+    number: p.policyNumber,
+    carrier: p.carrier,
+    type: p.policyType,
+    premium: p.premium,
+    expiry: p.expirationDate,
+    health: p.healthScore
+  }));
+
+  const prompt = `You are a high-authority Senior Risk Analyst. Analyze the insurance portfolio for ${client.name}.
+
+Client Context:
+- Industry: ${client.industry || 'General Business'}
+- Total Active Premium: $${totalPremium.toLocaleString()}
+- Average Portfolio Health: ${avgHealth.toFixed(1)}/100
+
+Portfolio Data:
+${JSON.stringify(policyData, null, 2)}
+
+Task:
+Create a comprehensive Strategic Client Intelligence Report in Markdown.
+1. Executive Summary: High-level overview of coverage health.
+2. Risk Concentration: Identify any carriers or coverage types that present high risk.
+3. Coverage Gaps: Suggest if they are missing critical lines (e.g. Cyber, D&O) based on their industry.
+4. Retention Strategy: 3 specific actions for the agency owner to ensure this client renews.
+
+Tone: Professional, clinical, high-authority.
+Constraints: Max 600 words. Use structured headers and tables where appropriate.`;
+
+  try {
+    const report = await callGemini(prompt);
+    
+    // 4. Increment usage
+    await incrementFeatureUsage(agencyId, 'aiRateAnalysis');
+    
+    return {
+      success: true,
+      report,
+      usage: accessCheck.limit ? { current: (accessCheck.currentUsage || 0) + 1, limit: accessCheck.limit } : undefined,
+    };
+  } catch (error) {
+    logger.error('Client report generation error', error);
+    return {
+      success: false,
+      error: 'AI Analysis engine failed to respond. Please try again.',
+    };
+  }
+}

@@ -41,9 +41,21 @@ export const GET = withApiSecurity(
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
+    // Get agency status for feature gating
+    const agency = await db
+      .select({
+        subscriptionStatus: agencies.subscriptionStatus,
+        trialEnd: agencies.trialEnd,
+      })
+      .from(agencies)
+      .where(eq(agencies.id, agencyId))
+      .limit(1)
+      .then((r: any[]) => r[0]);
+
     return NextResponse.json({
       success: true,
       client,
+      agency: agency || { subscriptionStatus: 'trialing', trialEnd: null },
     });
   },
   {

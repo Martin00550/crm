@@ -68,6 +68,7 @@ export default function ClientDetailPage() {
   const clientId = params.id as string;
 
   const [client, setClient] = useState<Client | null>(null);
+  const [agencyStatus, setAgencyStatus] = useState<{ subscriptionStatus: string; trialEnd: string | null } | null>(null);
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,6 +79,7 @@ export default function ClientDetailPage() {
   const [isAddingPolicy, setIsAddingPolicy] = useState(false);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [reportContent, setReportContent] = useState('');
   const [isCopyingLink, setIsCopyingLink] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [editPolicyId, setEditPolicyId] = useState<string | null>(null);
@@ -126,6 +128,7 @@ export default function ClientDetailPage() {
       }
       const clientData = await clientRes.json();
       setClient(clientData.client);
+      setAgencyStatus(clientData.agency);
       setEditForm({
         name: clientData.client.name || '',
         email: clientData.client.email || '',
@@ -306,13 +309,26 @@ export default function ClientDetailPage() {
     }
   };
 
-  const handleGenerateAIReport = () => {
+  const handleGenerateAIReport = async () => {
     setIsGeneratingReport(true);
-    // Simulate high-authority AI analysis
-    setTimeout(() => {
-      setIsGeneratingReport(false);
+    setError('');
+    try {
+      const res = await fetch(`/api/clients/${clientId}/report`, {
+        method: 'POST',
+      });
+      const result = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(result.error || 'Failed to generate report');
+      }
+      
+      setReportContent(result.report);
       setShowReport(true);
-    }, 2500);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsGeneratingReport(false);
+    }
   };
 
   const handleCopyPortalLink = async () => {
@@ -427,6 +443,9 @@ export default function ClientDetailPage() {
   const totalPremium = policies.reduce((sum, policy) => sum + parseFloat(policy.premium || '0'), 0);
   const activePolicies = policies.filter(p => p.status === 'active').length;
 
+  const isTrialExpired = agencyStatus?.trialEnd ? new Date(agencyStatus.trialEnd) < new Date() : false;
+  const isReadOnly = agencyStatus?.subscriptionStatus === 'trialing' && isTrialExpired;
+
   return (
     <div className="space-y-8 font-body text-on-surface">
       {/* Header & Primary Actions */}
@@ -451,10 +470,18 @@ export default function ClientDetailPage() {
         <div className="flex items-center gap-3">
           <button 
             onClick={handleGenerateAIReport}
-            className="flex items-center gap-2 px-6 py-3 bg-secondary text-white rounded-2xl hover:bg-secondary/90 transition-all shadow-lg shadow-secondary/20 group"
+            disabled={isReadOnly || isGeneratingReport}
+            className={`flex items-center gap-2 px-6 py-3 rounded-2xl transition-all shadow-lg group ${
+              isReadOnly 
+                ? "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none" 
+                : "bg-secondary text-white hover:bg-secondary/90 shadow-secondary/20"
+            }`}
+            title={isReadOnly ? "Trial Expired - Upgrade to use AI" : "Generate Strategic Analysis"}
           >
-            <TrendingUp className="w-4 h-4 group-hover:scale-110 transition-transform" />
-            <span className="text-[11px] font-bold uppercase tracking-widest">AI Analysis Report</span>
+            <TrendingUp className={`w-4 h-4 ${!isReadOnly && "group-hover:scale-110"} transition-transform`} />
+            <span className="text-[11px] font-bold uppercase tracking-widest">
+              {isReadOnly ? "AI Analysis Locked" : "AI Analysis Report"}
+            </span>
           </button>
           
           <div className="relative group">
@@ -1087,10 +1114,10 @@ export default function ClientDetailPage() {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <p className="text-sm text-on-surface font-medium leading-relaxed italic border-l-4 border-secondary pl-6">
-                  "Based on analysis of current market hardening, {client?.name}'s liability umbrella is currently performing in the top 15th percentile. We recommend initiating the portal sync to review these insights directly with the executive team."
-                </p>
+              <div className="space-y-4 max-h-[500px] overflow-y-auto pr-4 custom-scrollbar">
+                <div className="text-sm text-on-surface font-medium leading-relaxed prose prose-slate max-w-none whitespace-pre-wrap">
+                  {reportContent}
+                </div>
               </div>
             </div>
 

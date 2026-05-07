@@ -6,6 +6,7 @@ import { Globe, Check, AlertCircle } from 'lucide-react';
 interface CurrencySettingsFormProps {
   agency: {
     id: string;
+    name: string;
     currency: string | null;
   } | null;
   isDemo?: boolean;
@@ -31,7 +32,10 @@ export function CurrencySettingsForm({ agency, isDemo = false }: CurrencySetting
       const res = await fetch('/api/agency/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currency }),
+        body: JSON.stringify({ 
+          name: agency?.name, // API requires name
+          currency 
+        }),
       });
 
       if (!res.ok) throw new Error('Failed to update currency');

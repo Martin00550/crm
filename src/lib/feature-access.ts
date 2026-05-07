@@ -137,6 +137,16 @@ export async function canUseFeature(
   }
 
   const tier = agency.subscriptionTier as SubscriptionTier;
+  const status = agency.subscriptionStatus || 'trialing';
+  const trialEnd = agency.trialEnd;
+
+  // 1. Check for expired trial (Global Soft-Gate)
+  if (status === 'trialing' && trialEnd && new Date(trialEnd) < new Date()) {
+    return {
+      allowed: false,
+      reason: 'Your 14-day trial has ended. Please upgrade to a paid plan to continue using this feature.',
+    };
+  }
 
   // Check if feature is enabled for tier
   if (!isFeatureEnabled(featureKey, tier)) {

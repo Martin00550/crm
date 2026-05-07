@@ -125,26 +125,28 @@ export function DashboardClient({
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <div className="bg-white p-8 rounded-3xl shadow-sm border border-black/5 group hover:border-secondary/20 transition-all">
-          <span className="text-[10px] font-bold text-on-surface/30 uppercase tracking-[0.2em] block mb-2">Book of Business</span>
-          <h3 className="text-4xl font-bold tracking-tight text-on-surface">{formatCurrency(stats.totalBookOfBusiness, currency)}</h3>
-        </div>
-
-        <div className="bg-white p-8 rounded-3xl shadow-sm border border-black/5 group hover:border-red-100 transition-all">
-          <span className="text-[10px] font-bold text-on-surface/30 uppercase tracking-[0.2em] block mb-2">Leakage Risk</span>
-          <div className="flex items-end gap-3">
-            <h3 className="text-4xl font-bold tracking-tight text-red-500">{stats.renewalsAtRisk.count}</h3>
-            <span className="text-[10px] font-bold text-red-400 mb-1 uppercase tracking-wider">Policies</span>
+      {/* Stats Grid - Hidden if empty account */}
+      {!showNudge1 && (
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="bg-white p-8 rounded-3xl shadow-sm border border-black/5 group hover:border-secondary/20 transition-all">
+            <span className="text-[10px] font-bold text-on-surface/30 uppercase tracking-[0.2em] block mb-2">Book of Business</span>
+            <h3 className="text-4xl font-bold tracking-tight text-on-surface">{formatCurrency(stats.totalBookOfBusiness, currency)}</h3>
           </div>
-        </div>
 
-        <div className="bg-white p-8 rounded-3xl shadow-sm border border-black/5 group hover:border-secondary/20 transition-all">
-          <span className="text-[10px] font-bold text-on-surface/30 uppercase tracking-[0.2em] block mb-2">Active Policies</span>
-          <h3 className="text-4xl font-bold tracking-tight text-on-surface">{stats.totalPolicies}</h3>
-        </div>
-      </section>
+          <div className="bg-white p-8 rounded-3xl shadow-sm border border-black/5 group hover:border-red-100 transition-all">
+            <span className="text-[10px] font-bold text-on-surface/30 uppercase tracking-[0.2em] block mb-2">Leakage Risk</span>
+            <div className="flex items-end gap-3">
+              <h3 className="text-4xl font-bold tracking-tight text-red-500">{stats.renewalsAtRisk.count}</h3>
+              <span className="text-[10px] font-bold text-red-400 mb-1 uppercase tracking-wider">Policies</span>
+            </div>
+          </div>
+
+          <div className="bg-white p-8 rounded-3xl shadow-sm border border-black/5 group hover:border-secondary/20 transition-all">
+            <span className="text-[10px] font-bold text-on-surface/30 uppercase tracking-[0.2em] block mb-2">Active Policies</span>
+            <h3 className="text-4xl font-bold tracking-tight text-on-surface">{stats.totalPolicies}</h3>
+          </div>
+        </section>
+      )}
 
       {/* Nudge 1: Empty State Activation */}
       {showNudge1 && (
@@ -206,15 +208,17 @@ export function DashboardClient({
         </section>
       )}
 
-      {/* Main Ledger Section */}
-      <section className="space-y-6">
-        <div className="flex items-center justify-between px-2">
-          <h2 className="text-xl font-bold text-on-surface">Portfolio Ledger</h2>
-        </div>
-        <Suspense fallback={<div className="p-12 text-center text-on-surface/20 font-bold uppercase tracking-widest text-xs">Loading Ledger...</div>}>
-          <PolicyLedgerTable ledger={ledger} currency={currency} isReadOnly={isReadOnly} />
-        </Suspense>
-      </section>
+      {/* Main Ledger Section - Hidden if empty account */}
+      {!showNudge1 && (
+        <section className="space-y-6">
+          <div className="flex items-center justify-between px-2">
+            <h2 className="text-xl font-bold text-on-surface">Portfolio Ledger</h2>
+          </div>
+          <Suspense fallback={<div className="p-12 text-center text-on-surface/20 font-bold uppercase tracking-widest text-xs">Loading Ledger...</div>}>
+            <PolicyLedgerTable ledger={ledger} currency={currency} isReadOnly={isReadOnly} />
+          </Suspense>
+        </section>
+      )}
 
 
       {/* Notification Settings Modal */}

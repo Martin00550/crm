@@ -33,21 +33,6 @@ export default async function DashboardLayout({
   const subscriptionStatus = agency?.subscriptionStatus || 'trialing';
   const trialEnd = agency?.trialEnd ? new Date(agency.trialEnd) : null;
 
-  // Check if trial has expired
-  const now = new Date();
-  const isTrialExpired = subscriptionStatus === 'trialing' && trialEnd && trialEnd.getTime() < now.getTime();
-
-  if (isTrialExpired) {
-    return (
-      <DashboardShell user={user} agency={agency} agencyId={agencyId} tier={tier} currency={agency?.currency}>
-        <TrialExpiredModal 
-          tier={tier}
-          trialEndDate={trialEnd}
-        />
-      </DashboardShell>
-    );
-  }
-
   return (
     <DashboardShell user={user} agency={agency} agencyId={agencyId} tier={tier} currency={agency?.currency}>
       {children}

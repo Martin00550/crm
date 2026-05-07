@@ -64,5 +64,6 @@ export const POST = withApiSecurity(
     enableCsrf: true,
     rateLimit: 'api',
     auditAction: 'client.create',
+    requiredFeature: 'crm_basic',
   }
 );
