@@ -8,6 +8,7 @@ export interface SubscriptionCheck {
   subscriptionTier: string | null;
   trialEnd: Date | null;
   isTrialExpired: boolean;
+  isReadOnly: boolean;
   canAccessDashboard: boolean | null;
   reason?: string;
 }
@@ -24,6 +25,7 @@ export async function checkAgencySubscription(agencyId: string): Promise<Subscri
       subscriptionTier: null,
       trialEnd: null,
       isTrialExpired: false,
+      isReadOnly: false,
       canAccessDashboard: false,
       reason: 'Database not connected',
     };
@@ -47,6 +49,7 @@ export async function checkAgencySubscription(agencyId: string): Promise<Subscri
       subscriptionTier: null,
       trialEnd: null,
       isTrialExpired: false,
+      isReadOnly: false,
       canAccessDashboard: false,
       reason: 'Agency not found',
     };
@@ -54,14 +57,19 @@ export async function checkAgencySubscription(agencyId: string): Promise<Subscri
 
   const now = new Date();
   const trialEndDate = agency.trialEnd ? new Date(agency.trialEnd) : null;
-  const isTrialExpired = trialEndDate ? trialEndDate < now : true; // If trialEnd is null, consider as expired (no payment yet)
+  const isTrialExpired = trialEndDate ? trialEndDate < now : false;
 
-  // Allow access if subscription is active OR in valid trial
-  const hasActiveSubscription = 
-    agency.subscriptionStatus === 'active' || 
-    (agency.subscriptionStatus === 'trialing' && trialEndDate && trialEndDate > now);
-
-  const canAccessDashboard = hasActiveSubscription;
+  // Allow access if:
+  // 1. Subscription is active
+  // 2. Subscription is trialing (even if expired, it becomes read-only)
+  const hasActiveSubscription = agency.subscriptionStatus === 'active';
+  const isTrialing = agency.subscriptionStatus === 'trialing';
+  
+  // Soft lock if trialing AND expired
+  const isReadOnly = isTrialing && isTrialExpired;
+  
+  // Users can always access dashboard if they are active OR trialing (soft lock handled via flag)
+  const canAccessDashboard = hasActiveSubscription || isTrialing;
 
   return {
     hasActiveSubscription,
@@ -69,18 +77,15 @@ export async function checkAgencySubscription(agencyId: string): Promise<Subscri
     subscriptionTier: agency.subscriptionTier,
     trialEnd: trialEndDate,
     isTrialExpired,
+    isReadOnly,
     canAccessDashboard,
     reason: canAccessDashboard 
       ? undefined 
-      : !trialEndDate
-        ? 'Payment required to start trial'
-        : isTrialExpired 
-          ? 'Trial period has expired' 
-          : agency.subscriptionStatus === 'past_due'
-            ? 'Subscription payment is past due'
-            : agency.subscriptionStatus === 'canceled'
-              ? 'Subscription has been canceled'
-              : 'No active subscription',
+      : agency.subscriptionStatus === 'past_due'
+        ? 'Subscription payment is past due'
+        : agency.subscriptionStatus === 'canceled'
+          ? 'Subscription has been canceled'
+          : 'No active subscription',
   };
 }
 

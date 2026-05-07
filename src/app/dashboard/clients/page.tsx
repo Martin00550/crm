@@ -29,8 +29,8 @@ export default async function ClientsPage() {
   const clients = await getClients(agencyId);
 
   const totalClients = clients.length;
-  const totalPremium = clients.reduce((sum, c) => sum + parseFloat(c.totalPremium?.replace(/[$,]/g, '') || '0'), 0);
-  const totalPolicies = clients.reduce((sum, c) => sum + (c.totalPolicies || 0), 0);
+  const totalPremium = clients.reduce((sum: number, c: any) => sum + parseFloat(c.totalPremium?.replace(/[$,]/g, '') || '0'), 0);
+  const totalPolicies = clients.reduce((sum: number, c: any) => sum + (c.totalPolicies || 0), 0);
 
   return (
     <div className="space-y-12 font-body pb-20">

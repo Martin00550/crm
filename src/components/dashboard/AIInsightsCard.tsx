@@ -3,7 +3,15 @@
 import { TrendingUp, AlertTriangle, CheckCircle, Target, Zap } from 'lucide-react';
 import Link from 'next/link';
 
-export function AIInsightsCard({ stats, isDemo = false }: { stats: { renewalsAtRisk: { count: number; volume: string } }, isDemo?: boolean }) {
+export function AIInsightsCard({ 
+  stats, 
+  isDemo = false, 
+  isReadOnly = false 
+}: { 
+  stats: { renewalsAtRisk: { count: number; volume: string } }, 
+  isDemo?: boolean,
+  isReadOnly?: boolean 
+}) {
   const hasRisks = stats.renewalsAtRisk.count > 0;
 
   const quickActions = hasRisks ? [
@@ -92,7 +100,8 @@ export function AIInsightsCard({ stats, isDemo = false }: { stats: { renewalsAtR
               <button
                 key={i}
                 onClick={action.action}
-                className={`flex items-center gap-3 py-3 px-6 rounded-2xl border border-black/5 bg-white hover:bg-slate-50 transition-all shadow-sm`}
+                disabled={isReadOnly}
+                className={`flex items-center gap-3 py-3 px-6 rounded-2xl border border-black/5 bg-white hover:bg-slate-50 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 <action.icon className={`w-4 h-4 ${action.color}`} />
                 <span className="text-[11px] font-bold text-on-surface/60 uppercase tracking-widest">{action.label}</span>
@@ -106,7 +115,8 @@ export function AIInsightsCard({ stats, isDemo = false }: { stats: { renewalsAtR
                 : 'Run a full portfolio health check and show me any issues or opportunities.';
               window.dispatchEvent(new CustomEvent('open-chat', { detail: { prompt } }));
             }}
-            className="flex items-center gap-3 py-3 px-8 rounded-2xl bg-primary text-white hover:opacity-90 transition-all shadow-md ml-2"
+            disabled={isReadOnly}
+            className="flex items-center gap-3 py-3 px-8 rounded-2xl bg-primary text-white hover:opacity-90 transition-all shadow-md ml-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale"
           >
             <Target className="w-4 h-4" />
             <span className="text-[11px] font-bold uppercase tracking-widest">Full Review</span>

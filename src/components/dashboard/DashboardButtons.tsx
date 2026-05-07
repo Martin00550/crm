@@ -13,7 +13,7 @@ const ChatInterface = lazy(() => import('./ChatInterface').then(m => ({ default:
 import { Button } from '@/components/ui/button';
 import { Sparkles, Download, Filter, Send, Users as UsersIcon, Calculator, Plus as PlusIcon, Bell, Settings as SettingsIcon } from 'lucide-react';
 
-export function GenerateAIReportButton() {
+export function GenerateAIReportButton({ disabled = false }: { disabled?: boolean }) {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -44,6 +44,7 @@ export function GenerateAIReportButton() {
         variant="secondary"
         className="w-full mb-4"
         leftIcon={<Sparkles className="w-4 h-4" />}
+        disabled={disabled}
       >
         Generate Executive Summary
       </Button>
@@ -56,7 +57,15 @@ export function GenerateAIReportButton() {
   );
 }
 
-export function ExportCSVButton({ data = [], filename = 'export.csv' }: { data?: any[], filename?: string }) {
+export function ExportCSVButton({ 
+  data = [], 
+  filename = 'export.csv',
+  disabled = false 
+}: { 
+  data?: any[], 
+  filename?: string,
+  disabled?: boolean 
+}) {
   const [showMessage, setShowMessage] = useState(false);
 
   useEffect(() => {
@@ -104,6 +113,7 @@ export function ExportCSVButton({ data = [], filename = 'export.csv' }: { data?:
         size="sm"
         leftIcon={<Download className="w-3.5 h-3.5" />}
         className="text-on-surface/40 hover:text-on-surface"
+        disabled={disabled}
       >
         Export Book
       </Button>

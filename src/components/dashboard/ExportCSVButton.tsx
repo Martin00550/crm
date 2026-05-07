@@ -6,9 +6,10 @@ import { Download, Loader2 } from "lucide-react";
 interface ExportDataButtonProps {
   agencyId: string;
   dataType: "clients" | "policies" | "all";
+  disabled?: boolean;
 }
 
-export function ExportDataButton({ agencyId, dataType }: ExportDataButtonProps) {
+export function ExportDataButton({ agencyId, dataType, disabled }: ExportDataButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async () => {
@@ -38,7 +39,7 @@ export function ExportDataButton({ agencyId, dataType }: ExportDataButtonProps) 
   return (
     <button
       onClick={handleExport}
-      disabled={isExporting}
+      disabled={isExporting || disabled}
       className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-on-surface/40 bg-surface border border-black/10 rounded-xl hover:text-on-surface hover:bg-black/5 transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
     >
       {isExporting ? (

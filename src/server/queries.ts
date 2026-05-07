@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
-import { clients, policies } from '@/db/schema';
-import { eq, desc, and, sql } from 'drizzle-orm';
+import { clients, policies, renewals } from '@/db/schema';
+import { eq, desc, and, sql, count } from 'drizzle-orm';
 import { formatCurrency } from '@/lib/utils';
 import { getOrSetCached, CacheKeys, CacheConfig } from '@/lib/redis';
 
@@ -68,7 +68,7 @@ export async function getDashboardStatsQuery(agencyId: string, range?: string) {
       .where(and(eq(policies.agencyId, agencyId), eq(policies.status, 'active')))
       .then((r: any[]) => r[0]?.total || '0');
 
-    const renewalsAtRisk = await db
+    const renewalsAtRiskData = await db
       .select({
         id: policies.id,
         premium: policies.premium,
@@ -89,8 +89,14 @@ export async function getDashboardStatsQuery(agencyId: string, range?: string) {
       .where(and(eq(policies.agencyId, agencyId), eq(policies.status, 'active')))
       .then((r: any[]) => r[0]?.count || 0);
 
-    const riskCount = renewalsAtRisk.length;
-    const riskVolume = renewalsAtRisk.reduce((sum: number, p) => sum + (parseFloat(p.premium || '0') || 0), 0);
+    const aiReportCount = await db
+      .select({ count: count() })
+      .from(renewals)
+      .where(and(eq(renewals.agencyId, agencyId), eq(renewals.aiReportGenerated, true)))
+      .then((r) => r[0]?.count || 0);
+
+    const riskCount = renewalsAtRiskData.length;
+    const riskVolume = renewalsAtRiskData.reduce((sum: number, p) => sum + (parseFloat(p.premium || '0') || 0), 0);
 
     return {
       totalBookOfBusiness: totalPremium,
@@ -99,6 +105,7 @@ export async function getDashboardStatsQuery(agencyId: string, range?: string) {
         volume: riskVolume.toString(),
       },
       totalPolicies: totalPoliciesCount,
+      aiReportUsageCount: aiReportCount,
     };
   });
 }

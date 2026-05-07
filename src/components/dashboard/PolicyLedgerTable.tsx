@@ -18,7 +18,17 @@ function getDaysColor(days: number) {
   return 'text-secondary';
 }
 
-export function PolicyLedgerTable({ ledger, isDemo = false, currency = 'USD' }: { ledger: Policy[], isDemo?: boolean, currency?: string }) {
+export function PolicyLedgerTable({ 
+  ledger, 
+  isDemo = false, 
+  currency = 'USD',
+  isReadOnly = false
+}: { 
+  ledger: Policy[], 
+  isDemo?: boolean, 
+  currency?: string,
+  isReadOnly?: boolean
+}) {
   const [filteredLedger, setFilteredLedger] = useState(ledger);
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -112,8 +122,14 @@ export function PolicyLedgerTable({ ledger, isDemo = false, currency = 'USD' }: 
               <button className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-on-surface/40 hover:text-secondary transition-colors"><Download className="w-4 h-4" /></button>
             </div>
           )}
-          <button onClick={() => exportPolicyLedgerToPDF(filteredLedger, 'ledger')} className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-on-surface/40 hover:text-secondary transition-colors shrink-0"><FileText className="w-4 h-4" /></button>
-          <ExportCSVButton data={filteredLedger} filename="ledger.csv" />
+          <button 
+            onClick={() => !isReadOnly && exportPolicyLedgerToPDF(filteredLedger, 'ledger')} 
+            disabled={isReadOnly}
+            className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-on-surface/40 hover:text-secondary transition-colors shrink-0 disabled:opacity-50"
+          >
+            <FileText className="w-4 h-4" />
+          </button>
+          <ExportCSVButton data={filteredLedger} filename="ledger.csv" disabled={isReadOnly} />
           <FilterViewButton onFilter={() => {}} />
         </div>
       </div>

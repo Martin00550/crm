@@ -81,6 +81,9 @@ export function CurrencySettingsForm({ agency, isDemo = false }: CurrencySetting
               <option value="GBP">GBP - British Pound (£)</option>
               <option value="CAD">CAD - Canadian Dollar ($)</option>
               <option value="AUD">AUD - Australian Dollar ($)</option>
+              <option value="CHF">CHF - Swiss Franc (Fr)</option>
+              <option value="SGD">SGD - Singapore Dollar ($)</option>
+              <option value="HKD">HKD - Hong Kong Dollar ($)</option>
             </select>
             <p className="text-[10px] font-bold text-on-surface/30 uppercase tracking-widest mt-2 italic">
               This updates all premium volumes and renewal values across your command center.

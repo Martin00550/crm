@@ -103,7 +103,7 @@ export async function createAgency(data: {
         subdomain: defaultSubdomain.toLowerCase(),
         subscriptionTier: selectedTier,
         subscriptionStatus: 'trialing',
-        trialEnd: null, // Require payment to start trial
+        trialEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14-day trial starts now
       })
       .returning();
 

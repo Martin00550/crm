@@ -4,6 +4,7 @@ import { eq, and, count } from 'drizzle-orm';
 import { logger } from '@/lib/logger';
 import { createAgency } from '@/actions/data';
 import { handlePaddleBillingEvent } from '@/lib/billing';
+import { revalidatePath } from 'next/cache';
 
 // Paddle API configuration
 const PADDLE_API_KEY = process.env.PADDLE_API_KEY || '';
@@ -12,53 +13,7 @@ const PADDLE_BASE_URL = PADDLE_ENVIRONMENT === 'production'
   ? 'https://api.paddle.com' 
   : 'https://sandbox-api.paddle.com';
 
-// Paddle Price IDs for subscription tiers
-export const PADDLE_PRICE_IDS = {
-  solo: process.env.PADDLE_SOLO_PRICE_ID || 'pri_xxx_solo',
-  growth: process.env.PADDLE_GROWTH_PRICE_ID || 'pri_xxx_growth',
-  enterprise: process.env.PADDLE_ENTERPRISE_PRICE_ID || 'pri_xxx_enterprise',
-};
-
-export const SUBSCRIPTION_TIERS = {
-  solo: {
-    name: 'Solo Agent',
-    priceId: PADDLE_PRICE_IDS.solo,
-    price: 99,
-    features: [
-      'Single User Access',
-      'Standard Policy Ledger',
-      'Email Renewal Reminders',
-      'Carrier Data Sync',
-      '5 Carrier Integrations',
-    ],
-  },
-  growth: {
-    name: 'Growth Agency',
-    priceId: PADDLE_PRICE_IDS.growth,
-    price: 249,
-    features: [
-      'Up to 3 Staff Members',
-      'AI Rate Increase Explainer',
-      'WhatsApp Renewal Alerts',
-      'Advanced Analytics Dashboard',
-      'Team Performance Metrics',
-      'Unlimited Carrier Integrations',
-    ],
-  },
-  enterprise: {
-    name: 'Enterprise',
-    priceId: PADDLE_PRICE_IDS.enterprise,
-    price: 499,
-    features: [
-      'Unlimited Users (All Roles)',
-      'White-Labeled Client Portal',
-      'Dedicated Success Manager',
-      'Custom Integration Builds',
-      'SSO & Advanced Security',
-      '24/7 Priority Support',
-    ],
-  },
-};
+import { PADDLE_PRICE_IDS, SUBSCRIPTION_TIERS } from './paddle-shared';
 
 // Helper function to make Paddle API calls
 async function paddleAPI(endpoint: string, method: 'GET' | 'POST' | 'PATCH' | 'DELETE' = 'GET', data?: any) {
@@ -137,7 +92,7 @@ export async function createSubscription(
       },
       billing_details: {
         payment_terms: {
-          trial_period_days: 14, // 14-day trial
+          trial_period_days: 0, // No trial in Paddle, we manage it in our DB
         },
       },
     });
@@ -232,6 +187,31 @@ export async function cancelSubscription(agencyId: string) {
 }
 
 /**
+ * Get a secure management URL for the subscription
+ * Use this for "Update Credit Card" or "Manage Subscription" buttons
+ */
+export async function getSubscriptionManagementUrl(agencyId: string) {
+  if (!db) return null;
+  const agency = await db
+    .select()
+    .from(agencies)
+    .where(eq(agencies.id, agencyId))
+    .then((a: any[]) => a[0]);
+
+  if (!agency?.paddleSubscriptionId) return null;
+
+  try {
+    const response = await paddleAPI(`/subscriptions/${agency.paddleSubscriptionId}/activate`, 'GET');
+    // Note: In Paddle Billing v2, management URLs are often provided in the subscription resource
+    // or can be generated via the transactions/adjustments API
+    return response.data?.management_urls?.update_payment_method || null;
+  } catch (error) {
+    logger.error('Failed to get management URL', error);
+    return null;
+  }
+}
+
+/**
  * Get subscription status from Paddle
  */
 export async function getSubscriptionStatus(agencyId: string) {
@@ -294,7 +274,8 @@ export async function handleWebhook(event: any) {
               paddleSubscriptionId: subscription.id,
               subscriptionTier: tier,
               subscriptionStatus: subscription.status === 'trialing' ? 'trialing' : 'active',
-              trialEnd: trialEnd,
+              trialEnd: subscription.status === 'active' ? null : trialEnd,
+              currency: subscription.currency_code || 'USD',
             })
             .where(eq(agencies.id, agencyId));
         }
@@ -334,7 +315,7 @@ export async function handleWebhook(event: any) {
                   paddleSubscriptionId: subscription.id,
                   subscriptionTier: tier,
                   subscriptionStatus: subscription.status === 'trialing' ? 'trialing' : 'active',
-                  trialEnd: trialEnd,
+                  trialEnd: subscription.status === 'active' ? null : trialEnd,
                 })
                 .where(eq(agencies.id, user.agencyId));
             }
@@ -361,7 +342,12 @@ export async function handleWebhook(event: any) {
                             subscription.status === 'trialing' ? 'trialing' : 
                             subscription.status === 'past_due' ? 'past_due' : 
                             subscription.status === 'paused' ? 'paused' : subscription.status,
+          currency: subscription.currency_code || 'USD',
         };
+
+        if (subscription.status === 'active') {
+          updateData.trialEnd = null;
+        }
 
         if (tier) {
           updateData.subscriptionTier = tier;
@@ -442,7 +428,7 @@ export async function handleWebhook(event: any) {
       break;
     }
 
-    case 'transaction.payment_succeeded': {
+    case 'transaction.paid': {
       const transaction = event.data;
       const subscriptionId = transaction.subscription_id;
 
@@ -457,7 +443,10 @@ export async function handleWebhook(event: any) {
         if (agency) {
           await db
             .update(agencies)
-            .set({ subscriptionStatus: 'active' })
+            .set({ 
+              subscriptionStatus: 'active',
+              trialEnd: null,
+            })
             .where(eq(agencies.id, agency.id));
         }
       }
@@ -470,6 +459,10 @@ export async function handleWebhook(event: any) {
 
   // Also handle billing events (invoices, payments)
   await handlePaddleBillingEvent(event);
+
+  // Clear caches for relevant paths
+  revalidatePath('/dashboard');
+  revalidatePath('/dashboard/settings/billing');
 
   return { received: true };
 }

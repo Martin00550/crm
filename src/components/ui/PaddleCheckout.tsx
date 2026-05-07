@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { CreditCard, Loader2 } from 'lucide-react';
-import { PADDLE_PRICE_IDS } from '@/lib/paddle';
+import { useRouter } from 'next/navigation';
+import { PADDLE_PRICE_IDS } from '@/lib/paddle-shared';
 
 interface PaddleCheckoutProps {
   tier: 'solo' | 'growth' | 'enterprise';
@@ -14,6 +15,7 @@ interface PaddleCheckoutProps {
 }
 
 export function PaddleCheckout({ tier, agencyId, customerId, userId, onSuccess, onError }: PaddleCheckoutProps) {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [paddleLoaded, setPaddleLoaded] = useState(false);
 
@@ -80,6 +82,7 @@ export function PaddleCheckout({ tier, agencyId, customerId, userId, onSuccess, 
         // Listen for checkout completion
         window.Paddle.Checkout.onCompleted((data: any) => {
           console.log('Checkout completed:', data);
+          router.refresh();
           if (onSuccess) onSuccess();
         });
         

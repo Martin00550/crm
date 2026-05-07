@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button";
 interface ImportCSVButtonProps {
   agencyId: string;
   onImportComplete?: () => void;
+  disabled?: boolean;
 }
 
-export function ImportCSVButton({ agencyId, onImportComplete }: ImportCSVButtonProps) {
+export function ImportCSVButton({ agencyId, onImportComplete, disabled }: ImportCSVButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
@@ -20,6 +21,7 @@ export function ImportCSVButton({ agencyId, onImportComplete }: ImportCSVButtonP
         variant="secondary"
         size="sm"
         leftIcon={<Upload className="w-3.5 h-3.5" />}
+        disabled={disabled}
       >
         Add Entry
       </Button>

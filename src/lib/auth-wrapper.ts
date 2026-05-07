@@ -31,6 +31,9 @@ export async function getAuth(): Promise<{ userId: string | null }> {
 
   try {
     const session = await withAuth();
+    if (!session.user) {
+      console.warn('[getAuth] No user in session');
+    }
     return { userId: session.user?.id || null };
   } catch (err) {
     console.error("[getAuth Error in API Route]:", err);

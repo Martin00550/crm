@@ -38,28 +38,13 @@ export default async function DashboardPage({
     getAgency(agencyId),
   ]);
 
-  // Check if user has any policies - show onboarding if empty
-  const hasPolicies = stats.totalPolicies > 0;
-
-  // Show onboarding panel if no policies exist
-  if (!hasPolicies) {
-    return (
-      <div className="space-y-8 font-body">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-black text-on-surface mb-2 font-headline italic tracking-tight">Agency Command Center</h1>
-            <p className="text-on-surface/60 font-medium italic">Set up your agency dashboard</p>
-          </div>
-        </div>
-
-        {/* Onboarding Panel */}
-        <OnboardingPanel agencyId={agencyId} />
-      </div>
-    );
-  }
-
   return (
-    <DashboardClient stats={stats} ledger={ledger} agencyId={agencyId} currency={agency?.currency} />
+    <DashboardClient 
+      stats={stats} 
+      ledger={ledger} 
+      agencyId={agencyId} 
+      currency={agency?.currency} 
+      isReadOnly={subscriptionCheck.isReadOnly}
+    />
   );
 }

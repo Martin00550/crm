@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ArrowLeft, Check, CreditCard, Clock } from 'lucide-react';
-import { SUBSCRIPTION_TIERS } from '@/lib/paddle';
+import { SUBSCRIPTION_TIERS } from '@/lib/paddle-shared';
 
 const TIERS = Object.entries(SUBSCRIPTION_TIERS).map(([id, tier]) => ({
   id: id as 'solo' | 'growth' | 'enterprise',

@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { getUserAgencyId, getAgency } from '@/actions/data';
 import { PaddleCheckout } from '@/components/ui/PaddleCheckout';
-import { SUBSCRIPTION_TIERS } from '@/lib/paddle';
+import { SUBSCRIPTION_TIERS } from '@/lib/paddle-shared';
 import Link from 'next/link';
 import { ArrowLeft, Check, CreditCard, Clock } from 'lucide-react';
 
