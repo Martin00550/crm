@@ -73,7 +73,7 @@ export function getCsrfTokenFromRequest(request: Request): string | null {
 
 /**
  * Verify Origin/Referer headers for CSRF protection
- * This is an additional layer of protection
+ * This is an additional layer of protection that supports subdomains
  */
 export function verifyOrigin(request: Request, allowedOrigins: string[]): boolean {
   const origin = request.headers.get('origin');
@@ -81,13 +81,10 @@ export function verifyOrigin(request: Request, allowedOrigins: string[]): boolea
   
   // If both are missing, this might be a direct API call (suspicious for browser requests)
   if (!origin && !referer) {
-    // Check if this is a browser request
     const userAgent = request.headers.get('user-agent');
     if (userAgent && userAgent.includes('Mozilla')) {
-      // Browser request without origin/referer is suspicious
       return false;
     }
-    // Non-browser requests (like curl) are allowed without origin
     return true;
   }
   
@@ -97,7 +94,17 @@ export function verifyOrigin(request: Request, allowedOrigins: string[]): boolea
       const originUrl = new URL(origin);
       return allowedOrigins.some(allowed => {
         const allowedUrl = new URL(allowed);
-        return originUrl.origin === allowedUrl.origin;
+        
+        // Exact origin match (protocol + host + port)
+        if (originUrl.origin === allowedUrl.origin) return true;
+        
+        // Subdomain match logic
+        // Check if protocol and port match, but hostname is a subdomain
+        const protocolsMatch = originUrl.protocol === allowedUrl.protocol;
+        const portsMatch = originUrl.port === allowedUrl.port;
+        const isSubdomain = originUrl.hostname.endsWith('.' + allowedUrl.hostname);
+        
+        return protocolsMatch && portsMatch && isSubdomain;
       });
     } catch {
       return false;
@@ -110,7 +117,14 @@ export function verifyOrigin(request: Request, allowedOrigins: string[]): boolea
       const refererUrl = new URL(referer);
       return allowedOrigins.some(allowed => {
         const allowedUrl = new URL(allowed);
-        return refererUrl.origin === allowedUrl.origin;
+        
+        if (refererUrl.origin === allowedUrl.origin) return true;
+        
+        const protocolsMatch = refererUrl.protocol === allowedUrl.protocol;
+        const portsMatch = refererUrl.port === allowedUrl.port;
+        const isSubdomain = refererUrl.hostname.endsWith('.' + allowedUrl.hostname);
+        
+        return protocolsMatch && portsMatch && isSubdomain;
       });
     } catch {
       return false;
