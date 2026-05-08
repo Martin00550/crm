@@ -35,7 +35,7 @@ export interface Client {
 }
 
 /**
- * Call Gemini 1.5 Flash (requested as Gemini 3.1 Flash Lite) via Google AI
+ * Call Gemini 3.1 Flash Lite via Google AI
  */
 async function callGemini(prompt: string): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -43,8 +43,8 @@ async function callGemini(prompt: string): Promise<string> {
     throw new Error('GEMINI_API_KEY is not configured');
   }
 
-  // Using gemini-3.1-flash-lite as requested
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
+  // Using gemini-3.1-flash-lite-preview as requested
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
