@@ -19,42 +19,38 @@ export async function getPolicyLedger(agencyId: string, limit = 50, range?: stri
   return getPolicyLedgerQuery(agencyId, limit, range);
 }
 
+import { withAgencyContext } from '@/lib/db-rls';
+
 export async function getPolicyDetails(policyId: string) {
   const authResult = await requireAgencyAuth();
   
-  if (!db) {
-    throw Errors.server('Database connection failed');
-  }
+  return withAgencyContext(authResult.agencyId, async (tx) => {
+    const [policy] = await tx
+      .select()
+      .from(policies)
+      .where(eq(policies.id, policyId))
+      .limit(1);
 
-  const [policy] = await db
-    .select()
-    .from(policies)
-    .where(eq(policies.id, policyId))
-    .limit(1);
+    if (!policy) return null;
 
-  if (!policy) return null;
-  
-  if (policy.agencyId !== authResult.agencyId) {
-    throw Errors.authorization('Forbidden: You do not have access to this policy');
-  }
+    const [client] = await tx
+      .select()
+      .from(clients)
+      .where(eq(clients.id, policy.clientId))
+      .limit(1);
 
-  const [client] = await db
-    .select()
-    .from(clients)
-    .where(eq(clients.id, policy.clientId))
-    .limit(1);
+    const prevPremium = parseFloat(policy.previousTermPremium || '0');
+    const currPremium = parseFloat(policy.currentTermPremium || '0');
+    const premiumChange = prevPremium > 0 && currPremium > 0
+      ? (((currPremium - prevPremium) / prevPremium) * 100).toFixed(1)
+      : '0';
 
-  const prevPremium = parseFloat(policy.previousTermPremium || '0');
-  const currPremium = parseFloat(policy.currentTermPremium || '0');
-  const premiumChange = prevPremium > 0 && currPremium > 0
-    ? (((currPremium - prevPremium) / prevPremium) * 100).toFixed(1)
-    : '0';
-
-  return {
-    policy,
-    client,
-    premiumChange: parseFloat(premiumChange),
-  };
+    return {
+      policy,
+      client,
+      premiumChange: parseFloat(premiumChange),
+    };
+  });
 }
 
 export async function updatePolicy(
@@ -109,30 +105,32 @@ export async function getPolicyLeakageRisk(agencyId: string) {
     throw Errors.server('Database connection failed');
   }
 
-  const allPolicies = await db
-    .select({
-      id: policies.id,
-      policyNumber: policies.policyNumber,
-      carrier: policies.carrier,
-      policyType: policies.policyType,
-      premium: policies.premium,
-      currentTermPremium: policies.currentTermPremium,
-      previousTermPremium: policies.previousTermPremium,
-      expirationDate: policies.expirationDate,
-      healthScore: policies.healthScore,
-      healthStatus: policies.healthStatus,
-      notes: policies.notes,
-      clientName: clients.name,
-      clientEmail: clients.email,
-      clientIndustry: clients.industry,
-      clientId: policies.clientId,
-    })
-    .from(policies)
-    .innerJoin(clients, eq(policies.clientId, clients.id))
-    .where(and(eq(policies.agencyId, agencyId), eq(policies.status, 'active')))
-    .execute();
+  const allPolicies = await withAgencyContext(agencyId, async (tx) => {
+    return await tx
+      .select({
+        id: policies.id,
+        policyNumber: policies.policyNumber,
+        carrier: policies.carrier,
+        policyType: policies.policyType,
+        premium: policies.premium,
+        currentTermPremium: policies.currentTermPremium,
+        previousTermPremium: policies.previousTermPremium,
+        expirationDate: policies.expirationDate,
+        healthScore: policies.healthScore,
+        healthStatus: policies.healthStatus,
+        notes: policies.notes,
+        clientName: clients.name,
+        clientEmail: clients.email,
+        clientIndustry: clients.industry,
+        clientId: policies.clientId,
+      })
+      .from(policies)
+      .innerJoin(clients, eq(policies.clientId, clients.id))
+      .where(and(eq(policies.agencyId, agencyId), eq(policies.status, 'active')))
+      .execute();
+  });
 
-  const riskData = allPolicies.map((p) => {
+  const riskData = allPolicies.map((p: any) => {
     const daysUntilRenewal = calculateDaysUntil(p.expirationDate);
     const premium = parseFloat(p.premium || '0');
     const currentPremium = parseFloat(p.currentTermPremium || p.premium || '0');
@@ -193,19 +191,19 @@ export async function getPolicyLeakageRisk(agencyId: string) {
     };
   });
   
-  riskData.sort((a, b) => b.riskScore - a.riskScore);
+  riskData.sort((a: any, b: any) => b.riskScore - a.riskScore);
   
   const summary = {
     totalPolicies: riskData.length,
-    criticalRisk: riskData.filter((p) => p.riskLevel === 'critical').length,
-    highRisk: riskData.filter((p) => p.riskLevel === 'high').length,
-    mediumRisk: riskData.filter((p) => p.riskLevel === 'medium').length,
-    lowRisk: riskData.filter((p) => p.riskLevel === 'low').length,
+    criticalRisk: riskData.filter((p: any) => p.riskLevel === 'critical').length,
+    highRisk: riskData.filter((p: any) => p.riskLevel === 'high').length,
+    mediumRisk: riskData.filter((p: any) => p.riskLevel === 'medium').length,
+    lowRisk: riskData.filter((p: any) => p.riskLevel === 'low').length,
     totalPotentialLoss: riskData
-      .filter((p) => p.riskLevel === 'critical' || p.riskLevel === 'high')
-      .reduce((sum: number, p) => sum + p.potentialLoss, 0),
+      .filter((p: any) => p.riskLevel === 'critical' || p.riskLevel === 'high')
+      .reduce((sum: number, p: any) => sum + p.potentialLoss, 0),
     avgRiskScore: riskData.length > 0 
-      ? Math.round(riskData.reduce((sum: number, p) => sum + p.riskScore, 0) / riskData.length)
+      ? Math.round(riskData.reduce((sum: number, p: any) => sum + p.riskScore, 0) / riskData.length)
       : 0,
   };
   

@@ -424,39 +424,41 @@ export function WhiteLabelPortal({ agencyId, isDemo = false }: WhiteLabelPortalP
                         <div className="h-3 w-1/2 bg-slate-100 rounded-full" />
                       </div>
 
-                      {/* Mockup Login Card */}
-                      <div className="bg-white rounded-2xl p-6 shadow-sm border border-black/5 space-y-4">
-                        <div className="flex items-center gap-3 mb-2">
+                      {/* Mockup Executive Summary */}
+                      <div className="bg-white rounded-2xl p-6 shadow-sm border border-black/5 space-y-6">
+                        <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl transition-colors duration-500 flex items-center justify-center text-white" style={{ backgroundColor: config.branding.primaryColor }}>
                             <Shield className="w-5 h-5" />
                           </div>
                           <div className="space-y-1">
-                            <div className="h-2 w-16 bg-slate-200 rounded-full" />
-                            <div className="h-1.5 w-10 bg-slate-100 rounded-full" />
+                            <div className="h-2.5 w-24 bg-slate-200 rounded-full" />
+                            <div className="h-2 w-16 bg-slate-100 rounded-full" />
                           </div>
                         </div>
-                        <div className="h-8 w-full bg-slate-50 rounded-lg" />
-                        <div className="h-8 w-full bg-slate-50 rounded-lg" />
                         
-                        {/* Mockup Primary Button */}
-                        <div 
-                          className="h-10 w-full rounded-full transition-all duration-500 flex items-center justify-center text-[10px] font-black uppercase text-white shadow-lg"
-                          style={{ backgroundColor: config.branding.primaryColor }}
-                        >
-                          Access Gateway
+                        <div className="space-y-3">
+                          <div className="h-px w-full bg-slate-100" />
+                          <div className="flex justify-between">
+                            <div className="h-2 w-20 bg-slate-50 rounded-full" />
+                            <div className="h-2 w-12 bg-slate-100 rounded-full" />
+                          </div>
+                          <div className="h-px w-full bg-slate-100" />
+                          <div className="flex justify-between">
+                            <div className="h-2 w-20 bg-slate-50 rounded-full" />
+                            <div className="h-2 w-12 bg-slate-100 rounded-full" />
+                          </div>
                         </div>
 
-                        {/* Mockup Secondary Button */}
-                        <div 
-                          className="h-10 w-full rounded-full transition-all duration-500 flex items-center justify-center text-[10px] font-black uppercase border"
-                          style={{ borderColor: config.branding.secondaryColor + '20', color: config.branding.secondaryColor, backgroundColor: config.branding.secondaryColor + '05' }}
-                        >
-                          Request Access
+                        {/* Read Only Badge */}
+                        <div className="pt-2">
+                           <div className="h-8 w-full bg-slate-50 rounded-full border border-black/5 flex items-center justify-center">
+                             <div className="h-1.5 w-24 bg-slate-200 rounded-full" />
+                           </div>
                         </div>
                       </div>
                       
-                      <p className="text-[8px] text-center text-slate-300 font-bold uppercase tracking-widest mt-4">
-                        Deployed at {config.subdomain}.retainvault.com
+                      <p className="text-[8px] text-center text-slate-300 font-bold uppercase tracking-widest mt-4 italic">
+                        Secured Portfolio: {config.subdomain}.retainvault.com
                       </p>
                     </div>
 

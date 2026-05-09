@@ -1,6 +1,4 @@
-import { db } from '@/lib/db';
-import { rateLimits } from '@/db/schema';
-import { eq, and, gte, lte, lt } from 'drizzle-orm';
+import { getCacheClient } from './cache';
 import { logger } from '@/lib/logger';
 
 interface RateLimitConfig {
@@ -12,7 +10,7 @@ interface RateLimitConfig {
 // Default rate limit configurations
 export const RATE_LIMITS = {
   // AI generation - strict limits due to cost
-  aiGeneration: { windowMs: 60 * 1000, maxRequests: 10, keyPrefix: 'ai' },
+  aiGeneration: { windowMs: 60 * 1000, maxRequests: 5, keyPrefix: 'ai' },
   // Email sending - prevent abuse
   emailSend: { windowMs: 60 * 60 * 1000, maxRequests: 50, keyPrefix: 'email' },
   // API endpoints - general protection
@@ -36,109 +34,65 @@ interface RateLimitResult {
 }
 
 /**
- * Check rate limit for a given identifier and limit type
- * Uses database for persistence in production, in-memory for development
+ * Check rate limit for a given identifier and limit type using distributed Redis
  */
 export async function checkRateLimit(
   identifier: string,
   limitType: RateLimitType
 ): Promise<RateLimitResult> {
   const config = RATE_LIMITS[limitType];
-  const key = `${config.keyPrefix}:${identifier}`;
-  const now = Date.now();
-  const resetAt = now + config.windowMs;
-
-  // Always use database for rate limiting in production
-  // In-memory fallback is removed to ensure consistency across server instances
-  if (!db) {
+  const key = `ratelimit:${config.keyPrefix}:${identifier}`;
+  
+  const client = getCacheClient();
+  
+  if (!client) {
+    logger.warn('Redis not available, failing open on rate limit', { key });
     return {
-      success: false,
+      success: true,
       limit: config.maxRequests,
-      remaining: 0,
-      resetAt: new Date(resetAt),
-      retryAfter: Math.ceil(config.windowMs / 1000),
+      remaining: config.maxRequests,
+      resetAt: new Date(Date.now() + config.windowMs),
     };
   }
 
-  // Database-based rate limiting for all environments
-  return checkDatabaseRateLimit(key, config, now, resetAt);
-}
-
-async function checkDatabaseRateLimit(
-  key: string,
-  config: RateLimitConfig,
-  now: number,
-  resetAt: number
-): Promise<RateLimitResult> {
-  if (!db) {
-    return {
-      success: false,
-      limit: config.maxRequests,
-      remaining: 0,
-      resetAt: new Date(resetAt),
-      retryAfter: Math.ceil(config.windowMs / 1000),
-    };
-  }
   try {
-    // Clean up expired entries
-    await db.delete(rateLimits).where(lt(rateLimits.resetAt, new Date(now)));
-
-    // Get existing record
-    const records = await db.select().from(rateLimits).where(eq(rateLimits.key, key)).limit(1);
-    const record = records[0];
-
-    if (!record || new Date(record.resetAt).getTime() <= now) {
-      // No record or expired - create new
-      await db.insert(rateLimits)
-        .values({ key, count: 1, resetAt: new Date(resetAt) })
-        .onConflictDoUpdate({
-          target: rateLimits.key,
-          set: { count: 1, resetAt: new Date(resetAt) },
-        });
-
-      return {
-        success: true,
-        limit: config.maxRequests,
-        remaining: config.maxRequests - 1,
-        resetAt: new Date(resetAt),
-      };
+    const now = Date.now();
+    
+    // Use Redis INCR and PTTL for an atomic rate limit check
+    const currentCount = await client.incr(key);
+    
+    if (currentCount === 1) {
+      // First request in the window, set expiry
+      await client.pexpire(key, config.windowMs);
     }
+    
+    const pttl = await client.pttl(key);
+    const resetAt = new Date(now + (pttl > 0 ? pttl : config.windowMs));
 
-    const currentCount = record.count;
-    const recordResetAt = new Date(record.resetAt);
-
-    if (currentCount >= config.maxRequests) {
-      // Rate limit exceeded
-      const retryAfter = Math.ceil((recordResetAt.getTime() - now) / 1000);
+    if (currentCount > config.maxRequests) {
       return {
         success: false,
         limit: config.maxRequests,
         remaining: 0,
-        resetAt: recordResetAt,
-        retryAfter,
+        resetAt,
+        retryAfter: Math.ceil((resetAt.getTime() - now) / 1000),
       };
     }
-
-    // Increment count atomically
-    await db.update(rateLimits)
-      .set({ count: currentCount + 1 })
-      .where(eq(rateLimits.key, key));
 
     return {
       success: true,
       limit: config.maxRequests,
-      remaining: config.maxRequests - currentCount - 1,
-      resetAt: recordResetAt,
+      remaining: config.maxRequests - currentCount,
+      resetAt,
     };
   } catch (error) {
-    logger.error('Database rate limit error', error);
-    // Fail closed on error
+    logger.error('Distributed rate limit error', error);
+    // Fail open to prevent blocking legitimate users if Redis is down
     return {
-      success: false,
+      success: true,
       limit: config.maxRequests,
-      remaining: 0,
-      resetAt: new Date(resetAt),
-      retryAfter: Math.ceil(config.windowMs / 1000),
+      remaining: 1,
+      resetAt: new Date(Date.now() + config.windowMs),
     };
   }
 }
@@ -166,16 +120,3 @@ export const withRateLimit = (limitType: RateLimitType) => {
   };
 };
 
-/**
- * Clean up expired rate limit entries (call periodically)
- */
-export const cleanupExpiredRateLimits = async (): Promise<void> => {
-  if (!db) return;
-  const now = Date.now();
-  await db.delete(rateLimits).where(lt(rateLimits.resetAt, new Date(now)));
-};
-
-// Run cleanup every 5 minutes
-if (typeof setInterval !== 'undefined') {
-  setInterval(cleanupExpiredRateLimits, 5 * 60 * 1000);
-}

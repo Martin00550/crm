@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { agencies, clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { withCache, CacheKeys, CacheTTL } from './cache';
 
 export interface BrandingConfig {
   logoUrl?: string;
@@ -30,75 +31,87 @@ const DEFAULT_BRANDING: BrandingConfig = {
 
 // Get agency by subdomain
 export async function getAgencyBySubdomain(subdomain: string): Promise<AgencyWithBranding | null> {
-  if (!db) return null;
+  return withCache(
+    CacheKeys.portalAgency(subdomain),
+    CacheTTL.BRANDING,
+    async () => {
+      if (!db) return null;
 
-  const agency = await db
-    .select()
-    .from(agencies)
-    .where(eq(agencies.subdomain, subdomain))
-    .limit(1)
-    .then((r: any[]) => r[0]);
+      const agency = await db
+        .select()
+        .from(agencies)
+        .where(eq(agencies.subdomain, subdomain))
+        .limit(1)
+        .then((r: any[]) => r[0]);
 
-  if (!agency) return null;
+      if (!agency) return null;
 
-  const result = {
-    id: agency.id,
-    name: agency.name,
-    subdomain: agency.subdomain,
-    subscriptionTier: agency.subscriptionTier,
-    whiteLabelEnabled: agency.whiteLabelEnabled || false,
-    branding: {
-      ...DEFAULT_BRANDING,
-      ...(agency.branding as BrandingConfig || {}),
-    },
-  };
+      const result = {
+        id: agency.id,
+        name: agency.name,
+        subdomain: agency.subdomain,
+        subscriptionTier: agency.subscriptionTier,
+        whiteLabelEnabled: agency.whiteLabelEnabled || false,
+        branding: {
+          ...DEFAULT_BRANDING,
+          ...(agency.branding as BrandingConfig || {}),
+        },
+      };
 
-  if (result.branding.logoUrl && !result.branding.logoUrl.startsWith('http')) {
-    try {
-      const { getPresignedUrl } = await import('./storage');
-      result.branding.logoUrl = await getPresignedUrl(result.branding.logoUrl);
-    } catch (err) {
-      console.error('Failed to sign logo for portal:', err);
+      if (result.branding.logoUrl && !result.branding.logoUrl.startsWith('http')) {
+        try {
+          const { getPresignedUrl } = await import('./storage');
+          result.branding.logoUrl = await getPresignedUrl(result.branding.logoUrl);
+        } catch (err) {
+          console.error('Failed to sign logo for portal:', err);
+        }
+      }
+
+      return result;
     }
-  }
-
-  return result;
+  );
 }
 
 export async function getClientAndAgencyBySubdomain(subdomain: string) {
-  if (!db) return null;
+  return withCache(
+    CacheKeys.portalClient(subdomain),
+    CacheTTL.PORTAL_DATA,
+    async () => {
+      if (!db) return null;
 
-  const client = await db
-    .select()
-    .from(clients)
-    .where(eq(clients.subdomain, subdomain))
-    .limit(1)
-    .then((r: any[]) => r[0]);
+      const client = await db
+        .select()
+        .from(clients)
+        .where(eq(clients.subdomain, subdomain))
+        .limit(1)
+        .then((r: any[]) => r[0]);
 
-  if (!client) return null;
+      if (!client) return null;
 
-  const agency = await db
-    .select()
-    .from(agencies)
-    .where(eq(agencies.id, client.agencyId))
-    .limit(1)
-    .then((r: any[]) => r[0]);
+      const agency = await db
+        .select()
+        .from(agencies)
+        .where(eq(agencies.id, client.agencyId))
+        .limit(1)
+        .then((r: any[]) => r[0]);
 
-  if (!agency) return null;
+      if (!agency) return null;
 
-  const agencyResult = {
-    id: agency.id,
-    name: agency.name,
-    subdomain: agency.subdomain,
-    subscriptionTier: agency.subscriptionTier,
-    whiteLabelEnabled: agency.whiteLabelEnabled || false,
-    branding: {
-      ...DEFAULT_BRANDING,
-      ...(agency.branding as BrandingConfig || {}),
-    },
-  };
+      const agencyResult = {
+        id: agency.id,
+        name: agency.name,
+        subdomain: agency.subdomain,
+        subscriptionTier: agency.subscriptionTier,
+        whiteLabelEnabled: agency.whiteLabelEnabled || false,
+        branding: {
+          ...DEFAULT_BRANDING,
+          ...(agency.branding as BrandingConfig || {}),
+        },
+      };
 
-  return { client, agency: agencyResult };
+      return { client, agency: agencyResult };
+    }
+  );
 }
 
 // Get branding config for an agency

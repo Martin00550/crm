@@ -46,6 +46,20 @@ export function AgencyProfileForm({ agency, isDemo = false }: AgencyProfileFormP
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Auto-sanitize subdomain on mount if it's corrupted
+  useState(() => {
+    if (agency?.subdomain && /\s|[^a-z0-9-]/.test(agency.subdomain)) {
+      const sanitized = agency.subdomain
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      
+      setFormData(prev => ({ ...prev, subdomain: sanitized }));
+    }
+  });
+
   const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement> | React.DragEvent) => {
     e.preventDefault();
     let file: File | null = null;
@@ -101,9 +115,14 @@ export function AgencyProfileForm({ agency, isDemo = false }: AgencyProfileFormP
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    // Special handling for subdomain
+    // Special handling for subdomain - strip spaces and replace with hyphens immediately
     if (name === 'subdomain') {
-      const sanitized = value.toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/^-+|-+$/g, '');
+      const sanitized = value
+        .toLowerCase()
+        .replace(/\s+/g, '-')           // Replace spaces with hyphens
+        .replace(/[^a-z0-9-]/g, '')     // Remove anything not a-z, 0-9, or hyphen
+        .replace(/-+/g, '-')           // Collapse multiple hyphens
+        .replace(/^-+|-+$/g, '');       // Remove leading/trailing hyphens
       setFormData(prev => ({ ...prev, [name]: sanitized }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -128,10 +147,22 @@ export function AgencyProfileForm({ agency, isDemo = false }: AgencyProfileFormP
         return;
       }
 
+      const finalSubdomain = formData.subdomain
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
+      const submissionData = {
+        ...formData,
+        subdomain: finalSubdomain
+      };
+
       const res = await fetch('/api/agency/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submissionData),
       });
 
       const data = await res.json();
@@ -354,7 +385,7 @@ export function AgencyProfileForm({ agency, isDemo = false }: AgencyProfileFormP
                   </div>
                   <div className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-secondary" />
-                    <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Secure Login</span>
+                    <span className="text-[10px] font-black text-on-surface/40 uppercase tracking-widest">Risk Analysis Ledger</span>
                   </div>
                 </div>
                 <div className="pt-6 border-t border-black/5">

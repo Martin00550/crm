@@ -10,18 +10,12 @@ export default function PortalNotFound() {
           This agency portal doesn't exist or hasn't been set up yet. 
           Please check the URL or contact the agency directly.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex justify-center">
           <Link
             href="https://retainvault.com"
-            className="flex-1 px-8 py-4 bg-primary text-white font-black text-xs uppercase tracking-[0.2em] rounded-full hover:shadow-2xl transition-all text-center"
+            className="px-10 py-4 bg-slate-900 text-white font-black text-xs uppercase tracking-[0.2em] rounded-full hover:shadow-2xl transition-all text-center"
           >
             Go to RetainVault
-          </Link>
-          <Link
-            href="https://retainvault.com/sign-in"
-            className="px-6 py-3 border-2 border-primary text-primary font-bold rounded-lg hover:bg-primary hover:text-white transition-all"
-          >
-            Agent Sign In
           </Link>
         </div>
       </div>

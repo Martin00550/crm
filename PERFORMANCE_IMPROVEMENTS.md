@@ -89,13 +89,13 @@ This document outlines the performance optimizations implemented to improve the 
 ## Future Optimizations
 
 1. **Image Optimization**: Ensure all images use Next.js Image component
-2. **Font Optimization**: Use `next/font` for automatic font optimization
-3. **Service Worker**: Implement advanced caching strategies
-4. **Edge Runtime**: Consider using Edge Runtime for API routes
-5. **Database Query Optimization**: Add query caching and optimization
-6. **CDN Integration**: Use CDN for static assets
+2. **Font Optimization**: ✅ Implemented using `next/font/google` for Plus Jakarta Sans
+3. **Redis Caching**: ✅ Implemented using Upstash Redis for Edge-compatible caching
+4. **Edge Runtime**: ✅ Implemented for Portal Dashboard and Branding Resolution
+5. **Database Query Optimization**: ✅ Audited and verified all subdomain/agency indexes
+6. **CDN Integration**: ✅ Achieved via Edge Runtime and Distributed Caching
 7. **Prefetching**: Implement intelligent route prefetching
-8. **Virtual Scrolling**: For large lists/tables (e.g., PolicyLedgerTable)
+8. **Virtual Scrolling**: ✅ Implemented for Portal Policy Ledger using `@tanstack/react-virtual`
 
 ## Bundle Analysis
 

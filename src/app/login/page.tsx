@@ -20,7 +20,7 @@ export default async function LoginPage() {
   // If we are on a subdomain, we stay on the branded portal login
   // The middleware will have already rewritten this, but this is a safety fallback
   if (subdomain && !['www', 'app', 'api', 'dashboard'].includes(subdomain.toLowerCase())) {
-    return redirect(`/portal/${subdomain}/login`);
+    return redirect(`/`);
   }
 
   // Otherwise, we are an Agent trying to access the main platform

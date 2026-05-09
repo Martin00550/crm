@@ -32,12 +32,12 @@ export function BrandedLayout({ agencyName, branding, children }: BrandedLayoutP
   return (
     <>
       <style>{cssVariables}</style>
-      <div>
+      <div className="min-h-screen bg-slate-950 text-white selection:bg-primary/30">
         {/* Header */}
-        <header className="bg-white border-b border-black/5 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
+        <header className="bg-slate-900/50 backdrop-blur-md border-b border-white/5 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex justify-between items-center h-20">
+            <div className="flex items-center gap-4">
               {branding.logoUrl ? (
                 <img 
                   src={branding.logoUrl} 
@@ -46,26 +46,32 @@ export function BrandedLayout({ agencyName, branding, children }: BrandedLayoutP
                 />
               ) : (
                 <div 
-                  className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-black text-lg"
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-lg shadow-primary/20"
                   style={{ backgroundColor: branding.primaryColor }}
                 >
                   {agencyName.charAt(0).toUpperCase()}
                 </div>
               )}
-              <span className="text-xl font-bold text-slate-900">{agencyName}</span>
+              <div>
+                <span className="text-lg font-black tracking-tight block">{agencyName}</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 italic">Secure Client Portal</span>
+              </div>
             </div>
             
-            <nav className="hidden md:flex items-center gap-6">
-              <a href="#about" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
-                About
-              </a>
-              <a href="#services" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
-                Services
-              </a>
-              <a href="#contact" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
-                Contact
-              </a>
-            </nav>
+            <div className="hidden md:flex items-center gap-8">
+              {branding.phone && (
+                <a href={`tel:${branding.phone}`} className="flex items-center gap-2 text-white/60 hover:text-white transition-all group">
+                  <span className="material-symbols-outlined text-sm text-primary">phone</span>
+                  <span className="text-xs font-black uppercase tracking-widest">{branding.phone}</span>
+                </a>
+              )}
+              {branding.email && (
+                <a href={`mailto:${branding.email}`} className="flex items-center gap-2 text-white/60 hover:text-white transition-all group">
+                  <span className="material-symbols-outlined text-sm text-primary">mail</span>
+                  <span className="text-xs font-black uppercase tracking-widest">{branding.email}</span>
+                </a>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -76,54 +82,33 @@ export function BrandedLayout({ agencyName, branding, children }: BrandedLayoutP
       </main>
 
       {/* Footer */}
-      <footer className="bg-slate-50 border-t border-black/5 py-8 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-3">
+      <footer className="bg-slate-950 border-t border-white/5 py-12">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+            <div className="flex items-center gap-4">
               {branding.logoUrl ? (
                 <img 
                   src={branding.logoUrl} 
                   alt={`${agencyName} logo`}
-                  className="h-8 w-auto object-contain opacity-60"
+                  className="h-6 w-auto object-contain opacity-40 grayscale"
                 />
               ) : (
                 <div 
-                  className="w-8 h-8 rounded flex items-center justify-center text-white font-bold text-sm opacity-60"
+                  className="w-6 h-6 rounded flex items-center justify-center text-white font-black text-[10px] opacity-40 grayscale"
                   style={{ backgroundColor: branding.primaryColor }}
                 >
                   {agencyName.charAt(0).toUpperCase()}
                 </div>
               )}
-              <span className="text-sm font-medium text-slate-600">{agencyName}</span>
+              <span className="text-xs font-bold text-white/40">{agencyName} &copy; {new Date().getFullYear()}</span>
             </div>
             
-            <div className="text-xs text-slate-500">
-              Powered by <a href="https://retainvault.com" className="font-bold hover:text-slate-700 transition-colors">RetainVault</a>
+            <div className="flex items-center gap-6">
+               <div className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">
+                Secure Infrastructure Powered by <a href="https://retainvault.com" className="hover:text-primary transition-colors">RetainVault</a>
+              </div>
             </div>
           </div>
-          
-          {branding.phone || branding.email || branding.address ? (
-            <div className="mt-6 pt-6 border-t border-slate-200 flex flex-wrap gap-6 text-xs text-slate-500">
-              {branding.phone && (
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-sm">phone</span>
-                  {branding.phone}
-                </div>
-              )}
-              {branding.email && (
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-sm">mail</span>
-                  {branding.email}
-                </div>
-              )}
-              {branding.address && (
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-sm">location_on</span>
-                  {branding.address}
-                </div>
-              )}
-            </div>
-          ) : null}
         </div>
       </footer>
       </div>

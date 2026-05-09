@@ -25,7 +25,7 @@ export const POST = withApiSecurity(
       const { policyId } = validationResult.data;
 
       // Get policy and client data
-      const data = await getPolicyWithClient(policyId);
+      const data = await getPolicyWithClient(policyId, context.agencyId!);
       if (!data) {
         return NextResponse.json({ error: 'Policy not found' }, { status: 404 });
       }

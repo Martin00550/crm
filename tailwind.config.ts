@@ -26,8 +26,8 @@ export default {
         accent: "#22C55E",
       },
       fontFamily: {
-        headline: ["Plus Jakarta Sans", "sans-serif"],
-        body: ["Plus Jakarta Sans", "sans-serif"],
+        headline: ["var(--font-plus-jakarta-sans)", "sans-serif"],
+        body: ["var(--font-plus-jakarta-sans)", "sans-serif"],
       },
       borderRadius: {
         DEFAULT: "0.125rem",

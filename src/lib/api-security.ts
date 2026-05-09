@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { getAuth } from '@/lib/auth-wrapper';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { logAuditEvent, extractRequestMetadata } from '@/lib/audit';
+import { recordAuditLog, extractRequestMetadata } from '@/lib/audit';
 import { verifyOrigin, getAllowedOrigins } from '@/lib/csrf';
 import { checkIPWhitelist, getClientIP } from '@/lib/ip-whitelist';
 import { Errors, createErrorResponse, logError } from '@/lib/error-handler';
@@ -207,7 +207,7 @@ export function withApiSecurity(
       // 9. Audit logging
       if (options.auditAction && userId) {
         const metadata = await extractRequestMetadata(request);
-        await logAuditEvent({
+        await recordAuditLog({
           agencyId: agencyId || undefined,
           userId,
           action: options.auditAction as any,
@@ -230,7 +230,7 @@ export function withApiSecurity(
       if (options.auditAction) {
         try {
           const metadata = await extractRequestMetadata(request);
-          await logAuditEvent({
+          await recordAuditLog({
             agencyId: agencyId || undefined,
             userId: userId || undefined,
             action: options.auditAction as any,

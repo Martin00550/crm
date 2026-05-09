@@ -87,12 +87,17 @@ export async function createAgency(data: {
 
     const { name, subdomain, userId, email, firstName, lastName, tier } = data;
 
-    const defaultSubdomain = subdomain || name
+    const cleanNameSlug = name
       .toLowerCase()
-      .replace(/[^a-z0-9]/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '')
-      .substring(0, 30) + '-' + Math.random().toString(36).substring(2, 8);
+      .replace(/\s+/g, '-')           // Replace all whitespace with single hyphen
+      .replace(/[^a-z0-9-]/g, '')     // Strip everything else except letters, numbers, and hyphens
+      .replace(/-+/g, '-')           // Collapse multiple hyphens
+      .replace(/^-+|-+$/g, '');       // Trim leading/trailing hyphens
+
+    const defaultSubdomain = (subdomain ? 
+      subdomain.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-+|-+$/g, '') : 
+      cleanNameSlug
+    ).substring(0, 30) + '-' + Math.random().toString(36).substring(2, 8);
 
     const selectedTier = tier && ['solo', 'growth', 'enterprise'].includes(tier) ? tier : 'solo';
 

@@ -35,9 +35,9 @@ export interface Client {
 }
 
 /**
- * Call Gemini 3.1 Flash Lite via Google AI
+ * Call Gemini 3.1 Flash Lite via Google AI with Persona Support
  */
-async function callGemini(prompt: string): Promise<string> {
+async function callGemini(prompt: string, systemInstruction: string = 'You are a high-authority Insurance Analysis Expert.'): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY is not configured');
@@ -51,7 +51,7 @@ async function callGemini(prompt: string): Promise<string> {
     },
     body: JSON.stringify({
       system_instruction: {
-        parts: [{ text: 'You are a high-authority Insurance Analysis Expert.' }]
+        parts: [{ text: systemInstruction }]
       },
       contents: [
         { 
@@ -59,10 +59,10 @@ async function callGemini(prompt: string): Promise<string> {
         }
       ],
       generationConfig: {
-        temperature: 0.4,
-        topP: 0.8,
+        temperature: 0.3,
+        topP: 0.85,
         topK: 40,
-        maxOutputTokens: 1024,
+        maxOutputTokens: 2048,
       }
     }),
   });
@@ -173,23 +173,29 @@ Keep it under 400 words total. Be specific and actionable.`;
   }
 }
 
-export async function getPolicyWithClient(policyId: string) {
-  if (!db) return null;
-  const policy = await db
-    .select()
-    .from(policies)
-    .where(eq(policies.id, policyId))
-    .then((p: any[]) => p[0]);
+import { withAgencyContext } from '@/lib/db-rls';
 
-  if (!policy) return null;
+/**
+ * Get a policy and its associated client, enforcing RLS context
+ */
+export async function getPolicyWithClient(policyId: string, agencyId: string) {
+  return withAgencyContext(agencyId, async (tx) => {
+    const policy = await tx
+      .select()
+      .from(policies)
+      .where(eq(policies.id, policyId))
+      .then((p: any[]) => p[0]);
 
-  const client = await db
-    .select()
-    .from(clients)
-    .where(eq(clients.id, policy.clientId))
-    .then((c: any[]) => c[0]);
+    if (!policy) return null;
 
-  return { policy, client };
+    const client = await tx
+      .select()
+      .from(clients)
+      .where(eq(clients.id, policy.clientId))
+      .then((c: any[]) => c[0]);
+
+    return { policy, client };
+  });
 }
 
 /**
@@ -199,8 +205,6 @@ export async function generateClientReport(
   clientId: string,
   agencyId: string
 ): Promise<{ success: boolean; report?: string; error?: string; usage?: { current: number; limit: number } }> {
-  if (!db) return { success: false, error: 'Database not connected' };
-
   // 1. Check feature access
   const accessCheck = await canUseFeature(agencyId, 'aiRateAnalysis');
   if (!accessCheck.allowed) {
@@ -211,23 +215,29 @@ export async function generateClientReport(
     };
   }
 
-  // 2. Gather Data
-  const client = await db.select().from(clients).where(eq(clients.id, clientId)).then(r => r[0]);
-  if (!client || client.agencyId !== agencyId) {
+  // 2. Gather Data within RLS Context
+  const data = await withAgencyContext(agencyId, async (tx) => {
+    const client = await tx.select().from(clients).where(eq(clients.id, clientId)).then((r: any[]) => r[0]);
+    if (!client) return null;
+
+    const clientPolicies = await tx.select().from(policies).where(eq(policies.clientId, clientId)).execute();
+    return { client, clientPolicies };
+  });
+
+  if (!data) {
     return { success: false, error: 'Client not found or unauthorized' };
   }
 
-  const clientPolicies = await db.select().from(policies).where(eq(policies.clientId, clientId)).execute();
+  const { client, clientPolicies } = data;
   
   if (clientPolicies.length === 0) {
     return { success: false, error: 'No policies found for this client to analyze.' };
   }
 
-  // 3. Construct Prompt
-  const totalPremium = clientPolicies.reduce((sum, p) => sum + parseFloat(p.premium || '0'), 0);
-  const avgHealth = clientPolicies.reduce((sum, p) => sum + (p.healthScore || 100), 0) / clientPolicies.length;
+  const totalPremium = clientPolicies.reduce((sum: number, p: any) => sum + parseFloat(p.premium || '0'), 0);
+  const avgHealth = clientPolicies.reduce((sum: number, p: any) => sum + (p.healthScore || 100), 0) / clientPolicies.length;
   
-  const policyData = clientPolicies.map(p => ({
+  const policyData = clientPolicies.map((p: any) => ({
     number: p.policyNumber,
     carrier: p.carrier,
     type: p.policyType,
@@ -236,35 +246,48 @@ export async function generateClientReport(
     health: p.healthScore
   }));
 
-  const prompt = `You are a high-authority Senior Risk Analyst. Analyze the insurance portfolio for ${client.name}.
-
-Client Context:
-- Industry: ${client.industry || 'General Business'}
-- Total Active Premium: $${totalPremium.toLocaleString()}
-- Average Portfolio Health: ${avgHealth.toFixed(1)}/100
-
-Portfolio Data:
-${JSON.stringify(policyData, null, 2)}
-
-Task:
-Create a comprehensive Strategic Client Intelligence Report in Markdown.
-1. Executive Summary: High-level overview of coverage health.
-2. Risk Concentration: Identify any carriers or coverage types that present high risk.
-3. Coverage Gaps: Suggest if they are missing critical lines (e.g. Cyber, D&O) based on their industry.
-4. Retention Strategy: 3 specific actions for the agency owner to ensure this client renews.
-
-Tone: Professional, clinical, high-authority.
-Constraints: Max 600 words. Use structured headers and tables where appropriate.`;
-
   try {
-    const report = await callGemini(prompt);
-    
+    // PHASE 1: INITIAL DRAFT (Senior Analyst Persona)
+    const draftPrompt = `Analyze the insurance portfolio for ${client.name}.
+Industry: ${client.industry || 'General Business'}
+Total Premium: $${totalPremium.toLocaleString()}
+Avg Health: ${avgHealth.toFixed(1)}/100
+Data: ${JSON.stringify(policyData, null, 2)}
+
+Create a Strategic Client Intelligence Report in Markdown.
+Sections: Executive Summary, Risk Concentration, Coverage Gaps, Retention Strategy.
+Tone: Professional, high-authority. Max 500 words.`;
+
+    const initialDraft = await callGemini(draftPrompt, 'You are a Senior Insurance Risk Analyst. Focus on data-driven insights and technical accuracy.');
+
+    // PHASE 2: CRITIQUE (Institutional Reviewer Persona)
+    const critiquePrompt = `Review the following insurance report for ${client.name}. 
+Identify any logical inconsistencies, missing industry-specific risks for the ${client.industry || 'specified'} sector, or areas where the tone isn't clinical/authoritative enough.
+Point out specifically where the "Retention Strategy" could be more aggressive or professional.
+
+REPORT TO CRITIQUE:
+${initialDraft}`;
+
+    const critique = await callGemini(critiquePrompt, 'You are a Chief Underwriting Officer. You are extremely critical, picky about jargon, and demand absolute professional perfection.');
+
+    // PHASE 3: REFINEMENT (Refinement Expert Persona)
+    const refinementPrompt = `Refine the initial insurance report based on the CUO's critique.
+Produce a final, polished version in Markdown that incorporates the improvements while maintaining a lean, high-authority structure.
+
+INITIAL REPORT:
+${initialDraft}
+
+CUO CRITIQUE:
+${critique}`;
+
+    const finalReport = await callGemini(refinementPrompt, 'You are a Refinement Specialist. Your goal is to combine raw insights with expert critiques into a single, flawless, institutional-grade document.');
+
     // 4. Increment usage
     await incrementFeatureUsage(agencyId, 'aiRateAnalysis');
     
     return {
       success: true,
-      report,
+      report: finalReport,
       usage: accessCheck.limit ? { current: (accessCheck.currentUsage || 0) + 1, limit: accessCheck.limit } : undefined,
     };
   } catch (error) {

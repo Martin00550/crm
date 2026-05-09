@@ -7,7 +7,7 @@ import { getFeatureLimit, type SubscriptionTier } from '@/lib/features';
 import { sendTeamInvitationEmail } from '@/lib/email';
 import { UserRole, type UserRole as UserRoleType } from '@/lib/permissions';
 import { dispatchNotification } from '@/lib/notification-dispatcher';
-import { logAuditEvent } from '@/lib/audit';
+import { recordAuditLog } from '@/lib/audit';
 
 export interface TeamMember {
   id: string;
@@ -236,7 +236,7 @@ export async function updateTeamMemberRole(
     .where(eq(users.id, userId));
 
   // Log audit event
-  await logAuditEvent({
+  await recordAuditLog({
     agencyId,
     userId,
     action: 'user.update',
@@ -278,7 +278,7 @@ export async function removeTeamMember(
   await db.delete(users).where(eq(users.id, userId));
 
   // Log audit event
-  await logAuditEvent({
+  await recordAuditLog({
     agencyId,
     userId,
     action: 'user.delete',

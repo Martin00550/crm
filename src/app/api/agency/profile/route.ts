@@ -8,6 +8,8 @@ import { logger } from '@/lib/logger';
 
 import { withApiSecurity } from '@/lib/api-security';
 
+import { agencyProfileSchema } from '@/lib/validations/agency';
+
 export const PUT = withApiSecurity(
   async (request: NextRequest, context) => {
     try {
@@ -18,7 +20,28 @@ export const PUT = withApiSecurity(
       }
 
       const body = await request.json();
-      const { name, subdomain, logoUrl, phone, email, address, businessHours, description, currency } = body;
+      
+      // 1. Validate with Zod for strict type safety and data integrity
+      const validation = agencyProfileSchema.safeParse(body);
+      
+      if (!validation.success) {
+        return NextResponse.json({ 
+          error: 'Validation failed', 
+          details: validation.error.flatten().fieldErrors 
+        }, { status: 400 });
+      }
+
+      let { name, subdomain, logoUrl, phone, email, address, businessHours, description, currency } = validation.data;
+
+      // Force-sanitize subdomain to prevent spaces and illegal characters
+      if (subdomain) {
+        subdomain = subdomain
+          .toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^a-z0-9-]/g, '')
+          .replace(/-+/g, '-')
+          .replace(/^-+|-+$/g, '');
+      }
 
       if (!db) {
         return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -36,31 +59,20 @@ export const PUT = withApiSecurity(
         return NextResponse.json({ error: 'Agency not found' }, { status: 404 });
       }
 
-      // Validate required fields
-      if (!name) {
-        return NextResponse.json({ error: 'Name is required' }, { status: 400 });
-      }
-
+      // 2. Business Logic Checks (Tier & Uniqueness)
+      
       // Subdomain is only required for Enterprise tier
       if (currentAgency.subscriptionTier === 'enterprise' && !subdomain) {
         return NextResponse.json({ error: 'Subdomain is required for Enterprise tier' }, { status: 400 });
       }
 
-      // Validate subdomain format (only for Enterprise tier)
       if (currentAgency.subscriptionTier === 'enterprise') {
-        const subdomainRegex = /^[a-z0-9-]+$/;
-        if (!subdomainRegex.test(subdomain)) {
-          return NextResponse.json({ 
-            error: 'Subdomain can only contain lowercase letters, numbers, and hyphens' 
-          }, { status: 400 });
-        }
-
         // Check if subdomain is already taken by another agency
         const existingAgency = await db
           .select()
           .from(agencies)
           .where(and(
-            eq(agencies.subdomain, subdomain),
+            eq(agencies.subdomain, subdomain!),
             ne(agencies.id, agencyId) // Exclude current agency
           ))
           .limit(1)
@@ -101,6 +113,24 @@ export const PUT = withApiSecurity(
         .where(eq(agencies.id, agencyId))
         .returning()
         .then((r: any[]) => r[0]);
+
+      // Invalidate Edge Cache
+      try {
+        const { getCacheClient, CacheKeys } = await import('@/lib/cache');
+        const cache = getCacheClient();
+        if (cache) {
+          const keysToInvalidate = [];
+          if (currentAgency.subdomain) keysToInvalidate.push(CacheKeys.portalAgency(currentAgency.subdomain));
+          if (subdomain && subdomain !== currentAgency.subdomain) keysToInvalidate.push(CacheKeys.portalAgency(subdomain));
+          
+          if (keysToInvalidate.length > 0) {
+            await cache.del(...keysToInvalidate);
+            logger.info('Edge cache invalidated for agency profile update', { agencyId, keysToInvalidate });
+          }
+        }
+      } catch (err) {
+        logger.error('Failed to invalidate cache during agency update', err);
+      }
 
       return NextResponse.json({
         success: true,
