@@ -84,10 +84,10 @@ export async function getDashboardStatsQuery(agencyId: string, range?: string) {
       .execute();
 
     const totalPoliciesCount = await db
-      .select({ count: sql<number>`COUNT(*)` })
+      .select({ count: sql<number>`COUNT(*)::int` })
       .from(policies)
       .where(and(eq(policies.agencyId, agencyId), eq(policies.status, 'active')))
-      .then((r: any[]) => r[0]?.count || 0);
+      .then((r: any[]) => Number(r[0]?.count) || 0);
 
     const aiReportCount = await db
       .select({ count: count() })

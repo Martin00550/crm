@@ -31,16 +31,16 @@ export default async function AgencyProfilePage() {
 
   return (
     <div className="space-y-10 font-body text-on-surface">
-      <div className="flex items-center gap-5">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
         <Link 
           href="/dashboard/settings" 
-          className="w-12 h-12 flex items-center justify-center rounded-full bg-white border border-black/5 text-on-surface/40 hover:text-secondary hover:shadow-md transition-all shadow-sm group"
+          className="w-12 h-12 flex items-center justify-center rounded-full bg-white border border-black/5 text-on-surface/40 hover:text-secondary hover:shadow-md transition-all shadow-sm group shrink-0"
         >
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
         </Link>
         <div>
-          <h1 className="text-3xl font-black text-on-surface font-headline italic tracking-tight leading-none">Agency Profile</h1>
-          <p className="text-on-surface/60 mt-2 font-medium italic">Update your official agency name, contact information, and custom subdomain</p>
+          <h1 className="text-2xl md:text-3xl font-black text-on-surface font-headline italic tracking-tight leading-none">Agency Profile</h1>
+          <p className="text-on-surface/60 mt-2 font-medium italic text-sm md:text-base">Update your official agency name, contact information, and custom subdomain</p>
         </div>
       </div>
 

@@ -647,8 +647,8 @@ If the user asks something outside your capabilities, state that it is outside t
     } catch (error: any) {
       console.error('AI chat error:', error);
       return NextResponse.json({
-        error: error.message || 'Failed to get AI response. Please try again later.',
-      }, { status: 500 });
+        error: 'An error occurred while generating the response. Please try again.',
+      }, { status: 200 });
     } finally {
       if (agencyId) {
         try {

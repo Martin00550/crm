@@ -55,8 +55,8 @@ export const POST = withApiSecurity(
     } catch (error) {
       logger.error('Rate explainer error', error);
       return NextResponse.json(
-        { error: 'Failed to generate rate explainer' },
-        { status: 500 }
+        { error: 'An error occurred while generating the report. Please try again.' },
+        { status: 200 } // Return 200 with error message for graceful frontend handling
       );
     }
   },

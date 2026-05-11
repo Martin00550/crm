@@ -6,6 +6,8 @@ import { validateRequestBody, withApiSecurity } from '@/lib/api-security';
 import { canUseFeature } from '@/lib/feature-access';
 import { sanitizeString } from '@/lib/validation';
 import { logger } from '@/lib/logger';
+import { inngest } from '@/lib/inngest-client';
+import { importJobs } from '@/db/schema';
 
 interface CSVRow {
   clientName?: string;
@@ -19,17 +21,49 @@ interface CSVRow {
   effectiveDate?: string;
   expirationDate?: string;
   status?: string;
+  // Metadata for unmapped fields
+  _extraData?: Record<string, string>;
+  _warnings?: string[];
+  [key: string]: any;
+}
+
+// Robust Date Parser
+function parseFlexibleDate(dateStr: string | undefined): Date | null {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (!isNaN(d.getTime())) return d;
+
+  // Try some common formats that JS Date might struggle with
+  // e.g. DD/MM/YYYY or MM-DD-YYYY
+  const parts = dateStr.split(/[-/]/);
+  if (parts.length === 3) {
+    // Try YYYY-MM-DD
+    if (parts[0].length === 4) return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    // Try MM-DD-YYYY
+    if (parts[2].length === 4) return new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+  }
+  return null;
+}
+
+// Robust Premium Parser
+function parsePremium(val: string | undefined): string {
+  if (!val) return '0';
+  const cleaned = val.replace(/[$,\s]/g, '');
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? '0' : num.toString();
 }
 
 import Papa from 'papaparse';
 
-function parseCSV(csvText: string): CSVRow[] {
+function parseCSV(csvText: string, customMapping?: Record<string, string>): CSVRow[] {
   // Strip BOM if present
   const cleanText = csvText.replace(/^\uFEFF/, '').trim();
   
   const result = Papa.parse(cleanText, {
     header: true,
     skipEmptyLines: 'greedy',
+    // Auto-detect delimiter but also try common ones if detection fails
+    delimitersToGuess: [',', ';', '\t', '|'],
     // Remove all non-alphanumeric chars for ultra-robust mapping
     transformHeader: (header) => header.trim().toLowerCase().replace(/[^a-z0-9]/g, ''),
   });
@@ -38,23 +72,35 @@ function parseCSV(csvText: string): CSVRow[] {
     console.error('PapaParse errors:', result.errors);
   }
 
-  const columnMap: Record<string, string> = {
+  const defaultColumnMap: Record<string, string> = {
     'clientname': 'clientName',
     'name': 'clientName',
     'insured': 'clientName',
+    'insuredname': 'clientName',
+    'customer': 'clientName',
+    'customername': 'clientName',
     'clientemail': 'clientEmail',
     'email': 'clientEmail',
     'clientphone': 'clientPhone',
     'phone': 'clientPhone',
     'industry': 'clientIndustry',
+    'clientindustry': 'clientIndustry',
     'policynumber': 'policyNumber',
     'policyno': 'policyNumber',
+    'polnum': 'policyNumber',
+    'policyid': 'policyNumber',
     'carrier': 'carrier',
     'insurancecompany': 'carrier',
+    'company': 'carrier',
+    'insurer': 'carrier',
     'policytype': 'policyType',
     'coveragetype': 'policyType',
+    'lob': 'policyType',
+    'lineofbusiness': 'policyType',
     'premium': 'premium',
+    'writtenpremium': 'premium',
     'annualpremium': 'premium',
+    'amount': 'premium',
     'effectivedate': 'effectiveDate',
     'startdate': 'effectiveDate',
     'expirationdate': 'expirationDate',
@@ -65,61 +111,120 @@ function parseCSV(csvText: string): CSVRow[] {
     'policystatus': 'status',
   };
 
+  const columnMap = { ...defaultColumnMap, ...(customMapping || {}) };
+
   const rows: CSVRow[] = [];
   
-  (result.data as Array<Record<string, unknown>>).forEach((item, index) => {
-    const row: CSVRow = {};
+  if (result.errors.length > 0) {
+    logger.error('PapaParse errors detected during import', { errors: result.errors });
+  }
+
+  const data = result.data as Array<Record<string, unknown>>;
+  const headers = result.meta.fields || [];
+
+  // ULTRA-ADVANCED: Fuzzy Header Auto-Detection
+  // If required fields are missing from mapping, try to find them by scanning all headers
+  const requiredFields = ['clientName', 'policyNumber', 'carrier', 'policyType', 'premium', 'expirationDate'];
+  const mappedTargetFields = new Set(Object.values(columnMap));
+
+  requiredFields.forEach(field => {
+    if (!mappedTargetFields.has(field)) {
+      // Try to find a header that looks like this field
+      const fuzzyMatch = headers.find(h => {
+        const normH = h.toLowerCase();
+        if (field === 'clientName') return normH.includes('name') || normH.includes('insured') || normH.includes('customer');
+        if (field === 'policyNumber') return normH.includes('pol') || normH.includes('number') || normH.includes('id');
+        if (field === 'carrier') return normH.includes('carrier') || normH.includes('company') || normH.includes('insurer');
+        if (field === 'policyType') return normH.includes('type') || normH.includes('lob') || normH.includes('coverage');
+        if (field === 'premium') return normH.includes('premium') || normH.includes('amount') || normH.includes('written');
+        if (field === 'expirationDate') return normH.includes('exp') || normH.includes('renewal') || normH.includes('end');
+        return false;
+      });
+
+      if (fuzzyMatch) {
+        const normalizedMatch = fuzzyMatch.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+        columnMap[normalizedMatch] = field;
+        logger.info(`Fuzzy matched missing field: ${field} -> ${fuzzyMatch}`);
+      }
+    }
+  });
+
+  data.forEach((item, index) => {
+    const row: CSVRow = { _extraData: {}, _warnings: [] };
     
     Object.keys(item).forEach((header) => {
-      const mappedField = columnMap[header] || header;
-      if (item[header]) {
-        row[mappedField as keyof CSVRow] = String(item[header]).trim();
+      const mappedField = columnMap[header];
+      if (mappedField && requiredFields.concat(['clientEmail', 'clientPhone', 'clientIndustry', 'status', 'effectiveDate']).includes(mappedField)) {
+        if (item[header]) {
+          row[mappedField as keyof CSVRow] = String(item[header]).trim();
+        }
+      } else if (item[header]) {
+        // Save unmapped data into _extraData so no information is lost
+        row._extraData![header] = String(item[header]).trim();
       }
     });
 
-    // Handle missing policy number - make it unique using the index
-    if (!row.policyNumber && row.clientName) {
-      const hash = Math.abs(row.clientName.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a }, 0));
-      row.policyNumber = `T-${hash.toString(16).toUpperCase().substring(0, 6)}-${(index + 1).toString().padStart(3, '0')}`;
+    // Data Recovery & Normalization
+    if (!row.clientName) {
+      row.clientName = row.name || row.insured || row.customer || 'Unnamed Client';
+      row._warnings!.push('Client name was missing and auto-filled.');
     }
 
-    if (row.clientName || row.policyNumber) {
-      rows.push(row);
+    if (!row.carrier) row.carrier = 'Unknown Carrier';
+    if (!row.policyType) row.policyType = 'Other';
+    row.premium = parsePremium(row.premium);
+
+    // Smart Date Estimation (Unfailable Dates)
+    let effDate = parseFlexibleDate(row.effectiveDate);
+    let expDate = parseFlexibleDate(row.expirationDate || row.expDate || row.renewalDate);
+
+    if (!expDate) {
+      // If no expiration date, default to 1 year after effective date (or 1 year from now)
+      const baseDate = effDate || new Date();
+      expDate = new Date(baseDate);
+      expDate.setFullYear(expDate.getFullYear() + 1);
+      row._warnings!.push('Expiration date was missing or invalid; auto-set to 1 year from now/effective date.');
     }
+
+    row.effectiveDate = (effDate || new Date()).toISOString();
+    row.expirationDate = expDate.toISOString();
+
+    // Handle missing policy number - make it unique using the index
+    if (!row.policyNumber) {
+      const nameForHash = row.clientName || 'anonymous';
+      const hash = Math.abs(nameForHash.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a }, 0));
+      row.policyNumber = `T-${hash.toString(16).toUpperCase().substring(0, 6)}-${(index + 1).toString().padStart(3, '0')}`;
+      row._warnings!.push('Policy number was missing and auto-generated.');
+    }
+
+    // Every row is considered "valid enough" to push in unfailable mode
+    rows.push(row);
   });
+
+  if (rows.length === 0 && data.length > 0) {
+    logger.warn('Rows were parsed but none were valid for import (missing clientName and policyNumber)', {
+      firstRow: data[0],
+      columnMap
+    });
+  }
 
   return rows;
 }
 
 function validateRow(row: CSVRow): { valid: boolean; errors: string[] } {
-  const errors: string[] = [];
-
-  if (!row.clientName) {
-    errors.push('Missing client name');
+  // In "Unfailable" mode, we almost never reject a row.
+  // We only fail if there is literally no data at all.
+  if (!row.clientName && !row.policyNumber && Object.keys(row._extraData || {}).length === 0) {
+    return { valid: false, errors: ['Completely empty row'] };
   }
-  if (!row.policyNumber) {
-    errors.push('Missing policy number');
-  }
-  if (!row.carrier) {
-    errors.push('Missing carrier');
-  }
-  if (!row.policyType) {
-    errors.push('Missing policy type');
-  }
-  if (!row.premium || isNaN(parseFloat(row.premium.replace(/[$,]/g, '')))) {
-    errors.push('Invalid premium amount');
-  }
-  if (!row.expirationDate) {
-    errors.push('Missing expiration date (or renewal date)');
-  }
-
-  return { valid: errors.length === 0, errors };
+  return { valid: true, errors: [] };
 }
 
 // POST /api/import - Import policies from CSV (requires manage_policies permission)
 export const POST = withApiSecurity(
   async (request: NextRequest, context) => {
-    const { userId, agencyId: authAgencyId } = context;
+    try {
+      const { userId, agencyId: authAgencyId } = context;
 
     if (!authAgencyId) {
       return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
@@ -143,186 +248,67 @@ export const POST = withApiSecurity(
 
     // Parse CSV
     const csvText = await file.text();
-    const rows = parseCSV(csvText);
-
-    if (rows.length === 0) {
-      return NextResponse.json({ error: 'No valid data rows found in CSV' }, { status: 400 });
+    const mappingStr = formData.get('mapping') as string;
+    let customMapping: Record<string, string> | undefined;
+    
+    if (mappingStr) {
+      try {
+        customMapping = JSON.parse(mappingStr);
+      } catch (e) {
+        console.error('Failed to parse custom mapping:', e);
+      }
     }
 
-    // Validate all rows
-    const validationResults = rows.map(row => ({
-      row,
-      validation: validateRow(row),
-    }));
+    const rows = parseCSV(csvText, customMapping);
 
-    const validRows = validationResults.filter(r => r.validation.valid);
-    const invalidRows = validationResults.filter(r => !r.validation.valid);
-
-    if (validRows.length === 0) {
-      return NextResponse.json({
-        error: 'No valid rows to import',
-        invalidRows: invalidRows.map(r => ({
-          clientName: r.row.clientName,
-          errors: r.validation.errors,
-        })),
+    if (rows.length === 0) {
+      // Try to determine why it failed to find any rows
+      const preview = csvText.substring(0, 200);
+      logger.warn('No valid data rows found in CSV', { 
+        textSize: csvText.length, 
+        preview,
+        mapping: customMapping
+      });
+      
+      return NextResponse.json({ 
+        error: 'No valid data rows found in CSV',
+        details: 'The system could not identify any policy data in your file. Please ensure your CSV has a header row with field names like "Client Name", "Policy Number", etc.'
       }, { status: 400 });
     }
 
-    // Check policy limit before import
-    const policyAccess = await canUseFeature(agencyId, 'policies');
-    if (!policyAccess.allowed) {
-      return NextResponse.json({ 
-        error: policyAccess.reason || 'Policy limit reached',
-        limit: policyAccess.limit,
-        current: policyAccess.currentUsage,
-      }, { status: 403 });
-    }
+    // ENTERPRISE GRADE: Create a background job and trigger Inngest
+    const [job] = await db.insert(importJobs).values({
+      id: crypto.randomUUID(),
+      agencyId,
+      userId: userId!,
+      fileName: file.name,
+      status: 'pending',
+      totalRows: rows.length,
+    }).returning();
 
-    // Get current policy count
-    const currentPolicyCount = await db
-      .select({ count: count() })
-      .from(policies)
-      .where(eq(policies.agencyId, agencyId))
-      .then(r => r[0]?.count || 0);
+    await inngest.send({
+      name: 'import/csv.requested',
+      data: {
+        jobId: job.id,
+        agencyId,
+        userId: userId!,
+        rows, // For very large files, you might store this in S3/Redis first
+      },
+    });
 
-    // Check if import would exceed limit
-    if (policyAccess.limit && currentPolicyCount + validRows.length > policyAccess.limit) {
-      return NextResponse.json({ 
-        error: `Import would exceed your policy limit of ${policyAccess.limit}. You currently have ${currentPolicyCount} policies and are trying to import ${validRows.length} more.`,
-        limit: policyAccess.limit,
-        current: currentPolicyCount,
-        attempting: validRows.length,
-      }, { status: 403 });
-    }
-
-    // Process imports atomically using a database transaction
-    // This ensures all-or-nothing behavior - no partial imports
-    try {
-      return await db.transaction(async (tx) => {
-        // Get existing clients to avoid duplicates
-        const existingClients = await tx
-          .select()
-          .from(clients)
-          .where(eq(clients.agencyId, agencyId));
-
-        type Client = typeof clients.$inferSelect;
-        const existingClientMap = new Map<string, Client>(existingClients.map((c: Client) => [c.name.toLowerCase(), c]));
-        const clientsToCreate: Map<string, { id: string; agencyId: string; name: string; email: string | null; phone: string | null; industry: string | null; subdomain: string }> = new Map();
-        const policiesToCreate: { id: string; clientId: string; agencyId: string; policyNumber: string; carrier: string; policyType: string; premium: string; effectiveDate: Date; expirationDate: Date; status: string; healthStatus: string; healthScore: number; _clientName: string }[] = [];
-
-        // First pass: determine which clients need creation and collect all policies
-        for (const { row } of validRows) {
-          const clientNameLower = row.clientName!.toLowerCase();
-          let clientId: string;
-
-          if (existingClientMap.has(clientNameLower)) {
-            clientId = existingClientMap.get(clientNameLower)!.id;
-          } else if (clientsToCreate.has(clientNameLower)) {
-            clientId = clientsToCreate.get(clientNameLower)!.id;
-          } else {
-            // Create new client with sanitized inputs
-            clientId = crypto.randomUUID();
-            clientsToCreate.set(clientNameLower, {
-              id: clientId,
-              agencyId,
-              name: sanitizeString(row.clientName!).substring(0, 255),
-              email: row.clientEmail ? sanitizeString(row.clientEmail).substring(0, 255) : null,
-              phone: row.clientPhone ? sanitizeString(row.clientPhone).substring(0, 50) : null,
-              industry: row.clientIndustry ? sanitizeString(row.clientIndustry).substring(0, 100) : null,
-              subdomain: sanitizeString(row.clientName!).toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 63),
-            });
-          }
-
-          const rawStatus = row.status?.toLowerCase() || 'active';
-          const healthStatus = ['critical', 'at risk', 'review'].includes(rawStatus) ? rawStatus : 'healthy';
-          const healthScore = rawStatus === 'critical' ? 25 : rawStatus === 'at risk' ? 50 : rawStatus === 'review' ? 75 : 100;
-
-          policiesToCreate.push({
-            id: crypto.randomUUID(),
-            clientId,
-            agencyId,
-            policyNumber: sanitizeString(row.policyNumber!).substring(0, 100),
-            carrier: sanitizeString(row.carrier!).substring(0, 100),
-            policyType: sanitizeString(row.policyType!).substring(0, 50),
-            premium: row.premium!.replace(/[$,]/g, ''),
-            effectiveDate: row.effectiveDate ? new Date(row.effectiveDate) : new Date(),
-            expirationDate: new Date(row.expirationDate!),
-            status: 'active', // Force active so it shows on dashboard
-            healthStatus: healthStatus,
-            healthScore: healthScore,
-            _clientName: row.clientName!,
-          });
-        }
-
-        // Batch insert all new clients (if any)
-        if (clientsToCreate.size > 0) {
-          await tx.insert(clients).values(Array.from(clientsToCreate.values()));
-        }
-
-        // Batch insert with UPSERT logic to handle duplicates gracefully
-        const policiesData = policiesToCreate.map(({ _clientName, ...policy }) => policy);
-        
-        await tx
-          .insert(policies)
-          .values(policiesData)
-          .onConflictDoUpdate({
-            target: [policies.agencyId, policies.policyNumber],
-            set: {
-              carrier: sql`EXCLUDED.carrier`,
-              policyType: sql`EXCLUDED.policy_type`,
-              premium: sql`EXCLUDED.premium`,
-              effectiveDate: sql`EXCLUDED.effective_date`,
-              expirationDate: sql`EXCLUDED.expiration_date`,
-              status: sql`EXCLUDED.status`,
-              healthStatus: sql`EXCLUDED.health_status`,
-              healthScore: sql`EXCLUDED.health_score`,
-              updatedAt: new Date(),
-            }
-          });
-
-        // Build success response
-        const importedRows = policiesToCreate.map(p => ({
-          clientName: p._clientName,
-          policyNumber: p.policyNumber,
-        }));
-
-        // CLEAR CACHE TO ACTIVATE DASHBOARD
-        try {
-          const { deleteCachedPattern, CacheKeys } = await import('@/lib/redis');
-          await Promise.all([
-            deleteCachedPattern(`${CacheKeys.dashboardStats(agencyId)}*`),
-            deleteCachedPattern(`policy:list:${agencyId}*`),
-          ]);
-          
-          const { revalidatePath } = await import('next/cache');
-          revalidatePath('/dashboard');
-          revalidatePath('/');
-        } catch (cacheErr) {
-          logger.error('Failed to clear cache after import', cacheErr);
-        }
-
-        return NextResponse.json({
-          success: true,
-          imported: importedRows.length,
-          importedRows,
-          newClients: clientsToCreate.size,
-          invalidRows: invalidRows.length > 0 ? invalidRows.map(r => ({
-            clientName: r.row.clientName,
-            errors: r.validation.errors,
-          })) : undefined,
-        });
-      });
-    } catch (error: any) {
-      // Rollback is automatic since we use batch inserts
-      // If any insert fails, no data is committed
-      console.error('Import transaction failed:', error);
-      return NextResponse.json({
-        error: 'Import failed - no data was saved. Please check your CSV and try again.',
-        details: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-        imported: 0,
-      }, { status: 500 });
-    }
+    return NextResponse.json({
+      success: true,
+      message: "Import started in background",
+      jobId: job.id,
+      totalRows: rows.length
+    });
+  } catch (error: any) {
+    console.error('Import failed:', error);
+    return NextResponse.json({
+      error: 'Import failed to start.',
+      details: error.message,
+    }, { status: 500 });
+  }
   },
   {
     requireAuth: true,

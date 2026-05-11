@@ -460,9 +460,16 @@ export async function handleWebhook(event: any) {
   // Also handle billing events (invoices, payments)
   await handlePaddleBillingEvent(event);
 
-  // Clear caches for relevant paths
-  revalidatePath('/dashboard');
-  revalidatePath('/dashboard/settings/billing');
+  // ENTERPRISE GRADE: Clear caches for relevant paths
+  // This ensures the dashboard "unlocks" the exact second the webhook is processed
+  try {
+    revalidatePath('/dashboard');
+    revalidatePath('/dashboard/settings/billing');
+    revalidatePath('/', 'layout'); // Revalidate the root layout to update navigation states
+    logger.info(`Revalidated paths for Paddle event: ${eventType}`, { agencyId: event.data?.custom_data?.agencyId });
+  } catch (revalidateErr) {
+    logger.error('Failed to revalidate paths after Paddle webhook', revalidateErr);
+  }
 
   return { received: true };
 }

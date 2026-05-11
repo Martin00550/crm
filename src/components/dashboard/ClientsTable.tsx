@@ -81,9 +81,9 @@ export function ClientsTable({ clients, agencyId, isDemo = false }: ClientsTable
 
   return (
     <div className="bg-white rounded-3xl overflow-hidden border border-black/5 shadow-sm font-body">
-      <div className="px-8 py-6 border-b border-black/5 flex justify-between items-center">
+      <div className="px-6 md:px-8 py-6 border-b border-black/5 flex flex-col md:flex-row justify-between md:items-center gap-4">
         <h4 className="font-bold text-on-surface text-lg">Insured Portfolio</h4>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <ImportCSVButton agencyId={agencyId} onImportComplete={() => window.location.reload()} />
           <ExportCSVButton data={clientList} filename="portfolio.csv" />
           <AddClientButton />
@@ -93,26 +93,26 @@ export function ClientsTable({ clients, agencyId, isDemo = false }: ClientsTable
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-black/5 bg-background/30">
-              <th className="px-8 py-4 text-[11px] font-bold text-on-surface/30 uppercase tracking-widest">Insured Entity</th>
-              <th className="px-6 py-4 text-[11px] font-bold text-on-surface/30 uppercase tracking-widest">Industry</th>
-              <th className="px-6 py-4 text-center text-[11px] font-bold text-on-surface/30 uppercase tracking-widest">Policies</th>
-              <th className="px-6 py-4 text-right text-[11px] font-bold text-on-surface/30 uppercase tracking-widest">Premium Volume</th>
-              <th className="px-8 py-4 text-center text-[11px] font-bold text-on-surface/30 uppercase tracking-widest">Health</th>
+              <th className="px-6 md:px-8 py-4 text-[10px] md:text-[11px] font-bold text-on-surface/30 uppercase tracking-widest">Insured Entity</th>
+              <th className="hidden sm:table-cell px-6 py-4 text-[10px] md:text-[11px] font-bold text-on-surface/30 uppercase tracking-widest">Industry</th>
+              <th className="px-4 md:px-6 py-4 text-center text-[10px] md:text-[11px] font-bold text-on-surface/30 uppercase tracking-widest">Policies</th>
+              <th className="px-6 py-4 text-right text-[10px] md:text-[11px] font-bold text-on-surface/30 uppercase tracking-widest">Premium Volume</th>
+              <th className="px-6 md:px-8 py-4 text-center text-[10px] md:text-[11px] font-bold text-on-surface/30 uppercase tracking-widest">Health</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-black/5">
             {currentData.map((client) => (
               <tr key={client.id} className="hover:bg-background/20 transition-colors">
-                <td className="px-8 py-5">
+                <td className="px-6 md:px-8 py-5">
                   <Link href={`${basePath}/clients/${client.id}`} className="group">
-                    <span className="text-sm font-bold text-on-surface block hover:text-secondary transition-colors">{client.name}</span>
-                    <span className="text-[10px] text-on-surface/30 font-medium">{client.email}</span>
+                    <span className="text-sm font-bold text-on-surface block hover:text-secondary transition-colors truncate max-w-[120px] md:max-w-none">{client.name}</span>
+                    <span className="text-[10px] text-on-surface/30 font-medium truncate block max-w-[120px] md:max-w-none">{client.email}</span>
                   </Link>
                 </td>
-                <td className="px-6 py-5">
+                <td className="hidden sm:table-cell px-6 py-5">
                   <span className="text-[10px] font-bold text-on-surface/40 uppercase tracking-wider">{client.industry || 'General'}</span>
                 </td>
-                <td className="px-6 py-5 text-center">
+                <td className="px-4 md:px-6 py-5 text-center">
                   <span className="text-sm font-bold text-on-surface">{client.totalPolicies}</span>
                 </td>
                 <td className="px-6 py-5 text-right font-bold text-on-surface">

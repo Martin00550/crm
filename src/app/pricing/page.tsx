@@ -271,35 +271,35 @@ export default function PricingPage() {
             <p className="text-on-surface/50 font-medium font-body">See exactly what you get in each plan.</p>
           </div>
           <div className="overflow-x-auto rounded-[24px] md:rounded-[40px] bg-white shadow-sm border border-black/5 scrollbar-hide">
-            <table className="w-full text-left border-collapse font-body min-w-[700px]">
+            <table className="w-full text-left border-collapse font-body min-w-[600px] md:min-w-full">
               <thead>
                 <tr className="bg-slate-50 border-b border-black/5">
-                  <th className="p-8 text-[11px] font-black text-on-surface uppercase tracking-[0.2em]">Capability</th>
-                  <th className="p-8 text-[11px] font-black text-on-surface text-center uppercase tracking-[0.2em]">Solo</th>
-                  <th className="p-8 text-[11px] font-black text-secondary text-center uppercase tracking-[0.2em] bg-secondary/5">Growth</th>
-                  <th className="p-8 text-[11px] font-black text-on-surface text-center uppercase tracking-[0.2em]">Enterprise</th>
+                  <th className="p-6 md:p-8 text-[10px] md:text-[11px] font-black text-on-surface uppercase tracking-[0.2em]">Capability</th>
+                  <th className="p-6 md:p-8 text-[10px] md:text-[11px] font-black text-on-surface text-center uppercase tracking-[0.2em]">Solo</th>
+                  <th className="p-6 md:p-8 text-[10px] md:text-[11px] font-black text-secondary text-center uppercase tracking-[0.2em] bg-secondary/5">Growth</th>
+                  <th className="p-6 md:p-8 text-[10px] md:text-[11px] font-black text-on-surface text-center uppercase tracking-[0.2em]">Enterprise</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/5">
                 {FEATURES.map((feature, i) => (
                   <tr key={i} className="hover:bg-slate-50 transition-colors">
-                    <td className="p-8 text-sm font-bold text-on-surface">{feature.name}</td>
-                    <td className="p-8 text-center text-on-surface/60 font-medium">
+                    <td className="p-6 md:p-8 text-sm font-bold text-on-surface">{feature.name}</td>
+                    <td className="p-6 md:p-8 text-center text-on-surface/60 font-medium">
                       {feature.solo === true ? <span className="material-symbols-outlined text-secondary">check</span> : feature.solo === false ? '—' : feature.solo}
                     </td>
-                    <td className="p-8 text-center text-on-surface/60 font-medium bg-secondary/5">
+                    <td className="p-6 md:p-8 text-center text-on-surface/60 font-medium bg-secondary/5">
                       {feature.growth === true ? <span className="material-symbols-outlined text-secondary">check</span> : feature.growth}
                     </td>
-                    <td className="p-8 text-center text-on-surface/60 font-medium">
+                    <td className="p-6 md:p-8 text-center text-on-surface/60 font-medium">
                       {feature.enterprise === true ? <span className="material-symbols-outlined text-secondary">check</span> : feature.enterprise}
                     </td>
                   </tr>
                 ))}
                 <tr className="hover:bg-slate-50 transition-colors">
-                  <td className="p-8 text-sm font-bold text-on-surface">Mobile Experience</td>
-                  <td className="p-8 text-center text-on-surface/60 font-medium">Optimized</td>
-                  <td className="p-8 text-center text-on-surface/60 font-medium bg-secondary/5">Optimized</td>
-                  <td className="p-8 text-center text-on-surface/60 font-medium">Optimized</td>
+                  <td className="p-6 md:p-8 text-sm font-bold text-on-surface">Mobile Experience</td>
+                  <td className="p-6 md:p-8 text-center text-on-surface/60 font-medium">Optimized</td>
+                  <td className="p-6 md:p-8 text-center text-on-surface/60 font-medium bg-secondary/5">Optimized</td>
+                  <td className="p-6 md:p-8 text-center text-on-surface/60 font-medium">Optimized</td>
                 </tr>
               </tbody>
             </table>

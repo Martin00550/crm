@@ -340,4 +340,13 @@ export const weeklyIntelligenceReport = (inngest as { createFunction: (config: u
   }
 );
 
-export const functions = [renewalAutomation, healthScoreUpdater, rateExplainerGenerator, manualRenewalNotification, weeklyIntelligenceReport];
+import { backgroundCSVImport } from './inngest-import';
+
+export const functions = [
+  renewalAutomation, 
+  healthScoreUpdater, 
+  rateExplainerGenerator, 
+  manualRenewalNotification, 
+  weeklyIntelligenceReport,
+  backgroundCSVImport
+];

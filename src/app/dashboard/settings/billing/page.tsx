@@ -53,10 +53,10 @@ export default async function BillingPage() {
       </div>
 
       {/* Current Plan */}
-      <div className="bg-white rounded-[32px] p-8 border border-black/5 shadow-sm relative overflow-hidden group">
+      <div className="bg-white rounded-[32px] p-6 md:p-8 border border-black/5 shadow-sm relative overflow-hidden group">
         <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-secondary/10 transition-colors"></div>
         <h3 className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] mb-6 relative z-10">Current Plan</h3>
-        <div className="flex items-center justify-between relative z-10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
           <div>
             <p className="text-2xl font-black text-on-surface font-headline italic capitalize">{currentTier} Plan</p>
             <p className="text-sm text-on-surface/60 mt-1">
@@ -69,7 +69,7 @@ export default async function BillingPage() {
               </div>
             )}
           </div>
-          <div className="px-6 py-3 bg-secondary/10 rounded-full border border-secondary/10">
+          <div className="w-fit px-6 py-3 bg-secondary/10 rounded-full border border-secondary/10">
             <p className="text-secondary font-black tracking-tight">${TIERS.find(t => t.id === currentTier)?.price}/month</p>
           </div>
         </div>
@@ -86,7 +86,7 @@ export default async function BillingPage() {
             return (
               <div
                 key={tier.id}
-                className={`rounded-[32px] p-8 border-2 transition-all group ${
+                className={`rounded-[32px] p-6 md:p-8 border-2 transition-all group ${
                   isCurrentTier
                     ? 'border-secondary bg-secondary/5'
                     : 'border-black/5 bg-white hover:border-black/10'

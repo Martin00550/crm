@@ -60,18 +60,18 @@ export function AIInsightsCard({
       {/* Subtle Background Accent */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/5 rounded-full blur-3xl -mr-32 -mt-32 opacity-50 pointer-events-none" />
       
-      <div className="relative z-10 flex flex-col lg:flex-row items-center gap-10">
+      <div className="relative z-10 flex flex-col lg:flex-row items-center lg:items-center gap-8 lg:gap-10">
         {/* Main Briefing */}
-        <div className="flex-1 space-y-4">
-          <div className="flex items-center gap-3">
+        <div className="flex-1 space-y-4 text-center lg:text-left w-full">
+          <div className="flex items-center justify-center lg:justify-start gap-3">
             <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center">
               <Zap className="w-4 h-4 text-secondary" />
             </div>
             <span className="text-[11px] font-bold tracking-widest uppercase text-on-surface/30">Portfolio Intelligence</span>
           </div>
           
-          <div>
-            <h5 className="text-3xl font-bold tracking-tight text-on-surface mb-2">
+          <div className="flex flex-col items-center lg:items-start">
+            <h5 className="text-2xl md:text-3xl font-bold tracking-tight text-on-surface mb-2">
               {hasRisks 
                 ? `${stats.renewalsAtRisk.count} Priority Alerts`
                 : "Your Book is Healthy"}
@@ -85,13 +85,13 @@ export function AIInsightsCard({
         </div>
 
         {/* Actions */}
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center justify-center lg:justify-end gap-3 w-full lg:w-auto">
           {quickActions.map((action, i) => (
             action.href ? (
               <Link
                 key={i}
                 href={action.href}
-                className={`flex items-center gap-3 py-3 px-6 rounded-2xl border border-black/5 bg-white hover:bg-slate-50 transition-all shadow-sm`}
+                className={`flex items-center gap-3 py-3 px-5 md:px-6 rounded-2xl border border-black/5 bg-white hover:bg-slate-50 transition-all shadow-sm`}
               >
                 <action.icon className={`w-4 h-4 ${action.color}`} />
                 <span className="text-[11px] font-bold text-on-surface/60 uppercase tracking-widest">{action.label}</span>
@@ -101,7 +101,7 @@ export function AIInsightsCard({
                 key={i}
                 onClick={action.action}
                 disabled={isReadOnly}
-                className={`flex items-center gap-3 py-3 px-6 rounded-2xl border border-black/5 bg-white hover:bg-slate-50 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed`}
+                className={`flex items-center gap-3 py-3 px-5 md:px-6 rounded-2xl border border-black/5 bg-white hover:bg-slate-50 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 <action.icon className={`w-4 h-4 ${action.color}`} />
                 <span className="text-[11px] font-bold text-on-surface/60 uppercase tracking-widest">{action.label}</span>
@@ -116,7 +116,7 @@ export function AIInsightsCard({
               window.dispatchEvent(new CustomEvent('open-chat', { detail: { prompt } }));
             }}
             disabled={isReadOnly}
-            className="flex items-center gap-3 py-3 px-8 rounded-2xl bg-primary text-white hover:opacity-90 transition-all shadow-md ml-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale"
+            className="flex items-center gap-3 py-3 px-6 md:px-8 rounded-2xl bg-primary text-white hover:opacity-90 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale"
           >
             <Target className="w-4 h-4" />
             <span className="text-[11px] font-bold uppercase tracking-widest">Full Review</span>

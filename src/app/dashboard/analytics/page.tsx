@@ -46,24 +46,24 @@ export default function AnalyticsPage() {
     <div className="space-y-12 font-body pb-20">
       {/* Header */}
       <div>
-        <h1 className="text-4xl font-black text-on-surface tracking-tight">Portfolio Analytics</h1>
-        <p className="text-on-surface/50 font-medium mt-1">Book of Business trends and performance metrics.</p>
+        <h1 className="text-3xl md:text-4xl font-black text-on-surface tracking-tight">Portfolio Analytics</h1>
+        <p className="text-on-surface/50 font-medium mt-1 text-sm md:text-base">Book of Business trends and performance metrics.</p>
       </div>
 
       {/* Feature Info */}
-      <div className="bg-white border border-black/5 rounded-3xl p-10 shadow-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-10">
+      <div className="bg-white border border-black/5 rounded-3xl p-6 md:p-10 shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-6 md:gap-10">
           <div className="flex-1">
-            <h3 className="text-xl font-bold text-on-surface mb-3">Carrier & Producer Insights</h3>
-            <p className="text-on-surface/60 font-medium leading-relaxed max-w-2xl">
+            <h3 className="text-lg md:text-xl font-bold text-on-surface mb-2 md:mb-3">Carrier & Producer Insights</h3>
+            <p className="text-on-surface/60 font-medium leading-relaxed max-w-2xl text-sm md:text-base">
               Track performance across your entire portfolio. Analyze carrier data, producer productivity, 
               and client segmentation to drive agency growth.
             </p>
           </div>
-          <div className="flex flex-wrap gap-4 lg:justify-end">
-             <div className="px-4 py-2 bg-slate-50 rounded-xl text-[10px] font-bold text-on-surface/40 uppercase tracking-widest border border-black/5">Trend Analysis</div>
-             <div className="px-4 py-2 bg-slate-50 rounded-xl text-[10px] font-bold text-on-surface/40 uppercase tracking-widest border border-black/5">Carrier Benchmarking</div>
-             <div className="px-4 py-2 bg-slate-50 rounded-xl text-[10px] font-bold text-on-surface/40 uppercase tracking-widest border border-black/5">Retention Forecasting</div>
+          <div className="flex flex-wrap gap-3 md:gap-4 lg:justify-end">
+             <div className="px-3 py-1.5 md:px-4 md:py-2 bg-slate-50 rounded-xl text-[9px] md:text-[10px] font-bold text-on-surface/40 uppercase tracking-widest border border-black/5">Trend Analysis</div>
+             <div className="px-3 py-1.5 md:px-4 md:py-2 bg-slate-50 rounded-xl text-[9px] md:text-[10px] font-bold text-on-surface/40 uppercase tracking-widest border border-black/5">Carrier Benchmarking</div>
+             <div className="px-3 py-1.5 md:px-4 md:py-2 bg-slate-50 rounded-xl text-[9px] md:text-[10px] font-bold text-on-surface/40 uppercase tracking-widest border border-black/5">Retention Forecasting</div>
           </div>
         </div>
       </div>

@@ -163,21 +163,21 @@ export default function HomePage() {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-4 gap-4 mb-8">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                       <div className="p-4 rounded-2xl bg-cyan-50 border border-cyan-100">
-                        <div className="text-2xl font-bold mb-1 text-on-surface">84%</div>
+                        <div className="text-xl md:text-2xl font-bold mb-1 text-on-surface">84%</div>
                         <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Renewal Health</div>
                       </div>
                       <div className="p-4 rounded-2xl bg-red-50 border border-red-100">
-                        <div className="text-2xl font-bold mb-1 text-on-surface">12</div>
+                        <div className="text-xl md:text-2xl font-bold mb-1 text-on-surface">12</div>
                         <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">At-Risk Policies</div>
                       </div>
                       <div className="p-4 rounded-2xl bg-orange-50 border border-orange-100">
-                        <div className="text-2xl font-bold mb-1 text-on-surface">$42k</div>
+                        <div className="text-xl md:text-2xl font-bold mb-1 text-on-surface">$42k</div>
                         <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Leakage Risk</div>
                       </div>
                       <div className="p-4 rounded-2xl bg-secondary/10 border border-secondary/20">
-                        <div className="text-2xl font-bold mb-1 text-secondary">32</div>
+                        <div className="text-xl md:text-2xl font-bold mb-1 text-secondary">32</div>
                         <div className="text-[10px] text-secondary font-bold uppercase tracking-wider">Active Renewals</div>
                       </div>
                     </div>
@@ -579,14 +579,14 @@ export default function HomePage() {
             <p className="text-lg text-on-surface/60 font-body">Built for retention, not just accounting.</p>
           </div>
 
-          <div className="bg-white rounded-3xl border border-black/5 overflow-hidden">
-            <table className="w-full">
+          <div className="bg-white rounded-3xl border border-black/5 overflow-x-auto scrollbar-hide">
+            <table className="w-full min-w-[600px]">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="text-left p-6 font-headline font-bold text-lg">Feature</th>
-                  <th className="text-center p-6 font-headline font-bold text-lg">RetainVault</th>
-                  <th className="text-center p-6 font-headline font-bold text-lg">Traditional AMS</th>
-                  <th className="text-center p-6 font-headline font-bold text-lg">Spreadsheets</th>
+                  <th className="text-left p-6 font-headline font-bold text-base md:text-lg">Feature</th>
+                  <th className="text-center p-6 font-headline font-bold text-base md:text-lg">RetainVault</th>
+                  <th className="text-center p-6 font-headline font-bold text-base md:text-lg">Traditional AMS</th>
+                  <th className="text-center p-6 font-headline font-bold text-base md:text-lg">Spreadsheets</th>
                 </tr>
               </thead>
               <tbody>
@@ -600,11 +600,11 @@ export default function HomePage() {
                    { feature: "Setup time", bookGuard: "Fast", ams: "Weeks", spreadsheets: "N/A" },
                    { feature: "Monthly cost", bookGuard: "$99+", ams: "$500+", spreadsheets: "Free" }
                 ].map((row, i) => (
-                  <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}>
-                    <td className="p-6 font-medium font-body">{row.feature}</td>
-                    <td className="p-6 text-center text-secondary font-bold text-xl">{row.bookGuard}</td>
-                    <td className="p-6 text-center text-on-surface/40 font-body">{row.ams}</td>
-                    <td className="p-6 text-center text-on-surface/40 font-body">{row.spreadsheets}</td>
+                   <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}>
+                    <td className="p-4 md:p-6 font-medium font-body text-sm md:text-base">{row.feature}</td>
+                    <td className="p-4 md:p-6 text-center text-secondary font-bold text-lg md:text-xl">{row.bookGuard}</td>
+                    <td className="p-4 md:p-6 text-center text-on-surface/40 font-body text-sm md:text-base">{row.ams}</td>
+                    <td className="p-4 md:p-6 text-center text-on-surface/40 font-body text-sm md:text-base">{row.spreadsheets}</td>
                   </tr>
                 ))}
               </tbody>

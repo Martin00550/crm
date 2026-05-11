@@ -198,7 +198,7 @@ export function AgencyProfileForm({ agency, isDemo = false }: AgencyProfileFormP
         </h2>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-8 space-y-8">
+      <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-8">
         {/* Success/Error Message */}
         {message && (
           <div className={`p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${
@@ -269,12 +269,12 @@ export function AgencyProfileForm({ agency, isDemo = false }: AgencyProfileFormP
                   Recommended: 400x400px. PNG or SVG with a transparent background for best results on the portal.
                 </p>
                 
-                <div className="flex flex-wrap justify-center md:justify-start gap-3">
+                <div className="flex flex-wrap justify-center md:justify-start gap-3 w-full">
                   <button
                     type="button"
                     disabled={isUploadingLogo}
                     onClick={() => document.getElementById('logo-upload')?.click()}
-                    className="px-6 py-2.5 bg-white border border-black/10 text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-black/5 transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
+                    className="flex-1 md:flex-none px-6 py-2.5 bg-white border border-black/10 text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-black/5 transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     <Upload className="w-3.5 h-3.5" />
                     {isUploadingLogo ? "Processing..." : "Select File"}
@@ -482,11 +482,11 @@ export function AgencyProfileForm({ agency, isDemo = false }: AgencyProfileFormP
         </div>
 
         {/* Submit Button */}
-        <div className="flex gap-4 pt-8 border-t border-black/5">
+        <div className="flex flex-col sm:flex-row gap-4 pt-8 border-t border-black/5">
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-10 py-4 bg-secondary text-white font-black text-xs uppercase tracking-[0.2em] rounded-full hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto px-10 py-4 bg-secondary text-white font-black text-xs uppercase tracking-[0.2em] rounded-full hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Saving...' : 'Save Profile'}
           </button>
@@ -494,7 +494,7 @@ export function AgencyProfileForm({ agency, isDemo = false }: AgencyProfileFormP
           <button
             type="button"
             onClick={() => window.history.back()}
-            className="px-10 py-4 border border-black/10 text-on-surface/60 font-black text-xs uppercase tracking-widest rounded-full hover:bg-black/5 transition-all"
+            className="w-full sm:w-auto px-10 py-4 border border-black/10 text-on-surface/60 font-black text-xs uppercase tracking-widest rounded-full hover:bg-black/5 transition-all"
           >
             Cancel
           </button>

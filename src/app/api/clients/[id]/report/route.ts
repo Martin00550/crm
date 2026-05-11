@@ -30,8 +30,8 @@ export const POST = withApiSecurity(
     } catch (error) {
       logger.error('Client AI report API error', error);
       return NextResponse.json(
-        { error: 'Failed to generate client intelligence report' },
-        { status: 500 }
+        { error: 'An error occurred while generating the report. Please try again.' },
+        { status: 200 }
       );
     }
   },

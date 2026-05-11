@@ -1,5 +1,6 @@
 import { Inngest } from 'inngest';
 
 export const inngest = new Inngest({
-  id: 'retainvault',
+  id: process.env.INNGEST_APP_ID || 'retainvault',
+  eventKey: process.env.INNGEST_EVENT_KEY,
 });

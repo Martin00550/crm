@@ -3,10 +3,8 @@
 import { 
   AddClientButton
 } from "@/components/dashboard/DashboardButtons";
-import { ImportCSVButton } from "@/components/dashboard/ImportCSVButton";
-import { ExportDataButton } from "@/components/dashboard/ExportCSVButton";
 import { KeyboardShortcuts, useKeyboardShortcuts } from "@/components/dashboard/KeyboardShortcuts";
-import { Plus, RefreshCw, Bell, Sparkles, Upload, ArrowRight } from "lucide-react";
+import { Plus, RefreshCw, Bell, Sparkles, Upload, ArrowRight, Download } from "lucide-react";
 import { DateRangeFilter } from "@/components/dashboard/DateRangeFilter";
 import { useState, useEffect, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
@@ -29,6 +27,30 @@ interface DashboardStats {
   aiReportUsageCount: number;
 }
 
+interface DropdownItemProps {
+  onClick: () => void;
+  icon: any;
+  label: string;
+  disabled?: boolean;
+  isLoading?: boolean;
+  variant?: 'default' | 'danger';
+}
+
+function DropdownItem({ onClick, icon: Icon, label, disabled, isLoading, variant = 'default' }: DropdownItemProps) {
+  return (
+    <button 
+      onClick={onClick} 
+      disabled={disabled || isLoading}
+      className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left disabled:opacity-50 group/item`}
+    >
+      <Icon className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''} ${variant === 'danger' ? 'text-red-500' : 'text-on-surface/40'} group-hover/item:scale-110 transition-transform`} />
+      <span className={`text-[10px] font-black uppercase tracking-widest ${variant === 'danger' ? 'text-red-500' : 'text-on-surface/60'}`}>
+        {isLoading ? 'Processing...' : label}
+      </span>
+    </button>
+  );
+}
+
 export function DashboardClient({ 
   stats, 
   ledger, 
@@ -48,8 +70,8 @@ export function DashboardClient({
   const [notificationSettings, setNotificationSettings] = useState<any>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
-  const showNudge1 = stats.totalPolicies === 0;
-  const showNudge2 = stats.totalPolicies > 0 && stats.renewalsAtRisk.count > 0 && stats.aiReportUsageCount === 0;
+  const showNudge1 = Number(stats.totalPolicies) === 0;
+  const showNudge2 = Number(stats.totalPolicies) > 0 && stats.renewalsAtRisk.count > 0 && stats.aiReportUsageCount === 0;
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -69,9 +91,9 @@ export function DashboardClient({
       
       {/* Read Only Banner */}
       {isReadOnly && (
-        <div className="sticky top-4 z-[100] w-full bg-secondary text-white p-4 rounded-2xl shadow-2xl flex items-center justify-between border-2 border-white/20 backdrop-blur-md">
+        <div className="sticky top-4 z-[100] w-full bg-secondary text-white p-4 rounded-2xl shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 border-2 border-white/20 backdrop-blur-md">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-white">lock_clock</span>
             </div>
             <div>
@@ -81,7 +103,7 @@ export function DashboardClient({
           </div>
           <button 
             onClick={() => router.push('/checkout')}
-            className="px-6 py-2.5 bg-white text-secondary font-black text-[10px] uppercase tracking-widest rounded-xl hover:scale-105 transition-all shadow-lg shadow-black/10"
+            className="w-full sm:w-auto px-6 py-2.5 bg-white text-secondary font-black text-[10px] uppercase tracking-widest rounded-xl hover:scale-105 transition-all shadow-lg shadow-black/10"
           >
             Upgrade Now
           </button>
@@ -91,38 +113,69 @@ export function DashboardClient({
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6">
         <div>
-          <h1 className="text-4xl font-black text-on-surface tracking-tight">Command Center</h1>
-          <p className="text-on-surface/50 font-medium mt-1">Track your policies, renewals, and client health.</p>
+          <h1 className="text-3xl md:text-4xl font-black text-on-surface tracking-tight">Command Center</h1>
+          <p className="text-on-surface/50 font-medium mt-1 text-sm md:text-base">Track your policies, renewals, and client health.</p>
         </div>
         
-        <div className="flex items-center gap-3">
-          {!isReadOnly && <AddClientButton />}
-          <div className="relative group">
-            <button className="flex items-center gap-2 px-5 py-2.5 bg-white border border-black/5 rounded-2xl hover:bg-slate-50 transition-all shadow-sm">
-              <span className="text-[11px] font-bold text-on-surface/40 uppercase tracking-widest">Actions</span>
-              <Plus className="w-4 h-4 text-on-surface/20" />
-            </button>
-            <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-black/5 rounded-2xl shadow-xl z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all py-2">
-              <button onClick={() => router.refresh()} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-slate-50 transition-colors text-left">
-                <RefreshCw className="w-4 h-4 text-on-surface/40" />
-                <span className="text-[10px] font-bold text-on-surface/60 uppercase tracking-widest">Refresh Data</span>
+        {!showNudge1 && (
+          <div className="flex flex-wrap items-center gap-3">
+            {!isReadOnly && <AddClientButton />}
+            <div className="relative group">
+              <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-black/5 rounded-2xl hover:bg-slate-50 transition-all shadow-sm">
+                <span className="text-[11px] font-bold text-on-surface/40 uppercase tracking-widest">Actions</span>
+                <Plus className="w-4 h-4 text-on-surface/20" />
               </button>
-              <div className="px-4 py-1">
-                <ImportCSVButton agencyId={agencyId} disabled={isReadOnly} />
-              </div>
-              <div className="px-4 py-1">
-                <ExportDataButton agencyId={agencyId} dataType="all" disabled={isReadOnly} />
+              <div className="absolute top-full right-0 mt-2 w-56 bg-white border border-black/5 rounded-2xl shadow-xl z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all overflow-hidden">
+                <DropdownItem 
+                  onClick={() => router.refresh()} 
+                  icon={RefreshCw} 
+                  label="Refresh Snapshot" 
+                />
+                
+                <div className="h-px bg-black/5 w-full" />
+                
+                <DropdownItem 
+                  onClick={() => setIsImportModalOpen(true)} 
+                  icon={Upload} 
+                  label="Import Ledger (CSV)" 
+                  disabled={isReadOnly}
+                />
+                
+                <DropdownItem 
+                  onClick={() => {
+                    // Logic from ExportDataButton
+                    const handleExport = async () => {
+                      try {
+                        const response = await fetch(`/api/export?agencyId=${agencyId}&dataType=all`);
+                        if (!response.ok) throw new Error("Export failed");
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement("a");
+                        link.href = url;
+                        link.download = `retainvault-export-${new Date().toISOString().split('T')[0]}.csv`;
+                        link.click();
+                        window.URL.revokeObjectURL(url);
+                      } catch (error) {
+                        alert("Failed to export data");
+                      }
+                    };
+                    handleExport();
+                  }} 
+                  icon={Download} 
+                  label="Export Registry" 
+                  disabled={isReadOnly}
+                />
               </div>
             </div>
+            <DateRangeFilter />
+            <button
+              onClick={() => setShowNotificationSettings(true)}
+              className="flex items-center justify-center w-11 h-11 bg-white border border-black/5 rounded-2xl hover:bg-slate-50 transition-all shadow-sm"
+            >
+              <Bell className="w-5 h-5 text-on-surface/20" />
+            </button>
           </div>
-          <DateRangeFilter />
-          <button
-            onClick={() => setShowNotificationSettings(true)}
-            className="flex items-center justify-center w-11 h-11 bg-white border border-black/5 rounded-2xl hover:bg-slate-50 transition-all shadow-sm"
-          >
-            <Bell className="w-5 h-5 text-on-surface/20" />
-          </button>
-        </div>
+        )}
       </div>
 
       {/* Stats Grid - Hidden if empty account */}
@@ -148,28 +201,31 @@ export function DashboardClient({
         </section>
       )}
 
-      {/* Nudge 1: Empty State Activation */}
+      {/* Nudge 1: Empty State Activation - High Authority Version */}
       {showNudge1 && (
-        <div className="bg-primary/5 border border-primary/10 rounded-[32px] p-10 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
-          <div className="flex items-center gap-6 relative z-10">
-            <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
-              <Upload className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h4 className="text-xl font-bold text-on-surface mb-2 tracking-tight">Welcome to your Command Center</h4>
-              <p className="text-on-surface/60 max-w-xl font-medium leading-relaxed">
-                Import your existing policies via CSV to activate your retention risk analysis and begin monitoring your portfolio health.
-              </p>
-            </div>
+        <div className="flex flex-col items-center justify-center py-20 px-6 bg-white border border-black/5 rounded-[40px] shadow-sm text-center">
+          <div className="w-24 h-24 bg-primary/10 rounded-[32px] flex items-center justify-center mb-8">
+            <Upload className="w-12 h-12 text-primary" />
           </div>
-          <button 
-            onClick={() => setIsImportModalOpen(true)}
-            className="px-8 py-4 bg-primary text-white font-black text-xs uppercase tracking-widest rounded-xl hover:scale-105 transition-all shadow-xl shadow-primary/20 flex items-center gap-3 relative z-10 shrink-0"
-          >
-            Import Book of Business
-            <ArrowRight className="w-4 h-4" />
-          </button>
+          <h4 className="text-3xl font-black text-on-surface mb-4 tracking-tight">Activate your Command Center</h4>
+          <p className="text-on-surface/50 max-w-lg font-medium leading-relaxed mb-10">
+            Your portfolio metrics are currently dormant. Import your Book of Business via CSV to activate risk monitoring, AI reporting, and automated renewal alerts.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <button 
+              onClick={() => setIsImportModalOpen(true)}
+              className="px-10 py-5 bg-primary text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:scale-105 transition-all shadow-2xl shadow-primary/30 flex items-center gap-4"
+            >
+              Import Policies (CSV)
+              <ArrowRight className="w-5 h-5" />
+            </button>
+            <button 
+              onClick={() => router.push('/dashboard/clients')}
+              className="px-10 py-5 bg-white text-on-surface/40 font-black text-xs uppercase tracking-widest rounded-2xl border border-black/5 hover:bg-slate-50 transition-all"
+            >
+              Add Manually
+            </button>
+          </div>
         </div>
       )}
 

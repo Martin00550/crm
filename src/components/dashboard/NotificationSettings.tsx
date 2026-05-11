@@ -49,14 +49,14 @@ export function NotificationSettings({ agencyId, initialSettings }: Notification
 
   return (
     <div className="bg-white rounded-[32px] border border-black/5 shadow-sm overflow-hidden font-body">
-      <div className="p-8 border-b border-black/5 bg-background">
+      <div className="p-6 md:p-8 border-b border-black/5 bg-background">
         <h3 className="text-xl font-black text-on-surface italic font-headline tracking-tight uppercase">Renewal Dispatch Protocols</h3>
         <p className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] mt-2">Authorize automated intelligence delivery to insured entities</p>
       </div>
 
       <div className="divide-y divide-black/5">
         {/* Master Toggle */}
-        <div className="p-8 flex items-center justify-between group hover:bg-background/50 transition-colors">
+        <div className="p-6 md:p-8 flex items-center justify-between group hover:bg-background/50 transition-colors">
           <div>
             <h4 className="font-bold text-on-surface text-base">Enable Dispatch Engine</h4>
             <p className="text-xs text-on-surface/40 font-medium italic mt-1">Global authorization for automated policy reminders</p>
@@ -76,7 +76,7 @@ export function NotificationSettings({ agencyId, initialSettings }: Notification
         </div>
 
         {/* 90-Day Notification */}
-        <div className="p-8 flex items-center justify-between group hover:bg-background/50 transition-colors">
+        <div className="p-6 md:p-8 flex items-center justify-between group hover:bg-background/50 transition-colors">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-secondary/5 rounded-2xl flex items-center justify-center border border-secondary/10 shadow-sm transition-all group-hover:scale-110">
               <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>event</span>
@@ -102,7 +102,7 @@ export function NotificationSettings({ agencyId, initialSettings }: Notification
         </div>
 
         {/* 60-Day Notification */}
-        <div className="p-8 flex items-center justify-between group hover:bg-background/50 transition-colors">
+        <div className="p-6 md:p-8 flex items-center justify-between group hover:bg-background/50 transition-colors">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-secondary/5 rounded-2xl flex items-center justify-center border border-secondary/10 shadow-sm transition-all group-hover:scale-110">
               <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>notifications_active</span>
@@ -128,7 +128,7 @@ export function NotificationSettings({ agencyId, initialSettings }: Notification
         </div>
 
         {/* 30-Day Notification */}
-        <div className="p-8 flex items-center justify-between group hover:bg-background/50 transition-colors">
+        <div className="p-6 md:p-8 flex items-center justify-between group hover:bg-background/50 transition-colors">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-secondary/5 rounded-2xl flex items-center justify-center border border-secondary/10 shadow-sm transition-all group-hover:scale-110">
               <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>priority_high</span>
@@ -154,7 +154,7 @@ export function NotificationSettings({ agencyId, initialSettings }: Notification
         </div>
 
         {/* Expiry Notification */}
-        <div className="p-8 flex items-center justify-between group hover:bg-background/50 transition-colors">
+        <div className="p-6 md:p-8 flex items-center justify-between group hover:bg-background/50 transition-colors">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-secondary/5 rounded-2xl flex items-center justify-center border border-secondary/10 shadow-sm transition-all group-hover:scale-110">
               <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
@@ -180,7 +180,7 @@ export function NotificationSettings({ agencyId, initialSettings }: Notification
         </div>
 
         {/* Daily Digest */}
-        <div className="p-8 flex items-center justify-between group hover:bg-background/50 transition-colors">
+        <div className="p-6 md:p-8 flex items-center justify-between group hover:bg-background/50 transition-colors">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-secondary/5 rounded-2xl flex items-center justify-center border border-secondary/10 shadow-sm transition-all group-hover:scale-110">
               <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>mail</span>
@@ -205,7 +205,7 @@ export function NotificationSettings({ agencyId, initialSettings }: Notification
         </div>
 
         {/* Commission Alerts */}
-        <div className="p-8 flex items-center justify-between group hover:bg-background/50 transition-colors">
+        <div className="p-6 md:p-8 flex items-center justify-between group hover:bg-background/50 transition-colors">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-secondary/5 rounded-2xl flex items-center justify-center border border-secondary/10 shadow-sm transition-all group-hover:scale-110">
               <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span>
@@ -231,7 +231,7 @@ export function NotificationSettings({ agencyId, initialSettings }: Notification
       </div>
 
       {/* Footer / Status Indicator */}
-      <div className="p-8 bg-background border-t border-black/5 flex items-center justify-between">
+      <div className="p-6 md:p-8 bg-background border-t border-black/5 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           {saving ? (
             <div className="flex items-center gap-2 text-secondary animate-pulse">
@@ -251,7 +251,7 @@ export function NotificationSettings({ agencyId, initialSettings }: Notification
           )}
         </div>
         
-        <p className="text-[10px] font-bold text-on-surface/30 italic uppercase tracking-wider">
+        <p className="text-[10px] font-bold text-on-surface/30 italic uppercase tracking-wider text-center sm:text-right">
           Auto-deployed to active renewal cycles
         </p>
       </div>

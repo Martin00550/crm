@@ -230,16 +230,16 @@ export function WhiteLabelPortal({ agencyId, isDemo = false }: WhiteLabelPortalP
       {config && (
         <>
           {/* Configuration Form */}
-          <div className="bg-white rounded-[32px] border border-black/5 p-8 shadow-sm">
+          <div className="bg-white rounded-[32px] border border-black/5 p-6 md:p-8 shadow-sm">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em]">Portal Protocol Configuration</h2>
-              <div className="flex items-center space-x-2">
+              <div className="flex flex-wrap items-center gap-3">
                 {config.subdomain && (
                   <a
                     href={`https://${config.subdomain}.retainvault.tech`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center space-x-2 px-6 py-2.5 bg-secondary/10 text-secondary rounded-full hover:bg-secondary hover:text-white transition-all border border-secondary/10 group/link"
+                    className="w-full sm:w-auto flex items-center justify-center space-x-2 px-6 py-2.5 bg-secondary/10 text-secondary rounded-full hover:bg-secondary hover:text-white transition-all border border-secondary/10 group/link"
                   >
                     <ExternalLink className="w-4 h-4 group-hover:rotate-12 transition-transform" />
                     <span className="text-[10px] font-black uppercase tracking-widest">Preview Deployment</span>
@@ -341,7 +341,7 @@ export function WhiteLabelPortal({ agencyId, isDemo = false }: WhiteLabelPortalP
                 {/* Logo Upload */}
                 <div>
                   <label className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] block mb-2">Agency Seal (Logo)</label>
-                  <div className="flex items-center space-x-6">
+                  <div className="flex flex-col sm:flex-row items-center gap-6">
                     <div className="w-20 h-20 bg-background border border-black/10 rounded-2xl flex items-center justify-center overflow-hidden shadow-inner relative group/logo">
                       {isUploadingLogo ? (
                         <div className="w-6 h-6 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
@@ -368,7 +368,7 @@ export function WhiteLabelPortal({ agencyId, isDemo = false }: WhiteLabelPortalP
                         type="button"
                         onClick={() => document.getElementById('portal-logo-upload')?.click()}
                         disabled={isUploadingLogo}
-                        className="px-6 py-2.5 bg-white border border-black/10 text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-black/5 transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
+                        className="w-full sm:w-auto px-6 py-2.5 bg-white border border-black/10 text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-black/5 transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
                       >
                         <Upload className="w-3.5 h-3.5" />
                         {isUploadingLogo ? 'Processing...' : 'Upload Asset'}
@@ -522,8 +522,8 @@ export function WhiteLabelPortal({ agencyId, isDemo = false }: WhiteLabelPortalP
             </div>
 
             {/* Save Button */}
-            <div className="mt-10 flex items-center justify-between pt-8 border-t border-black/5">
-              <div>
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-between gap-6 pt-8 border-t border-black/5">
+              <div className="w-full sm:w-auto">
                 {error && (
                   <div className="flex items-center space-x-2 text-red-600 bg-red-50 px-4 py-2 rounded-full border border-red-100">
                     <AlertCircle className="w-4 h-4" />
@@ -540,7 +540,7 @@ export function WhiteLabelPortal({ agencyId, isDemo = false }: WhiteLabelPortalP
               <button
                 onClick={saveConfig}
                 disabled={saving}
-                className="px-12 py-4 bg-secondary text-white font-black text-xs uppercase tracking-[0.2em] rounded-full hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto px-12 py-4 bg-secondary text-white font-black text-xs uppercase tracking-[0.2em] rounded-full hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed text-center"
               >
                 {saving ? 'Syncing...' : 'Commit Configuration'}
               </button>
@@ -548,7 +548,7 @@ export function WhiteLabelPortal({ agencyId, isDemo = false }: WhiteLabelPortalP
           </div>
 
           {/* Client Invitations */}
-          <div className="bg-white rounded-[32px] border border-black/5 p-8 shadow-sm">
+          <div className="bg-white rounded-[32px] border border-black/5 p-6 md:p-8 shadow-sm">
             <h2 className="text-[10px] font-black text-on-surface/40 uppercase tracking-[0.2em] mb-4">Insured Portfolio Access</h2>
             <p className="text-sm text-on-surface/50 font-medium italic mb-6">
               Generate secure, single-use authentication links for your insured portfolio.

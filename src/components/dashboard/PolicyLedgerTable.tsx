@@ -103,7 +103,7 @@ export function PolicyLedgerTable({
 
   return (
     <div className="bg-white rounded-3xl border border-black/5 shadow-sm overflow-hidden font-body flex flex-col h-[600px] md:h-[700px]">
-      <div className="px-4 md:px-8 py-4 md:py-6 border-b border-black/5 flex flex-col lg:flex-row justify-between items-center gap-6 shrink-0">
+      <div className="px-4 md:px-8 py-4 md:py-6 border-b border-black/5 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 md:gap-6 shrink-0">
         <div className="flex-1 max-w-md w-full relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface/20" />
           <input
@@ -115,17 +115,17 @@ export function PolicyLedgerTable({
           />
         </div>
 
-        <div className="flex items-center gap-3 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
+        <div className="flex items-center gap-2 md:gap-3 w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0 scrollbar-hide">
           {selectedPolicies.size > 0 && (
-            <div className="flex gap-2 mr-4 border-r border-black/5 pr-4 shrink-0">
-              <button className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-on-surface/40 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
-              <button className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-on-surface/40 hover:text-secondary transition-colors"><Download className="w-4 h-4" /></button>
+            <div className="flex gap-2 mr-2 md:mr-4 border-r border-black/5 pr-2 md:pr-4 shrink-0">
+              <button className="p-2.5 min-w-[40px] min-h-[40px] flex items-center justify-center text-on-surface/40 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
+              <button className="p-2.5 min-w-[40px] min-h-[40px] flex items-center justify-center text-on-surface/40 hover:text-secondary transition-colors"><Download className="w-4 h-4" /></button>
             </div>
           )}
           <button 
             onClick={() => !isReadOnly && exportPolicyLedgerToPDF(filteredLedger, 'ledger')} 
             disabled={isReadOnly}
-            className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-on-surface/40 hover:text-secondary transition-colors shrink-0 disabled:opacity-50"
+            className="p-2.5 min-w-[40px] min-h-[40px] flex items-center justify-center text-on-surface/40 hover:text-secondary transition-colors shrink-0 disabled:opacity-50 border border-black/5 rounded-xl bg-white lg:border-none lg:bg-transparent"
           >
             <FileText className="w-4 h-4" />
           </button>
@@ -135,23 +135,23 @@ export function PolicyLedgerTable({
       </div>
 
       <div className="flex-1 overflow-auto relative" ref={parentRef}>
-        <table className="w-full text-left border-collapse table-fixed min-w-[1000px]">
+        <table className="w-full text-left border-collapse table-fixed min-w-[600px] md:min-w-[1000px]">
           <thead className="sticky top-0 z-10">
             <tr className="border-b border-black/5 bg-slate-50/90 backdrop-blur-sm">
-              <th className="pl-8 py-4 w-16">
+              <th className="pl-4 md:pl-8 py-4 w-12 md:w-16">
                 <input type="checkbox" checked={selectAll} onChange={handleSelectAll} className="w-4 h-4 rounded border-black/10 text-secondary focus:ring-secondary/20" />
               </th>
-              <th className="px-6 py-4 text-[11px] font-bold text-on-surface/30 uppercase tracking-widest cursor-pointer group w-[28%]" onClick={() => handleSort('clientName')}>
+              <th className="px-4 md:px-6 py-4 text-[10px] md:text-[11px] font-bold text-on-surface/30 uppercase tracking-widest cursor-pointer group w-[40%] md:w-[28%]" onClick={() => handleSort('clientName')}>
                 <div className="flex items-center gap-2">Insured {getSortIcon('clientName')}</div>
               </th>
-              <th className="px-6 py-4 text-[11px] font-bold text-on-surface/30 uppercase tracking-widest cursor-pointer group w-[18%]" onClick={() => handleSort('carrier')}>
+              <th className="hidden md:table-cell px-6 py-4 text-[11px] font-bold text-on-surface/30 uppercase tracking-widest cursor-pointer group w-[18%]" onClick={() => handleSort('carrier')}>
                 <div className="flex items-center gap-2">Carrier {getSortIcon('carrier')}</div>
               </th>
-              <th className="px-6 py-4 text-[11px] font-bold text-on-surface/30 uppercase tracking-widest w-[20%]">Type</th>
-              <th className="px-6 py-4 text-[11px] font-bold text-on-surface/30 uppercase tracking-widest text-right w-[15%]" onClick={() => handleSort('premium')}>
+              <th className="hidden sm:table-cell px-4 md:px-6 py-4 text-[10px] md:text-[11px] font-bold text-on-surface/30 uppercase tracking-widest w-[20%]">Type</th>
+              <th className="px-4 md:px-6 py-4 text-[10px] md:text-[11px] font-bold text-on-surface/30 uppercase tracking-widest text-right w-[25%] md:w-[15%]" onClick={() => handleSort('premium')}>
                 <div className="flex items-center justify-end gap-2">Premium {getSortIcon('premium')}</div>
               </th>
-              <th className="px-8 py-4 text-[11px] font-bold text-on-surface/30 uppercase tracking-widest text-right w-[15%]">Expiration</th>
+              <th className="px-4 md:px-8 py-4 text-[10px] md:text-[11px] font-bold text-on-surface/30 uppercase tracking-widest text-right w-[25%] md:w-[15%]">Expiration</th>
             </tr>
           </thead>
           <tbody className="relative" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
@@ -166,24 +166,24 @@ export function PolicyLedgerTable({
                   className="hover:bg-background/20 transition-all absolute top-0 left-0 w-full border-b border-black/5"
                   style={{ height: `${virtualItem.size}px`, transform: `translateY(${virtualItem.start}px)` }}
                 >
-                  <td className="pl-8 py-4 w-16">
+                  <td className="pl-4 md:pl-8 py-4 w-12 md:w-16">
                     <input type="checkbox" checked={selectedPolicies.has(policy.id)} onChange={() => handleSelectPolicy(policy.id)} className="w-4 h-4 rounded border-black/10 text-secondary focus:ring-secondary/20" />
                   </td>
-                  <td className="px-6 py-4 overflow-hidden truncate w-[28%]">
-                    <Link href={clientPath} className="font-bold text-on-surface text-sm hover:text-secondary transition-colors block truncate">{policy.clientName}</Link>
-                    <p className="text-[10px] text-on-surface/30 font-medium truncate">{policy.clientIndustry || "General"}</p>
+                  <td className="px-4 md:px-6 py-4 overflow-hidden truncate w-[40%] md:w-[28%]">
+                    <Link href={clientPath} className="font-bold text-on-surface text-[13px] md:text-sm hover:text-secondary transition-colors block truncate">{policy.clientName}</Link>
+                    <p className="text-[9px] md:text-[10px] text-on-surface/30 font-medium truncate">{policy.clientIndustry || "General"}</p>
                   </td>
-                  <td className="px-6 py-4 text-sm text-on-surface/60 font-medium truncate w-[18%]">{policy.carrier}</td>
-                  <td className="px-6 py-4 w-[20%]">
-                    <span className="text-[10px] font-bold text-on-surface/40 uppercase tracking-wider bg-background/50 px-2 py-1 rounded-md border border-black/5 truncate inline-block">{policy.policyType}</span>
+                  <td className="hidden md:table-cell px-6 py-4 text-sm text-on-surface/60 font-medium truncate w-[18%]">{policy.carrier}</td>
+                  <td className="hidden sm:table-cell px-4 md:px-6 py-4 w-[20%]">
+                    <span className="text-[9px] md:text-[10px] font-bold text-on-surface/40 uppercase tracking-wider bg-background/50 px-2 py-1 rounded-md border border-black/5 truncate inline-block">{policy.policyType}</span>
                   </td>
-                  <td className="px-6 py-4 text-right font-bold text-sm text-on-surface w-[15%]">
+                  <td className="px-4 md:px-6 py-4 text-right font-bold text-[13px] md:text-sm text-on-surface w-[25%] md:w-[15%]">
                     {formatCurrency(policy.premium, currency)}
                   </td>
-                  <td className="px-8 py-4 text-right w-[15%]">
+                  <td className="px-4 md:px-8 py-4 text-right w-[25%] md:w-[15%]">
                     <div className="flex flex-col items-end">
-                      <span className="text-xs font-bold text-on-surface/60">{policy.expirationDate}</span>
-                      <span className={`text-[10px] font-bold ${getDaysColor(policy.daysUntilRenewal)}`}>{policy.daysUntilRenewal} days</span>
+                      <span className="text-[11px] md:text-xs font-bold text-on-surface/60">{policy.expirationDate}</span>
+                      <span className={`text-[9px] md:text-[10px] font-bold ${getDaysColor(policy.daysUntilRenewal)}`}>{policy.daysUntilRenewal} d</span>
                     </div>
                   </td>
                 </tr>

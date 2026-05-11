@@ -177,3 +177,28 @@ export const securityAlertsRelations = relations(securityAlerts, ({ one }) => ({
     references: [agencies.id],
   }),
 }));
+
+export const importJobs = pgTable('import_jobs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  agencyId: uuid('agency_id').notNull().references(() => agencies.id, { onDelete: 'cascade' }),
+  userId: text('user_id'),
+  fileName: text('file_name'),
+  status: text('status').default('pending'), // pending, processing, completed, failed
+  totalRows: integer('total_rows').default(0),
+  processedRows: integer('processed_rows').default(0),
+  successCount: integer('success_count').default(0),
+  errorCount: integer('error_count').default(0),
+  errorDetails: jsonb('error_details'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+}, (table) => ({
+  agencyIdIdx: index('import_jobs_agency_idx').on(table.agencyId),
+  statusIdx: index('import_jobs_status_idx').on(table.status),
+}));
+
+export const importJobsRelations = relations(importJobs, ({ one }) => ({
+  agency: one(agencies, {
+    fields: [importJobs.agencyId],
+    references: [agencies.id],
+  }),
+}));

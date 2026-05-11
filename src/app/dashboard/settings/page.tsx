@@ -90,13 +90,13 @@ export default async function SettingsPage() {
           <Link
             key={item.name}
             href={item.available ? item.href : '/pricing'}
-            className={`group block p-8 bg-surface rounded-[32px] border border-black/5 shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all relative overflow-hidden ${
+            className={`group block p-6 md:p-8 bg-surface rounded-[32px] border border-black/5 shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all relative overflow-hidden ${
               !item.available ? 'opacity-60' : ''
             }`}
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-secondary/10 transition-colors"></div>
-            <div className="flex items-start gap-6 relative z-10">
-              <div className="w-14 h-14 bg-black text-white rounded-2xl flex items-center justify-center shadow-lg group-hover:bg-secondary transition-all group-hover:rotate-3">
+            <div className="flex flex-col sm:flex-row items-start gap-6 relative z-10">
+              <div className="w-14 h-14 bg-black text-white rounded-2xl flex items-center justify-center shadow-lg group-hover:bg-secondary transition-all group-hover:rotate-3 shrink-0">
                 <span className="material-symbols-outlined text-2xl">{item.icon}</span>
               </div>
               <div className="flex-1">

@@ -77,7 +77,7 @@ export async function generateRateExplanation(policyId: string) {
     return data.candidates[0].content.parts[0].text.trim();
   } catch (error) {
     logger.error('Error generating AI rate explanation', error);
-    return "Unable to generate a policy analysis at this time.";
+    return 'An error occurred while generating the report. Please try again.';
   }
 }
 

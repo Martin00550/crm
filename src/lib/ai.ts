@@ -43,42 +43,49 @@ async function callGemini(prompt: string, systemInstruction: string = 'You are a
     throw new Error('GEMINI_API_KEY is not configured');
   }
 
-  // Using gemini-3.1-flash-lite-preview as requested
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      system_instruction: {
-        parts: [{ text: systemInstruction }]
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s enterprise timeout
+
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-      contents: [
-        { 
-          parts: [{ text: prompt }] 
+      signal: controller.signal,
+      body: JSON.stringify({
+        system_instruction: {
+          parts: [{ text: systemInstruction }]
+        },
+        contents: [
+          { 
+            parts: [{ text: prompt }] 
+          }
+        ],
+        generationConfig: {
+          temperature: 0.3,
+          topP: 0.85,
+          topK: 40,
+          maxOutputTokens: 2048,
         }
-      ],
-      generationConfig: {
-        temperature: 0.3,
-        topP: 0.85,
-        topK: 40,
-        maxOutputTokens: 2048,
-      }
-    }),
-  });
+      }),
+    });
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Gemini API error: ${response.status} - ${error}`);
-  }
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Gemini API error: ${response.status} - ${error}`);
+    }
 
-  const data = await response.json();
-  
-  if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
-    throw new Error('Invalid response format from Gemini API');
+    const data = await response.json();
+    
+    if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+      throw new Error('Invalid response format from Gemini API');
+    }
+    
+    return data.candidates[0].content.parts[0].text;
+  } finally {
+    clearTimeout(timeoutId);
   }
-  
-  return data.candidates[0].content.parts[0].text;
 }
 
 export async function generateRateExplainer(
@@ -168,7 +175,7 @@ Keep it under 400 words total. Be specific and actionable.`;
     logger.error('Gemini API error', error);
     return {
       success: false,
-      error: 'Gemini AI service temporarily unavailable. Please try again in a few moments.',
+      error: 'An error occurred while generating the report. Please try again.',
     };
   }
 }
@@ -294,7 +301,7 @@ ${critique}`;
     logger.error('Client report generation error', error);
     return {
       success: false,
-      error: 'AI Analysis engine failed to respond. Please try again.',
+      error: 'An error occurred while generating the report. Please try again.',
     };
   }
 }

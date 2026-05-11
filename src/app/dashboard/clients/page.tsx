@@ -35,10 +35,10 @@ export default async function ClientsPage() {
   return (
     <div className="space-y-12 font-body pb-20">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-6 md:gap-0">
         <div>
-          <h1 className="text-4xl font-black text-on-surface tracking-tight">Book of Business</h1>
-          <p className="text-on-surface/50 font-medium mt-1">Complete view of all current placements and client health.</p>
+          <h1 className="text-3xl md:text-4xl font-black text-on-surface tracking-tight">Book of Business</h1>
+          <p className="text-on-surface/50 font-medium mt-1 text-sm md:text-base">Complete view of all current placements and client health.</p>
         </div>
         <div className="flex items-center gap-3">
           <ImportCSVButton agencyId={agencyId} />
