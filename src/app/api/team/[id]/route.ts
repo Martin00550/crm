@@ -5,6 +5,8 @@ import { getUserAgencyId } from '@/actions/data';
 import { UserRole } from '@/lib/permissions';
 import { logger } from '@/lib/logger';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/team/[id] - Get team member details
 export async function GET(
   request: NextRequest,
