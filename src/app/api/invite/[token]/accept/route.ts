@@ -3,6 +3,8 @@ import { getAuth } from '@/lib/auth-wrapper';
 import { acceptInvitation } from '@/lib/team-access';
 import { logger } from '@/lib/logger';
 
+export const dynamic = 'force-dynamic';
+
 // POST /api/invite/[token]/accept - Accept invitation
 export async function POST(
   request: NextRequest,

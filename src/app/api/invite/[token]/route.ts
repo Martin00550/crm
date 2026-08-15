@@ -4,6 +4,8 @@ import { invitations, agencies } from '@/db/schema';
 import { eq, and, gt } from 'drizzle-orm';
 import { logger } from '@/lib/logger';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/invite/[token] - Verify invitation
 export async function GET(
   request: NextRequest,
