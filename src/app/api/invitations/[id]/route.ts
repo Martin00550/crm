@@ -4,6 +4,8 @@ import { cancelInvitation, resendInvitation } from '@/lib/team-access';
 import { getUserAgencyId } from '@/actions/data';
 import { logger } from '@/lib/logger';
 
+export const dynamic = 'force-dynamic';
+
 // DELETE /api/invitations/[id] - Cancel invitation
 export async function DELETE(
   request: NextRequest,
